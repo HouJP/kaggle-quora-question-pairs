@@ -75,6 +75,19 @@ class Feature(object):
 		LogUtil.log("INFO", "merge feature done, shape=(%d,%d)" % (row_num, col_num))
 		return features
 
+	@staticmethod
+	def get_feature_names_question(cf):
+		'''
+		获取针对<问题>的特征池中的特证名
+		'''
+		return cf.get('feature', 'feature_names_question').split()
+
+	@staticmethod
+	def get_feature_names_question_pair(cf):
+		'''
+		获取针对<问题，问题>二元组的特征池中的特征名
+		'''
+		return cf.get('feature', 'feature_names_question_pair').split()
 
 	@staticmethod
 	def demo():
@@ -82,11 +95,13 @@ class Feature(object):
 		cf = ConfigParser.ConfigParser()
 		cf.read("../conf/python.conf")
 		# 加载特征文件
-		features = Feature.load("%s/feature1.test.smx" % cf.get('path', 'feature_question_pt'))
+		features = Feature.load("%s/feature1.test.smat" % cf.get('path', 'feature_question_pt'))
 		# 存储特征文件
-		Feature.save(features, "%s/feature2.test.smx" % cf.get('path', 'feature_question_pt'))
+		Feature.save(features, "%s/feature2.test.smat" % cf.get('path', 'feature_question_pt'))
 		# 合并特征
 		Feature.merge(features, features)
+		# 获取<问题>特征池中的特征名
+		Feature.get_feature_names_question(cf)
 
 
 if __name__ == "__main__":
