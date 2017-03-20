@@ -70,7 +70,10 @@ class Feature(object):
 		'''
 		横向合并特征矩阵，即为每个实例增加特征
 		'''
-		return hstack([features_1, features_2])
+		features = hstack([features_1, features_2])
+		(row_num, col_num) = features.shape
+		LogUtil.log("INFO", "merge feature done, shape=(%d,%d)" % (row_num, col_num))
+		return features
 
 
 	@staticmethod
