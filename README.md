@@ -1,8 +1,7 @@
 ****
 
 #	<center>Kaggle: Quora Question Pairs</center>
-##### <center>Author: HouJP_NSD</center>
-##### <center>E-mail: houjp1992@gmail.com</center>
+##### <center>Author: PL FYX ZW HJP</center>
 
 ****
 
