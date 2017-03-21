@@ -90,6 +90,27 @@ class Feature(object):
 		return cf.get('feature', 'feature_names_question_pair').split()
 
 	@staticmethod
+	def sample_with_index(features, indexs):
+		'''
+		根据索引采样特征向量
+		'''
+		features_sampled = features[indexs, :]
+		(row_num, col_num) = features_sampled.shape
+		LogUtil.log("INFO", "sample feature done, shape=(%d,%d)" % (row_num, col_num))
+		return features_sampled
+
+	@staticmethod
+	def load_index(fp):
+		'''
+		加载特征索引文件
+		'''
+		f = open(fp)
+		indexs = [int(line) for line in f.readlines()]
+		LogUtil.log("INFO", "load index done, len(index)=%d" % (len(indexs)))
+		f.close()
+		return indexs
+
+	@staticmethod
 	def demo():
 		# 读取配置文件
 		cf = ConfigParser.ConfigParser()
@@ -102,7 +123,11 @@ class Feature(object):
 		Feature.merge(features, features)
 		# 获取<问题>特征池中的特征名
 		Feature.get_feature_names_question(cf)
-
+		# 加载索引文件
+		indexs = Feature.load_index("%s/vali.test.index" % cf.get('path', 'feature_index_pt'))
+		# 根据索引对特征采样
+		features = Feature.sample_with_index(features, indexs)
+		print features.todense()
 
 if __name__ == "__main__":
 	Feature.demo()
