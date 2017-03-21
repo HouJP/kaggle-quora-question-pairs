@@ -111,6 +111,9 @@ class Feature(object):
 		return indexs
 
 	@staticmethod
+	def extract_word_share()
+
+	@staticmethod
 	def demo():
 		# 读取配置文件
 		cf = ConfigParser.ConfigParser()
