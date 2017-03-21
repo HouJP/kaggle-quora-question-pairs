@@ -11,6 +11,9 @@ import math
 import matplotlib.pyplot as plt
 from utils import LogUtil, StrUtil
 from sklearn.metrics import roc_auc_score
+import random
+
+from utils import DataUtil
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -138,6 +141,38 @@ class Feature(object):
 		LogUtil.log("INFO", "load index done, len(index)=%d" % (len(indexs)))
 		f.close()
 		return indexs
+
+	@staticmethod
+	def balance_index(indexs, labels, rate):
+		'''
+		增加正样本或者负样本的比例，使得正样本的比例在rate附近
+		'''
+		pos_indexs = [ index for index in indexs if labels[index] == 1. ]
+		neg_indexs = [ index for index in indexs if labels[index] == 0. ]
+		origin_rate = 1.0 * len(pos_indexs) / len(indexs)
+		LogUtil.log("INFO", "original: len(pos)=%d, len(neg)=%d, rate=%.2f%%" % (len(pos_indexs), len(neg_indexs), 100.0 * origin_rate))
+		if (origin_rate < rate):
+			# 始终采样负样本
+			pos_indexs, neg_indexs = neg_indexs, pos_indexs
+			origin_rate = 1.0 - origin_rate
+			rate = 1.0 - rate
+			LogUtil.log("INFO", "increase postive instances ...")
+		else:
+			LogUtil.log("INFO", "increase negtive instances ...")
+		k = (1. - rate) * origin_rate / rate / (1 - origin_rate)
+		LogUtil.log("INFO", "k=%.4f" % k)
+		balance_indexs = pos_indexs
+		while k > 1e-6:
+			if (k > 1.):
+				balance_indexs.extend(neg_indexs)
+			else:
+				balance_indexs.extend(random.sample(neg_indexs, int(k * len(neg_indexs))))
+			k -= 1.
+		pos_indexs = [ index for index in balance_indexs if labels[index] == 1. ]
+		neg_indexs = [ index for index in balance_indexs if labels[index] == 0. ]
+		balanced_rate = 1.0 * len(pos_indexs) / len(balance_indexs)
+		LogUtil.log("INFO", "balanced: len(pos)=%d, len(neg)=%d, rate=%.2f%%" % (len(pos_indexs), len(neg_indexs), 100.0 * balanced_rate))
+		return balance_indexs
 
 	@staticmethod
 	def cal_word_share_rate(row):
@@ -279,6 +314,9 @@ class Feature(object):
 
 	@staticmethod
 	def demo():
+		'''
+		使用样例代码
+		'''
 		# 读取配置文件
 		cf = ConfigParser.ConfigParser()
 		cf.read("../conf/python.conf")
@@ -305,7 +343,7 @@ class Feature(object):
 		Feature.save_dataframe(features, out_fp)
 
 		# 绘制<Q1,Q2>特征：word_share
-		# Feature.plot_word_share_rate(features, train_data)
+		Feature.plot_word_share_rate(features, train_data)
 
 		# 计算train.csv中的IDF
 		train_qid2question_fp = '%s/train_qid2question.csv' % cf.get('path', 'devel_pt')
@@ -320,9 +358,34 @@ class Feature(object):
 		Feature.save_dataframe(features, out_fp)
 
 		# 绘制<Q1,Q2>特征：word_share_tfidf
-		# Feature.plot_word_share_tfidf_rate(features, train_data)
+		Feature.plot_word_share_tfidf_rate(features, train_data)
+
+		# 正负样本均衡化
+		rate = 0.165
+		train311_train_indexs_fp = '%s/train_311.train.index' % cf.get('path', 'feature_index_pt')
+		train311_train_indexs = Feature.load_index(train311_train_indexs_fp)
+		train_labels_fp = '%s/train.label' % cf.get('path', 'feature_label_pt')
+		train_labels = DataUtil.load_vector(train_labels_fp, True)
+		balanced_indexs = Feature.balance_index(train311_train_indexs, train_labels, rate)
+
+	@staticmethod
+	def test():
+		'''
+		测试函数
+		'''
+		# 读取配置文件
+		cf = ConfigParser.ConfigParser()
+		cf.read("../conf/python.conf")
+
+		# 正负样本均衡化
+		rate = 0.165
+		train311_train_indexs_fp = '%s/train_311.train.index' % cf.get('path', 'feature_index_pt')
+		train311_train_indexs = Feature.load_index(train311_train_indexs_fp)
+		train_labels_fp = '%s/train.label' % cf.get('path', 'feature_label_pt')
+		train_labels = DataUtil.load_vector(train_labels_fp, True)
+		balanced_indexs = Feature.balance_index(train311_train_indexs, train_labels, rate)
 
 
 if __name__ == "__main__":
-	Feature.demo()
+	Feature.test()
 
