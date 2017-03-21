@@ -41,6 +41,15 @@ class Preprocessor(object):
 		return labels
 
 	@staticmethod
+	def get_test_ids(df):
+		'''
+		获取test_id列表
+		'''
+		ids = df['test_id'].tolist()
+		LogUtil.log("INFO", "len(ids)=%d" % len(ids))
+		return ids
+
+	@staticmethod
 	def static_dul_question(df):
 		'''
 		统计重复语句
@@ -62,9 +71,9 @@ class PreprocessorRunner(object):
 		'''
 		获取train.csv和test.csv的Map(qid, question)
 		'''
-		train_df = pd.read_csv('%s/train.csv' % cf.get('path', 'origin_pt')).fillna(value="")
+		train_df = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
 		train_qid2question = Preprocessor.get_qid2question(train_df)
-		qid2question_fp = '%s/train_qid2question.csv' % cf.get('path', 'devel_pt')
+		qid2question_fp = '%s/train_qid2question.csv' % cf.get('DEFAULT', 'devel_pt')
 		DataUtil.save_dic2csv(train_qid2question, '"qid","question"', qid2question_fp)
 
 	@staticmethod
@@ -72,9 +81,9 @@ class PreprocessorRunner(object):
 		'''
 		获取train.csv中标签（is_duplicate）信息，并存储
 		'''
-		train_df = pd.read_csv('%s/train.csv' % cf.get('path', 'origin_pt')).fillna(value="")
+		train_df = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
 		train_labels = Preprocessor.get_labels(train_df)
-		train_labels_fp = '%s/train.label' % cf.get('path', 'feature_label_pt')
+		train_labels_fp = '%s/train.label' % cf.get('DEFAULT', 'feature_label_pt')
 		DataUtil.save_vector(train_labels_fp, train_labels, 'w')
 		LogUtil.log("INFO", "save label file done (%s)" % train_labels_fp)
 
@@ -83,10 +92,42 @@ class PreprocessorRunner(object):
 		'''
 		统计重复语句
 		'''
-		train_df = pd.read_csv('%s/train.csv' % cf.get('path', 'origin_pt')).fillna(value="")
+		train_df = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
 		Preprocessor.static_dul_question(train_df)
-		test_df = pd.read_csv('%s/test.csv' % cf.get('path', 'origin_pt')).fillna(value="")
+		test_df = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
 		Preprocessor.static_dul_question(test_df)
+
+	@staticmethod
+	def get_test_ids(cf):
+		'''
+		存储test.csv中test_id列表
+		'''
+		test_df = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+		test_ids = Preprocessor.get_test_ids(test_df)
+		test_ids_fp = '%s/test.id' % cf.get('DEFAULT', 'feature_id_pt')
+		DataUtil.save_vector(test_ids_fp, test_ids, 'w')
+		LogUtil.log("INFO", "save test id file done (%s)" % test_ids_fp)
+
+	@staticmethod
+	def get_test_indexs(cf):
+		'''
+		存储test.csv索引文件
+		'''
+		test_df = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+		test_indexs_fp = '%s/full.test.index' % cf.get('DEFAULT', 'feature_index_pt')
+		DataUtil.save_vector(test_indexs_fp, range(len(test_df)), 'w')
+		LogUtil.log("INFO", "save test index file done (%s)" % test_indexs_fp)
+
+	@staticmethod
+	def get_test_labels(cf):
+		'''
+		存储test.csv标签文件
+		'''
+		test_df = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+		test_labels_fp = '%s/test.label' % cf.get('DEFAULT', 'feature_label_pt')
+		DataUtil.save_vector(test_labels_fp, [0 for i in range(len(test_df))], 'w')
+		LogUtil.log("INFO", "save test labels file done (%s)" % test_labels_fp)
+
 
 if __name__ == "__main__":
 	# 读取配置文件
@@ -95,5 +136,8 @@ if __name__ == "__main__":
 
 	# PreprocessorRunner.get_qid2question(cf)
 	# PreprocessorRunner.static_dul_question(cf)
-	PreprocessorRunner.get_labels(cf)
+	# PreprocessorRunner.get_labels(cf)
+	# PreprocessorRunner.get_test_ids(cf)
+	# PreprocessorRunner.get_test_indexs(cf)
+	PreprocessorRunner.get_test_labels(cf)
 

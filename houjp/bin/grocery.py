@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 #! /usr/bin/python
 
+'''
+该脚本中记录的是临时使用的函数
+'''
+
 import ConfigParser
 import sys
 
