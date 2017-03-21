@@ -181,7 +181,7 @@ class Feature(object):
 			LogUtil.log("INFO", "increase postive instances ...")
 		else:
 			LogUtil.log("INFO", "increase negtive instances ...")
-		k = (1. - rate) * origin_rate / rate / (1 - origin_rate)
+		k = 3. #(1. - rate) * origin_rate / rate / (1 - origin_rate)
 		LogUtil.log("INFO", "k=%.4f" % k)
 		balance_indexs = pos_indexs
 		while k > 1e-6:
@@ -362,28 +362,28 @@ class Feature(object):
 		test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
 
 		# 抽取<Q1,Q2>特征：word_share
-		# out_fp = '%s/word_share.train.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
-		# features = Feature.extract_word_share_rate(train_data)
-		# Feature.save_dataframe(features, out_fp)
+		out_fp = '%s/word_share.train.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
+		features = Feature.extract_word_share_rate(train_data)
+		Feature.save_dataframe(features, out_fp)
 
 		out_fp = '%s/word_share.test.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
 		features = Feature.extract_word_share_rate(test_data)
 		Feature.save_dataframe(features, out_fp)
 
 		# 绘制<Q1,Q2>特征：word_share
-		# Feature.plot_word_share_rate(features, train_data)
+		Feature.plot_word_share_rate(features, train_data)
 
 		# 计算train.csv中的IDF
-		# train_qid2question_fp = '%s/train_qid2question.csv' % cf.get('DEFAULT', 'devel_pt')
-		# train_qid2question = pd.read_csv(train_qid2question_fp).fillna(value="")
-		# Feature.train_idf = Feature.get_idf(train_qid2question)
-		# Feature.save_idf(Feature.train_idf, '%s/train.idf' % cf.get('DEFAULT', 'devel_pt'))
+		train_qid2question_fp = '%s/train_qid2question.csv' % cf.get('DEFAULT', 'devel_pt')
+		train_qid2question = pd.read_csv(train_qid2question_fp).fillna(value="")
+		Feature.train_idf = Feature.get_idf(train_qid2question)
+		Feature.save_idf(Feature.train_idf, '%s/train.idf' % cf.get('DEFAULT', 'devel_pt'))
 
 		# 抽取<Q1,Q2>特征：word_share_tfidf
-		# Feature.train_idf = Feature.load_idf('%s/train.idf' % cf.get('DEFAULT', 'devel_pt'))
-		# out_fp = '%s/word_share_tfidf.train.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
-		# features = Feature.extract_word_share_tfidf_rate(train_data)
-		# Feature.save_dataframe(features, out_fp)
+		Feature.train_idf = Feature.load_idf('%s/train.idf' % cf.get('DEFAULT', 'devel_pt'))
+		out_fp = '%s/word_share_tfidf.train.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
+		features = Feature.extract_word_share_tfidf_rate(train_data)
+		Feature.save_dataframe(features, out_fp)
 
 		Feature.train_idf = Feature.load_idf('%s/train.idf' % cf.get('DEFAULT', 'devel_pt'))
 		out_fp = '%s/word_share_tfidf.test.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
@@ -391,15 +391,15 @@ class Feature(object):
 		Feature.save_dataframe(features, out_fp)
 
 		# 绘制<Q1,Q2>特征：word_share_tfidf
-		# Feature.plot_word_share_tfidf_rate(features, train_data)
+		Feature.plot_word_share_tfidf_rate(features, train_data)
 
 		# 正负样本均衡化
-		# rate = 0.165
-		# train311_train_indexs_fp = '%s/train_311.train.index' % cf.get('DEFAULT', 'feature_index_pt')
-		# train311_train_indexs = Feature.load_index(train311_train_indexs_fp)
-		# train_labels_fp = '%s/train.label' % cf.get('DEFAULT', 'feature_label_pt')
-		# train_labels = DataUtil.load_vector(train_labels_fp, True)
-		# balanced_indexs = Feature.balance_index(train311_train_indexs, train_labels, rate)
+		rate = 0.165
+		train311_train_indexs_fp = '%s/train_311.train.index' % cf.get('DEFAULT', 'feature_index_pt')
+		train311_train_indexs = Feature.load_index(train311_train_indexs_fp)
+		train_labels_fp = '%s/train.label' % cf.get('DEFAULT', 'feature_label_pt')
+		train_labels = DataUtil.load_vector(train_labels_fp, True)
+		balanced_indexs = Feature.balance_index(train311_train_indexs, train_labels, rate)
 
 	@staticmethod
 	def test():
