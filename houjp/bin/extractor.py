@@ -367,5 +367,114 @@ class MyTFIDFWordMatchShare(object):
         # 提取特征
         MyTFIDFWordMatchShare.run(train_data, test_data, train_qid2q, feature_path)
 
+
+class PowerfulWord(object):
+    """
+    寻找最有影响力的词
+    """
+    @staticmethod
+    def cal_word_power(train_data, train_subset_indexs):
+        """
+        计算数据中词语的影响力，格式如下：
+            词语 --> [0. 出现语句对数量，1. 出现语句对比例，2. 正确语句对比例，3. 单侧语句对比例，4. 单侧语句对正确比例，5. 双侧语句对比例，6. 双侧语句对正确比例]
+        :param data: 训练数据
+        :return: 影响力词典
+        """
+        words_power = {}
+        train_subset_data = train_data.iloc[train_subset_indexs, :]
+        for index, row in train_subset_data.iterrows():
+            label = int(row['is_duplicate'])
+            q1_words = str(row['question1']).lower().split()
+            q2_words = str(row['question2']).lower().split()
+            all_words = set(q1_words + q2_words)
+            q1_words = set(q1_words)
+            q2_words = set(q2_words)
+            for word in all_words:
+                if word not in words_power:
+                    words_power[word] = [0. for i in range(7)]
+                # 计算出现语句对数量
+                words_power[word][0] += 1.
+                words_power[word][1] += 1.
+
+                if ((word in q1_words) and (word not in q2_words)) or ((word not in q1_words) and (word in q2_words)):
+                    # 计算单侧语句数量
+                    words_power[word][3] += 1.
+                    if 0 == label:
+                        # 计算正确语句对数量
+                        words_power[word][2] += 1.
+                        # 计算单侧语句正确比例
+                        words_power[word][4] += 1.
+                if (word in q1_words) and (word in q2_words):
+                    # 计算双侧语句数量
+                    words_power[word][5] += 1.
+                    if 1 == label:
+                        # 计算正确语句对数量
+                        words_power[word][2] += 1.
+                        # 计算双侧语句正确比例
+                        words_power[word][6] += 1.
+        for word in words_power:
+            # 计算出现语句对比例
+            words_power[word][1] /= len(train_subset_indexs)
+            # 计算正确语句对比例
+            words_power[word][2] /= words_power[word][0]
+            # 计算单侧语句对正确比例
+            if words_power[word][3] > 1e-6:
+                words_power[word][4] /= words_power[word][3]
+            # 计算单侧语句对比例
+            words_power[word][3] /= words_power[word][0]
+            # 计算双侧语句对正确比例
+            if words_power[word][5] > 1e-6:
+                words_power[word][6] /= words_power[word][5]
+            # 计算双侧语句对比例
+            words_power[word][5] /= words_power[word][0]
+        sorted_words_power = sorted(words_power.iteritems(), key=lambda d: d[1][0], reverse=True)
+        LogUtil.log("INFO", "power words calculation done, len(words_power)=%d" % len(sorted_words_power))
+        return sorted_words_power
+
+    @staticmethod
+    def save_word_power(words_power, fp):
+        """
+        存储影响力词表
+        :param words_power: 影响力词表
+        :param fp: 存储路径
+        :return: NONE
+        """
+        f = open(fp, 'w')
+        for ele in words_power:
+            f.write("%s" % ele[0])
+            for num in ele[1]:
+                f.write("\t%.5f" % num)
+            f.write("\n")
+        f.close()
+
+    @staticmethod
+    def run(train_data, train_subset_indexs, words_power_fp):
+        # 计算词语影响力
+        words_power = PowerfulWord.cal_word_power(train_data, train_subset_indexs)
+        # 存储影响力词表
+        PowerfulWord.save_word_power(words_power, words_power_fp)
+        return
+
+    @staticmethod
+    def demo():
+        """
+        使用示例
+        :return:
+        """
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 加载train.csv文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        # 加载训练子集索引文件（NOTE: 不是训练集）
+        train_subset_indexs = Feature.load_index(cf.get('MODEL', 'train_indexs_fp'))
+        # 影响力词表路径
+        words_power_fp = '%s/words_power.%s.txt' % (cf.get('DEFAULT', 'feature_stat_pt'), cf.get('MODEL', 'train_subset_name'))
+
+        # 提取特征
+        PowerfulWord.run(train_data, train_subset_indexs, words_power_fp)
+
+
 if __name__ == "__main__":
-    pass
+    PowerfulWord.demo()
