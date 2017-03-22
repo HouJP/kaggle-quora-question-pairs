@@ -100,7 +100,7 @@ class DataUtil(object):
 		vector = []
 		file = open(file_path)
 		for line in file:
-			value = float(line.strip()) if is_float else line.strip()
+			value = int(line.strip()) if is_float else line.strip()
 			vector.append(value)
 		file.close()
 		LogUtil.log("INFO", "load vector done. length=%d" % (len(vector)))
