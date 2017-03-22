@@ -2,14 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import ConfigParser
-import sys
 from scipy.sparse import csr_matrix, hstack
-import pandas as pd
 from nltk.corpus import stopwords
-import math
-import matplotlib.pyplot as plt
-from utils import LogUtil, StrUtil
-from sklearn.metrics import roc_auc_score
+from utils import LogUtil
 import random
 
 from utils import DataUtil
@@ -184,7 +179,7 @@ class Feature(object):
         LogUtil.log("INFO", "k=%.4f" % k)
         balance_indexs = pos_indexs
         while k > 1e-6:
-            if (k > 1.):
+            if k > 1. - 1e-6:
                 balance_indexs.extend(neg_indexs)
             else:
                 balance_indexs.extend(random.sample(neg_indexs, int(k * len(neg_indexs))))
@@ -195,149 +190,6 @@ class Feature(object):
         LogUtil.log("INFO", "balanced: len(pos)=%d, len(neg)=%d, rate=%.2f%%" % (
         len(pos_indexs), len(neg_indexs), 100.0 * balanced_rate))
         return balance_indexs
-
-    @staticmethod
-    def cal_word_share_rate(row):
-        '''
-        计算共享词比例，不包括停用词
-        '''
-        q1words = {}
-        q2words = {}
-        for word in StrUtil.tokenize_doc_en(row['question1']):
-            if word not in Feature.stops:
-                q1words[word] = 1 if word not in q1words else (q1words[word] + 1)
-        for word in StrUtil.tokenize_doc_en(row['question2']):
-            if word not in Feature.stops:
-                q2words[word] = 1 if word not in q2words else (q2words[word] + 1)
-        if len(q1words) == 0 or len(q2words) == 0:
-            # The computer-generated chaff includes a few questions that are nothing but stopwords
-            return (0., 0., 0.)
-        len_shared_words_in_q1 = sum([q1words[w] for w in q1words.keys() if w in q2words])
-        len_shared_words_in_q2 = sum([q2words[w] for w in q2words.keys() if w in q1words])
-        len_q1 = sum(q1words.values())
-        len_q2 = sum(q2words.values())
-        r_in_q1 = 1.0 * len_shared_words_in_q1 / len_q1
-        r_in_q2 = 1.0 * len_shared_words_in_q2 / len_q2
-        r = 1.0 * (len_shared_words_in_q1 + len_shared_words_in_q2) / (len_q1 + len_q2)
-        return (r_in_q1, r_in_q2, r)
-
-    @staticmethod
-    def extract_word_share_rate(df):
-        '''
-        抽取<Q1,Q2>特征：word_share
-        '''
-        features = df.apply(Feature.cal_word_share_rate, axis=1, raw=True)
-        LogUtil.log("INFO", "extract word_share feature done ")
-        return features
-
-    @staticmethod
-    def plot_word_share_rate(word_share, train_data):
-        '''
-        绘制<Q1,Q2>特征：word_share
-        '''
-        word_share_all = word_share.apply(lambda x: x[2])
-        LogUtil.log("INFO", 'Original AUC: %f' % roc_auc_score(train_data['is_duplicate'], word_share_all.fillna(0)))
-        plt.figure(figsize=(15, 5))
-        plt.hist(word_share_all[train_data['is_duplicate'] == 0].fillna(0), bins=20, normed=True, label='Not Duplicate')
-        plt.hist(word_share_all[train_data['is_duplicate'] == 1].fillna(0), bins=20, normed=True, alpha=0.7,
-                 label='Duplicate')
-        plt.legend()
-        plt.title('Label distribution over word_match_share', fontsize=15)
-        plt.xlabel('word_share', fontsize=15)
-        plt.show()
-
-    @staticmethod
-    def get_idf(df):
-        '''
-        根据文档获取idf字典，包括停用词
-        '''
-        idf = {}
-        for index, row in df.iterrows():
-            words = set(StrUtil.tokenize_doc_en(row['question']))
-            for word in words:
-                idf[word] = 1 if word not in idf else (idf[word] + 1)
-        num_documents = len(df)
-        for word in idf:
-            idf[word] = math.log(1.0 * num_documents / (idf[word] + 1.0)) / math.log(2.0)
-        LogUtil.log("INFO", "IDF calculation done, len(idf)=%d" % len(idf))
-        return idf
-
-    @staticmethod
-    def save_idf(idf, out_fp):
-        '''
-        存储IDF文件
-        '''
-        f = open(out_fp, 'w')
-        for word in idf:
-            f.write("%s %f\n" % (word, idf[word]))
-        LogUtil.log("INFO", "save IDF file done (%s)" % out_fp)
-        f.close()
-
-    @staticmethod
-    def load_idf(in_fp):
-        '''
-        加载IDF文件
-        '''
-        idf = {}
-        f = open(in_fp)
-        for line in f:
-            [word, value] = line.strip().split()
-            idf[word] = float(value)
-        f.close()
-        LogUtil.log("INFO", "load IDF file done, len(idf)=%d" % len(idf))
-        return idf
-
-    @staticmethod
-    def cal_word_share_tfidf_rate(row):
-        '''
-        根据tfidf计算共享词比例，包括停用词
-        '''
-        q1words = {}
-        q2words = {}
-        for word in StrUtil.tokenize_doc_en(row['question1']):
-            q1words[word] = 1 if word not in q1words else (q1words[word] + 1)
-        for word in StrUtil.tokenize_doc_en(row['question2']):
-            q2words[word] = 1 if word not in q2words else (q2words[word] + 1)
-        if len(q1words) == 0 or len(q2words) == 0:
-            # The computer-generated chaff includes a few questions that are nothing but stopwords
-            return (0., 0., 0.)
-        tfidf_shared_words_in_q1 = sum(
-            [q1words[w] * Feature.train_idf[w] for w in q1words.keys() if w in q2words and w in Feature.train_idf])
-        tfidf_shared_words_in_q2 = sum(
-            [q2words[w] * Feature.train_idf[w] for w in q2words.keys() if w in q1words and w in Feature.train_idf])
-        tfidf_q1 = sum([q1words[w] * Feature.train_idf[w] for w in q1words.keys() if w in Feature.train_idf])
-        tfidf_q2 = sum([q2words[w] * Feature.train_idf[w] for w in q2words.keys() if w in Feature.train_idf])
-        r_in_q1 = 0.0 if tfidf_q1 < 1e-6 else 1.0 * tfidf_shared_words_in_q1 / tfidf_q1
-        r_in_q2 = 0.0 if tfidf_q2 < 1e-6 else 1.0 * tfidf_shared_words_in_q2 / tfidf_q2
-        r = 0.0 if (tfidf_q1 + tfidf_q2) < 1e-6 else 1.0 * (tfidf_shared_words_in_q1 + tfidf_shared_words_in_q2) / (
-        tfidf_q1 + tfidf_q2)
-        return (r_in_q1, r_in_q2, r)
-
-    @staticmethod
-    def extract_word_share_tfidf_rate(df):
-        '''
-        抽取<Q1,Q2>特征：word_share_tfidf
-        '''
-        features = df.apply(Feature.cal_word_share_tfidf_rate, axis=1, raw=True)
-        LogUtil.log("INFO", "extract word_share_tfidf feature done ")
-        return features
-
-    @staticmethod
-    def plot_word_share_tfidf_rate(word_share_tfidf, train_data):
-        '''
-        绘制<Q1,Q2>特征：word_share_tfidf
-        '''
-        word_share_tfidf_all = word_share_tfidf.apply(lambda x: x[2])
-        LogUtil.log("INFO", 'TFIDF AUC: %f' % roc_auc_score(train_data['is_duplicate'], word_share_tfidf_all.fillna(0)))
-        plt.figure(figsize=(15, 5))
-        plt.hist(word_share_tfidf_all[train_data['is_duplicate'] == 0].fillna(0), bins=20, normed=True,
-                 label='Not Duplicate')
-        plt.hist(word_share_tfidf_all[train_data['is_duplicate'] == 1].fillna(0), bins=20, normed=True, alpha=0.7,
-                 label='Duplicate')
-        plt.legend()
-        plt.title('Label distribution over tfidf_word_match_share', fontsize=15)
-        plt.xlabel('word_share_tfidf', fontsize=15)
-        plt.show()
 
     @staticmethod
     def demo():
@@ -360,44 +212,6 @@ class Feature(object):
         indexs = Feature.load_index("%s/vali.demo.index" % cf.get('DEFAULT', 'feature_index_pt'))
         # 根据索引对特征采样
         features = Feature.sample_with_index(features, indexs)
-
-        # 加载train.csv文件
-        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
-        # 加载test.csv文件
-        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
-
-        # 抽取<Q1,Q2>特征：word_share
-        out_fp = '%s/word_share.train.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
-        features = Feature.extract_word_share_rate(train_data)
-        Feature.save_dataframe(features, out_fp)
-
-        out_fp = '%s/word_share.test.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
-        features = Feature.extract_word_share_rate(test_data)
-        Feature.save_dataframe(features, out_fp)
-
-        # 绘制<Q1,Q2>特征：word_share
-        Feature.plot_word_share_rate(features, train_data)
-
-        # 计算train.csv中的IDF
-        train_qid2question_fp = '%s/train_qid2question.csv' % cf.get('DEFAULT', 'devel_pt')
-        train_qid2question = pd.read_csv(train_qid2question_fp).fillna(value="")
-        Feature.train_idf = Feature.get_idf(train_qid2question)
-        Feature.save_idf(Feature.train_idf, '%s/train.idf' % cf.get('DEFAULT', 'devel_pt'))
-
-        # 抽取<Q1,Q2>特征：word_share_tfidf
-        Feature.train_idf = Feature.load_idf('%s/train.idf' % cf.get('DEFAULT', 'devel_pt'))
-        out_fp = '%s/word_share_tfidf.train.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
-        features = Feature.extract_word_share_tfidf_rate(train_data)
-        Feature.save_dataframe(features, out_fp)
-
-        Feature.train_idf = Feature.load_idf('%s/train.idf' % cf.get('DEFAULT', 'devel_pt'))
-        out_fp = '%s/word_share_tfidf.test.smat' % cf.get('DEFAULT', 'feature_question_pair_pt')
-        features = Feature.extract_word_share_tfidf_rate(test_data)
-        Feature.save_dataframe(features, out_fp)
-
-        # 绘制<Q1,Q2>特征：word_share_tfidf
-        Feature.plot_word_share_tfidf_rate(features, train_data)
-
         # 正负样本均衡化
         rate = 0.165
         train311_train_indexs_fp = '%s/train_311.train.index' % cf.get('DEFAULT', 'feature_index_pt')

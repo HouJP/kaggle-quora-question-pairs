@@ -73,13 +73,10 @@ class Model(object):
         pass
 
     @staticmethod
-    def train_xgb():
+    def train_xgb(cf):
         '''
         训练xgb模型
         '''
-        # 读取配置文件
-        cf = ConfigParser.ConfigParser()
-        cf.read("../conf/python.conf")
 
         # 设置正样本比例
         pos_rate = float(cf.get('MODEL', 'pos_rate'))
@@ -175,13 +172,18 @@ class Model(object):
             Model.entropy_loss(test_data.get_label(), pred_test_fp)
 
     @staticmethod
-    def test():
-        '''
-        测试函数
-        '''
+    def demo():
+        """
+        使用样例代码
+        :return: NONE
+        """
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
         # XGBoost模型训练及预测
-        Model.train_xgb()
+        Model.train_xgb(cf)
 
 
 if __name__ == "__main__":
-    Model.test()
+    Model.demo()
