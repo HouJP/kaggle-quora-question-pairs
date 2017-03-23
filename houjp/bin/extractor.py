@@ -132,10 +132,10 @@ class TFIDFWordMatchShare(object):
         q1words = {}
         q2words = {}
         for word in str(row['question1']).lower().split():
-            if word not in TFIDWordMatchShare.stops:
+            if word not in TFIDFWordMatchShare.stops:
                 q1words[word] = 1
         for word in str(row['question2']).lower().split():
-            if word not in TFIDWordMatchShare.stops:
+            if word not in TFIDFWordMatchShare.stops:
                 q2words[word] = 1
         if len(q1words) == 0 or len(q2words) == 0:
             # The computer-generated chaff includes a few questions that are nothing but stopwords
@@ -158,11 +158,11 @@ class TFIDFWordMatchShare(object):
         :return: None
         """
         # 获取weights信息
-        TFIDWordMatchShare.get_weights(train_data)
+        TFIDFWordMatchShare.get_weights(train_df)
         # 抽取特征
-        train_features = train_df.apply(TFIDWordMatchShare.tfidf_word_match_share, axis=1, raw=True)
+        train_features = train_df.apply(TFIDFWordMatchShare.tfidf_word_match_share, axis=1, raw=True)
         Feature.save_dataframe(train_features, feature_pt + '/tfidf_word_match_share.train.smat')
-        test_features = test_df.apply(TFIDWordMatchShare.tfidf_word_match_share, axis=1, raw=True)
+        test_features = test_df.apply(TFIDFWordMatchShare.tfidf_word_match_share, axis=1, raw=True)
         Feature.save_dataframe(test_features, feature_pt + '/tfidf_word_match_share.test.smat')
         # 绘图
         tfidf_word_match_share = train_features.apply(lambda x: x[0])
@@ -372,6 +372,71 @@ class PowerfulWord(object):
     """
     寻找最有影响力的词
     """
+    dside_word_power = []
+    oside_word_power = []
+    aside_word_power = []
+    word_power_dict = {}
+
+    @staticmethod
+    def init_word_power_dict(words_power_fp):
+        """
+        初始化静态成员变量 word_power_dict
+        :param words_power_fp: 关键词词典路径
+        :return:
+        """
+        words_power = PowerfulWord.load_word_power(words_power_fp)
+        PowerfulWord.word_power_dict = dict(words_power)
+
+    @staticmethod
+    def init_dside_word_power(words_power):
+        """
+        初始化双边影响力词表
+        :param words_power: 影响力词表
+        :return: NONE
+        """
+        PowerfulWord.dside_word_power = []
+        # 在双边pair中最少出现的次数
+        num_least = 500
+        words_power = filter(lambda x: x[1][0] * x[1][5] >= num_least, words_power)
+        # 按照双侧语句对正确比例排序
+        sorted_words_power = sorted(words_power, key=lambda d: d[1][6], reverse=True)
+        # 双侧正确比例阈值
+        dside_corate_rate = 0.7
+        PowerfulWord.dside_word_power.extend(map(lambda x: x[0], filter(lambda x: x[1][6] >= dside_corate_rate, sorted_words_power)))
+        LogUtil.log('INFO', 'Double side power words(%d): %s' % (len(PowerfulWord.dside_word_power), str(PowerfulWord.dside_word_power)))
+
+    @staticmethod
+    def init_oside_word_power(words_power):
+        """
+        初始化单边影响力词表
+        :param words_power:
+        :return:
+        """
+        PowerfulWord.oside_word_power = []
+        # 在单边pair中最少出现次数
+        num_least = 500
+        words_power = filter(lambda x: x[1][0] * x[1][3] >= num_least, words_power)
+        # 单边正确比例阈值
+        oside_corate_rate = 0.9
+        PowerfulWord.oside_word_power.extend(
+            map(lambda x: x[0], filter(lambda x: x[1][4] >= oside_corate_rate, words_power)))
+        LogUtil.log('INFO', 'One side power words(%d): %s' % (
+            len(PowerfulWord.oside_word_power), str(PowerfulWord.oside_word_power)))
+
+    @staticmethod
+    def init_aside_word_power(words_power):
+        PowerfulWord.aside_word_power = []
+        # 在pair中最少出现次数
+        num_least = 500
+        words_power = filter(lambda x: x[1][0] >= num_least, words_power)
+        # 按照正确语句比例排序
+        sorted_words_power = sorted(words_power, key=lambda d: d[1][2], reverse=True)
+        # 正确语句比例阈值
+        aside_corate_rate = 0.7
+        PowerfulWord.dside_word_power.extend(
+            map(lambda x: x[0], filter(lambda x: x[1][2] >= aside_corate_rate, sorted_words_power)))
+        LogUtil.log('INFO', 'Double side power words: %s' % str(PowerfulWord.dside_word_power))
+
     @staticmethod
     def cal_word_power(train_data, train_subset_indexs):
         """
@@ -448,12 +513,293 @@ class PowerfulWord(object):
         f.close()
 
     @staticmethod
-    def run(train_data, train_subset_indexs, words_power_fp):
+    def load_word_power(fp):
+        """
+        加载影响力词表
+        :param fp: 影响力词表路径
+        :return: 影响力词表
+        """
+        words_power = []
+        f = open(fp, 'r')
+        for line in f:
+            subs = line.split('\t')
+            word = subs[0]
+            stats = [float(num) for num in subs[1:]]
+            words_power.append((word, stats))
+        f.close()
+        return words_power
+
+    @staticmethod
+    def tag_dside_word_power(row):
+        """
+        针对一个Pair抽取特征：是否包含双边影响力词表
+        :param row: 一个Pair实例
+        :return: Tags
+        """
+        tags = []
+        q1_words = str(row['question1']).lower().split()
+        q2_words = str(row['question2']).lower().split()
+        for word in PowerfulWord.dside_word_power:
+            if (word in q1_words) and (word in q2_words):
+                tags.append(1.0)
+            else:
+                tags.append(0.0)
+        return tags
+
+    @staticmethod
+    def tag_oside_word_power(row):
+        """
+        针对一个Pair抽取特征：是否包含单边影响力词表
+        :param row:
+        :return:
+        """
+        tags = []
+        q1_words = set(str(row['question1']).lower().split())
+        q2_words = set(str(row['question2']).lower().split())
+        for word in PowerfulWord.oside_word_power:
+            if (word in q1_words) and (word not in q2_words):
+                tags.append(1.0)
+            elif (word not in q1_words) and (word in q2_words):
+                tags.append(1.0)
+            else:
+                tags.append(0.0)
+        return tags
+
+
+    @staticmethod
+    def run_dside_word_power(train_data, test_data, words_power_fp, feature_pt):
+
+        # 加载影响力词表
+        words_power = PowerfulWord.load_word_power(words_power_fp)
+        # 筛选双边影响力词表
+        PowerfulWord.init_dside_word_power(words_power)
+
+        # 抽取双边影响力词表特征
+        train_features = train_data.apply(PowerfulWord.tag_dside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(train_features, feature_pt + '/dside_word_power.train.smat')
+        test_features = test_data.apply(PowerfulWord.tag_dside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(test_features, feature_pt + '/dside_word_power.test.smat')
+
+        # 统计
+        neg_train_features = train_features[train_data['is_duplicate'] == 0]
+        num_neg_dside_pair = 0
+        for row in neg_train_features:
+            if sum(row):
+                num_neg_dside_pair += 1
+        pos_train_features = train_features[train_data['is_duplicate'] == 1]
+        num_pos_dside_pair = 0
+        for row in pos_train_features:
+            if sum(row):
+                num_pos_dside_pair += 1
+        LogUtil.log("INFO", 'train neg: sum=%.2f, train pos: sum=%.2f' % (num_neg_dside_pair, num_pos_dside_pair))
+        return
+
+    @staticmethod
+    def run_oside_word_power(train_data, test_data, words_power_fp, feature_pt):
+
+        # 加载影响力词表
+        words_power = PowerfulWord.load_word_power(words_power_fp)
+        # 筛选单边影响力词表
+        PowerfulWord.init_oside_word_power(words_power)
+
+        # 抽取单边影响力词表特征
+        train_features = train_data.apply(PowerfulWord.tag_oside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(train_features, feature_pt + '/oside_word_power.train.smat')
+        test_features = test_data.apply(PowerfulWord.tag_oside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(test_features, feature_pt + '/oside_word_power.test.smat')
+
+        # 统计
+        neg_train_features = train_features[train_data['is_duplicate'] == 0]
+        num_neg_oside_pair = 0
+        for row in neg_train_features:
+            if sum(row):
+                num_neg_oside_pair += 1
+        pos_train_features = train_features[train_data['is_duplicate'] == 1]
+        num_pos_oside_pair = 0
+        for row in pos_train_features:
+            if sum(row):
+                num_pos_oside_pair += 1
+        LogUtil.log("INFO", 'train neg: sum=%.2f, train pos: sum=%.2f' % (num_neg_oside_pair, num_pos_oside_pair))
+        return
+
+    @staticmethod
+    def tag_any_dside_word_power(row):
+        """
+        针对一个Pair抽取特征：是否包含任一双边影响力词表
+        :param row: 一个Pair实例
+        :return: Tag
+        """
+        tag = [0.0]
+        q1_words = str(row['question1']).lower().split()
+        q2_words = str(row['question2']).lower().split()
+        for word in PowerfulWord.dside_word_power:
+            if (word in q1_words) and (word in q2_words):
+                tag[0] = 1.0
+                break
+        return tag
+
+    @staticmethod
+    def run_any_dside_word_power(train_data, test_data, words_power_fp, feature_pt):
+        """
+        计算train.csv test.csv特征：any_dside_word_power
+        :param train_data: train.csv数据
+        :param test_data: test.csv数据
+        :param words_power_fp:
+        :param feature_pt:
+        :return:
+        """
+        # 加载影响力词表
+        words_power = PowerfulWord.load_word_power(words_power_fp)
+        # 筛选双边影响力词表
+        PowerfulWord.init_dside_word_power(words_power)
+
+        # 抽取双边影响力词表特征
+        train_features = train_data.apply(PowerfulWord.tag_any_dside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(train_features, feature_pt + '/any_dside_word_power.train.smat')
+        test_features = test_data.apply(PowerfulWord.tag_any_dside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(test_features, feature_pt + '/any_dside_word_power.test.smat')
+
+        # 统计
+        neg_train_features = train_features[train_data['is_duplicate'] == 0]
+        num_neg_dside_pair = 0
+        for row in neg_train_features:
+            if sum(row):
+                num_neg_dside_pair += 1
+        pos_train_features = train_features[train_data['is_duplicate'] == 1]
+        num_pos_dside_pair = 0
+        for row in pos_train_features:
+            if sum(row):
+                num_pos_dside_pair += 1
+        LogUtil.log("INFO", 'train neg: sum=%.2f, train pos: sum=%.2f' % (num_neg_dside_pair, num_pos_dside_pair))
+        return
+
+    @staticmethod
+    def cal_rate_by_dside_word_power(row):
+        """
+        针对一个Pair抽取特征：rate_by_dside_word_power
+        :param row:
+        :return:
+        """
+        num_least = 300
+        rate = [1.0]
+        q1_words = set(str(row['question1']).lower().split())
+        q2_words = set(str(row['question2']).lower().split())
+        share_words = list(q1_words.intersection(q2_words))
+        for word in share_words:
+            if word not in PowerfulWord.word_power_dict:
+                continue
+            if PowerfulWord.word_power_dict[word][0] * PowerfulWord.word_power_dict[word][5] < num_least:
+                continue
+            rate[0] *= (1.0 - PowerfulWord.word_power_dict[word][6])
+        rate = [1 - num for num in rate]
+        return rate
+
+    @staticmethod
+    def run_rate_by_dside_word_power(train_data, test_data, words_power_fp, feature_pt):
+        # 初始化
+        PowerfulWord.init_word_power_dict(words_power_fp)
+
+        # 抽取特征
+        train_features = train_data.apply(PowerfulWord.cal_rate_by_dside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(train_features, feature_pt + '/rate_by_dside_word_power.train.smat')
+        test_features = test_data.apply(PowerfulWord.cal_rate_by_dside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(test_features, feature_pt + '/rate_by_dside_word_power.test.smat')
+
+        # 统计
+        # 负例
+        neg_train_features = train_features[train_data['is_duplicate'] == 0].apply(lambda x: x[0])
+        LogUtil.log("INFO", 'neg: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            neg_train_features.mean(), neg_train_features.std(), neg_train_features.max(), neg_train_features.min()))
+        # 正例
+        pos_train_features = train_features[train_data['is_duplicate'] == 1].apply(lambda x: x[0])
+        LogUtil.log("INFO", 'pos: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            pos_train_features.mean(), pos_train_features.std(), pos_train_features.max(), pos_train_features.min()))
+
+        # 绘图
+        plt.figure(figsize=(15, 5))
+        plt.xlim([0, 1])
+        plt.hist(neg_train_features, bins=50, normed=False, label='Not Duplicate', edgecolor='None')
+        plt.hist(pos_train_features, bins=50, normed=False, alpha=0.7, label='Duplicate', edgecolor='None')
+        plt.legend()
+        plt.title('Label distribution over rate_by_dside_word_power', fontsize=15)
+        plt.xlabel('rate_by_dside_word_power', fontsize=15)
+        plt.show()
+
+    @staticmethod
+    def cal_rate_by_oside_word_power(row):
+        """
+        针对一个Pair抽取特征：rate_by_oside_word_power
+        :param row:
+        :return:
+        """
+        num_least = 300
+        rate = [1.0]
+        q1_words = set(str(row['question1']).lower().split())
+        q2_words = set(str(row['question2']).lower().split())
+        q1_diff = list(set(q1_words).difference(set(q2_words)))
+        q2_diff = list(set(q2_words).difference(set(q1_words)))
+        all_diff = set(q1_diff + q2_diff)
+        for word in all_diff:
+            if word not in PowerfulWord.word_power_dict:
+                continue
+            if PowerfulWord.word_power_dict[word][0] * PowerfulWord.word_power_dict[word][3] < num_least:
+                continue
+            rate[0] *= (1.0 - PowerfulWord.word_power_dict[word][4])
+        rate = [1 - num for num in rate]
+        return rate
+
+    @staticmethod
+    def generate_word_power(train_data, train_subset_indexs, words_power_fp):
+        """
+        生成并存储影响力词表
+        :param train_data:
+        :param train_subset_indexs:
+        :param words_power_fp:
+        :return:
+        """
         # 计算词语影响力
         words_power = PowerfulWord.cal_word_power(train_data, train_subset_indexs)
         # 存储影响力词表
         PowerfulWord.save_word_power(words_power, words_power_fp)
-        return
+
+    @staticmethod
+    def run_rate_by_oside_word_power(train_data, test_data, words_power_fp, feature_pt):
+        # 初始化
+        PowerfulWord.init_word_power_dict(words_power_fp)
+
+        # 抽取特征
+        train_features = train_data.apply(PowerfulWord.cal_rate_by_oside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(train_features, feature_pt + '/rate_by_oside_word_power.train.smat')
+        test_features = test_data.apply(PowerfulWord.cal_rate_by_oside_word_power, axis=1, raw=True)
+        Feature.save_dataframe(test_features, feature_pt + '/rate_by_oside_word_power.test.smat')
+
+        # 统计
+        # 负例
+        neg_train_features = train_features[train_data['is_duplicate'] == 0].apply(lambda x: x[0])
+        LogUtil.log("INFO", 'neg: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            neg_train_features.mean(), neg_train_features.std(), neg_train_features.max(), neg_train_features.min()))
+        # 正例
+        pos_train_features = train_features[train_data['is_duplicate'] == 1].apply(lambda x: x[0])
+        LogUtil.log("INFO", 'pos: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            pos_train_features.mean(), pos_train_features.std(), pos_train_features.max(), pos_train_features.min()))
+
+        # 绘图
+        plt.figure(figsize=(15, 5))
+        plt.xlim([0, 1])
+        plt.hist(neg_train_features, bins=100, normed=False, label='Not Duplicate', edgecolor='None')
+        plt.hist(pos_train_features, bins=100, normed=False, alpha=0.7, label='Duplicate', edgecolor='None')
+        plt.legend()
+        plt.title('Label distribution over rate_by_oside_word_power', fontsize=15)
+        plt.xlabel('rate_by_oside_word_power', fontsize=15)
+        plt.show()
+
+    @staticmethod
+    def run_aside_word_power(train_data, test_data, words_power_fp, feature_pt):
+        # 加载影响力词表
+        words_power = PowerfulWord.load_word_power(words_power_fp)
+        # 筛选双边影响力词表
+        PowerfulWord.init_aside_word_power(words_power)
+
 
     @staticmethod
     def demo():
@@ -471,10 +817,150 @@ class PowerfulWord(object):
         train_subset_indexs = Feature.load_index(cf.get('MODEL', 'train_indexs_fp'))
         # 影响力词表路径
         words_power_fp = '%s/words_power.%s.txt' % (cf.get('DEFAULT', 'feature_stat_pt'), cf.get('MODEL', 'train_subset_name'))
+        # 加载test.csv文件
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        # 特征文件路径
+        feature_path = cf.get('DEFAULT', 'feature_question_pair_pt')
 
         # 提取特征
-        PowerfulWord.run(train_data, train_subset_indexs, words_power_fp)
+        PowerfulWord.run_oside_word_power(train_data, test_data, words_power_fp, feature_path)
 
+
+class QuestionLenDiff(object):
+    """
+    <Q1, Q2>长度差特征：
+        1.  长度差
+        2.  len(短句) / len(长句)
+    """
+    @staticmethod
+    def cal_len_diff(row):
+        """
+        针对一个Pair抽取特征：长度差的绝对值
+        :param row: 一个Pair实例
+        :return: 特征值
+        """
+        q1 = row['question1']
+        q2 = row['question2']
+        return [abs(len(q1) - len(q2))]
+
+    @staticmethod
+    def run_len_diff(train_df, test_df, feature_pt):
+        """
+        抽取train.csv和test.csv的Pair特征：ABS(长度差)
+        :param train_df: train.csv
+        :param test_df: test.csv
+        :param feature_pt: 特征文件目录
+        :return: NONE
+        """
+        # 抽取特征ABS(长度差)
+        train_features = train_df.apply(QuestionLenDiff.cal_len_diff, axis=1, raw=True)
+        Feature.save_dataframe(train_features, feature_pt + '/len_diff.train.smat')
+        test_features = test_df.apply(QuestionLenDiff.cal_len_diff, axis=1, raw=True)
+        Feature.save_dataframe(test_features, feature_pt + '/len_diff.test.smat')
+
+        # 统计
+        # 负例
+        neg_train_features = train_features[train_df['is_duplicate'] == 0].apply(lambda x: x[0])
+        LogUtil.log("INFO", 'neg: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            neg_train_features.mean(), neg_train_features.std(), neg_train_features.max(), neg_train_features.min()))
+        # 正例
+        pos_train_features = train_features[train_df['is_duplicate'] == 1].apply(lambda x: x[0])
+        LogUtil.log("INFO", 'pos: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            pos_train_features.mean(), pos_train_features.std(), pos_train_features.max(), pos_train_features.min()))
+
+        # 绘图
+        plt.figure(figsize=(15, 5))
+        plt.xlim([0, 200])
+        plt.hist(neg_train_features, bins=200, normed=False, label='Not Duplicate', edgecolor='None')
+        plt.hist(pos_train_features, bins=200, normed=False, alpha=0.7, label='Duplicate', edgecolor='None')
+        plt.legend()
+        plt.title('Label distribution over len_diff', fontsize=15)
+        plt.xlabel('len_diff', fontsize=15)
+        plt.show()
+
+    @staticmethod
+    def cal_len_diff_rate(row):
+        """
+        针对一个Pair抽取特征：len_short / len_long
+        :param row: 一个Pair实例
+        :return: 特征值
+        """
+        len_q1 = len(row['question1'])
+        len_q2 = len(row['question2'])
+        if max(len_q1, len_q2) < 1e-6:
+            return [0.0]
+        else:
+            return [1.0 * min(len_q1, len_q2) / max(len_q1, len_q2)]
+
+    @staticmethod
+    def run_len_diff_rate(train_df, test_df, feature_pt):
+        """
+        抽取train.csv和test.csv的Pair特征：len_short / len_long
+        :param train_df: train.csv
+        :param test_df: test.csv
+        :param feature_pt: 特征文件目录
+        :return: NONE
+        """
+        # 抽取特征
+        train_features = train_df.apply(QuestionLenDiff.cal_len_diff_rate, axis=1, raw=True)
+        Feature.save_dataframe(train_features, feature_pt + '/len_diff_rate.train.smat')
+        test_features = test_df.apply(QuestionLenDiff.cal_len_diff_rate, axis=1, raw=True)
+        Feature.save_dataframe(test_features, feature_pt + '/len_diff_rate.test.smat')
+
+        # 统计
+        # 负例
+        neg_train_features = train_features[train_df['is_duplicate'] == 0].apply(lambda x: x[0])
+        LogUtil.log("INFO", 'neg: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            neg_train_features.mean(), neg_train_features.std(), neg_train_features.max(), neg_train_features.min()))
+        # 正例
+        pos_train_features = train_features[train_df['is_duplicate'] == 1].apply(lambda x: x[0])
+        LogUtil.log("INFO", 'pos: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            pos_train_features.mean(), pos_train_features.std(), pos_train_features.max(), pos_train_features.min()))
+
+        # 绘图
+        plt.figure(figsize=(15, 5))
+        plt.xlim([0, 1])
+        plt.hist(neg_train_features, bins=200, normed=False, label='Not Duplicate', edgecolor='None')
+        plt.hist(pos_train_features, bins=200, normed=False, alpha=0.7, label='Duplicate', edgecolor='None')
+        plt.legend()
+        plt.title('Label distribution over len_diff_rate', fontsize=15)
+        plt.xlabel('len_diff_rate', fontsize=15)
+        plt.show()
+
+    @staticmethod
+    def run(train_df, test_df, feature_pt):
+        """
+        抽取train.csv和test.csv的Pair特征：
+            1.  ABS(长度差)
+            2.  len(short_question) / len(long_question)
+        :param train_df: train.csv
+        :param test_df: test.csv
+        :param feature_pt: 特征文件目录
+        :return: NONE
+        """
+        # 抽取特征 ABS(长度差)
+        # QuestionLenDiff.run_len_diff(train_df, test_df, feature_pt)
+        # 抽取特征 len_short / len_long
+        QuestionLenDiff.run_len_diff_rate(train_df, test_df, feature_pt)
+
+    @staticmethod
+    def demo():
+        """
+        使用样例
+        :return: NONE
+        """
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 加载train.csv文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        # 加载test.csv文件
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        # 特征文件路径
+        feature_path = cf.get('DEFAULT', 'feature_question_pair_pt')
+        # 提取特征
+        QuestionLenDiff.run(train_data, test_data, feature_path)
 
 if __name__ == "__main__":
     PowerfulWord.demo()
