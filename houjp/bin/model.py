@@ -170,7 +170,7 @@ class Model(object):
         LogUtil.log("INFO", 'params=%s, best_ntree_limit=%d' % (str(params), model.best_ntree_limit))
 
         # 存储模型
-        model_fp = cf.get('MODEL', 'model_pt' + '/xgboost.model')
+        model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
         model.save_model(model_fp)
 
         # 进行预测
