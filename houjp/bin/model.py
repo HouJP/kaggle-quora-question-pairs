@@ -157,6 +157,7 @@ class Model(object):
         params['silent'] = cf.getint('XGBOOST_PARAMS', 'silent')
         params['num_round'] = cf.getint('XGBOOST_PARAMS', 'num_round')
         params['early_stop'] = cf.getint('XGBOOST_PARAMS', 'early_stop')
+        params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
         watchlist = [(train_data, 'train'), (valid_data, 'valid')]
 
         # 训练模型
