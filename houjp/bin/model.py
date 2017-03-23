@@ -271,12 +271,12 @@ class Model(object):
 
         f_pos = open(pos_fault_fp, 'w')
         for ele in pos:
-            f_pos.write('%.5f\t%s\t%s\t%d\t%d\n' % (ele[1][0], ele[1][1]['question1'], ele[1][1]['question2'], ele[1][1]['id'], ele[1][1]['is_duplicate']))
+            f_pos.write('%.5f\t%s\t||\t%s\t%d\t%d\n' % (ele[1][0], ele[1][1]['question1'], ele[1][1]['question2'], ele[1][1]['id'], ele[1][1]['is_duplicate']))
         f_pos.close()
 
         f_neg = open(neg_fault_fp, 'w')
         for ele in neg:
-            f_neg.write('%.5f\t%s\t%s\t%d\t%d\n' % (ele[1][0], ele[1][1]['question1'], ele[1][1]['question2'], ele[1][1]['id'], ele[1][1]['is_duplicate']))
+            f_neg.write('%.5f\t%s\t||\t%s\t%d\t%d\n' % (ele[1][0], ele[1][1]['question1'], ele[1][1]['question2'], ele[1][1]['id'], ele[1][1]['is_duplicate']))
         f_neg.close()
 
         LogUtil.log('INFO', 'save fault file done')
