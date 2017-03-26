@@ -11,7 +11,8 @@ import numpy as np
 import math
 import nltk
 import difflib
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk import word_tokenize, ngrams
 from utils import LogUtil
 
 
@@ -145,7 +146,7 @@ class TFIDFWordMatchShare(object):
             return [0.]
 
         shared_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words.keys() if w in q2words] + [
-            TFIDWordMatchShare.weights.get(w, 0) for w in q2words.keys() if w in q1words]
+            TFIDFWordMatchShare.weights.get(w, 0) for w in q2words.keys() if w in q1words]
         total_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words] + [TFIDWordMatchShare.weights.get(w, 0)
                                                                                     for w in q2words]
         if 1e-6 > np.sum(total_weights):
@@ -977,6 +978,7 @@ class F00FromKaggle(object):
     """
 
     tfidf = None
+    seq = difflib.SequenceMatcher()
 
     @staticmethod
     def init_tfidf(train_data, test_data):
@@ -999,26 +1001,40 @@ class F00FromKaggle(object):
         data['question1_nouns'] = data.question1.map(
             lambda x: [w for w, t in nltk.pos_tag(nltk.word_tokenize(str(x).lower().decode('utf-8'))) if
                        t[:1] in ['N']])
+        LogUtil.log('INFO', 'question1_nouns done')
         data['question2_nouns'] = data.question2.map(
             lambda x: [w for w, t in nltk.pos_tag(nltk.word_tokenize(str(x).lower().decode('utf-8'))) if
                        t[:1] in ['N']])
+        LogUtil.log('INFO', 'question2_nouns done')
         data['z_noun_match'] = data.apply(
             lambda r: sum([1 for w in r.question1_nouns if w in r.question2_nouns]), axis=1)  # takes long
+        LogUtil.log('INFO', 'z_noun_match done')
         # about length
         data['z_len1'] = data.question1.map(lambda x: len(str(x)))
+        LogUtil.log('INFO', 'z_len1 done')
         data['z_len2'] = data.question2.map(lambda x: len(str(x)))
+        LogUtil.log('INFO', 'z_len2 done')
         data['z_word_len1'] = data.question1.map(lambda x: len(str(x).split()))
+        LogUtil.log('INFO', 'z_word_len1 done')
         data['z_word_len2'] = data.question2.map(lambda x: len(str(x).split()))
+        LogUtil.log('INFO', 'z_word_len2 done')
         # about difflib
         data['z_match_ratio'] = data.apply(lambda r: F00FromKaggle.diff_ratios(r.question1, r.question2),
                                            axis=1)  # takes long
+        LogUtil.log('INFO', 'z_noun_match done')
         # abount tfidf
         data['z_tfidf_sum1'] = data.question1.map(lambda x: np.sum(F00FromKaggle.tfidf.transform([str(x)]).data))
+        LogUtil.log('INFO', 'z_tfidf_sum1 done')
         data['z_tfidf_sum2'] = data.question2.map(lambda x: np.sum(F00FromKaggle.tfidf.transform([str(x)]).data))
+        LogUtil.log('INFO', 'z_tfidf_sum2 done')
         data['z_tfidf_mean1'] = data.question1.map(lambda x: np.mean(F00FromKaggle.tfidf.transform([str(x)]).data))
+        LogUtil.log('INFO', 'z_tfidf_mean1 done')
         data['z_tfidf_mean2'] = data.question2.map(lambda x: np.mean(F00FromKaggle.tfidf.transform([str(x)]).data))
+        LogUtil.log('INFO', 'z_tfidf_mean2 done')
         data['z_tfidf_len1'] = data.question1.map(lambda x: len(F00FromKaggle.tfidf.transform([str(x)]).data))
+        LogUtil.log('INFO', 'z_tfidf_len1 done')
         data['z_tfidf_len2'] = data.question2.map(lambda x: len(F00FromKaggle.tfidf.transform([str(x)]).data))
+        LogUtil.log('INFO', 'z_tfidf_len2 done')
 
         # fulfill nan
         data = data.fillna(0.0)
@@ -1055,6 +1071,12 @@ class F00FromKaggle(object):
 
         # 提取特征
         F00FromKaggle.run(train_data, test_data, feature_path)
+
+
+class F01FromKaggle(object):
+    """
+    Kaggle解决方案：https://www.kaggle.com/sudalairajkumar/quora-question-pairs/simple-exploration-notebook-quora-ques-pair
+    """
 
 
 if __name__ == "__main__":
