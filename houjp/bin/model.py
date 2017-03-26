@@ -12,10 +12,6 @@ import os
 from utils import LogUtil, DataUtil
 from feature import Feature
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
-
 class Model(object):
     """
     模型工具类

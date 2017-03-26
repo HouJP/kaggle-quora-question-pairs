@@ -9,6 +9,9 @@ import pandas as pd
 from collections import Counter
 import numpy as np
 import math
+import nltk
+import difflib
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from utils import LogUtil
 
 
@@ -141,8 +144,10 @@ class TFIDFWordMatchShare(object):
             # The computer-generated chaff includes a few questions that are nothing but stopwords
             return [0.]
 
-        shared_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words.keys() if w in q2words] + [TFIDWordMatchShare.weights.get(w, 0) for w in                                                                                q2words.keys() if w in q1words]
-        total_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words] + [TFIDWordMatchShare.weights.get(w, 0) for w in q2words]
+        shared_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words.keys() if w in q2words] + [
+            TFIDWordMatchShare.weights.get(w, 0) for w in q2words.keys() if w in q1words]
+        total_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words] + [TFIDWordMatchShare.weights.get(w, 0)
+                                                                                    for w in q2words]
         if 1e-6 > np.sum(total_weights):
             return [0.]
         R = np.sum(shared_weights) / np.sum(total_weights)
@@ -310,7 +315,8 @@ class MyTFIDFWordMatchShare(object):
             q2words[word] = q2words.get(word, 0) + 1
         sum_shared_word_in_q1 = sum([q1words[w] * MyTFIDFWordMatchShare.idf.get(w, 0) for w in q1words if w in q2words])
         sum_shared_word_in_q2 = sum([q2words[w] * MyTFIDFWordMatchShare.idf.get(w, 0) for w in q2words if w in q1words])
-        sum_tol = sum(q1words[w] * MyTFIDFWordMatchShare.idf.get(w, 0) for w in q1words) + sum(q2words[w] * MyTFIDFWordMatchShare.idf.get(w, 0) for w in q2words)
+        sum_tol = sum(q1words[w] * MyTFIDFWordMatchShare.idf.get(w, 0) for w in q1words) + sum(
+            q2words[w] * MyTFIDFWordMatchShare.idf.get(w, 0) for w in q2words)
         if 1e-6 > sum_tol:
             return [0.]
         else:
@@ -402,8 +408,10 @@ class PowerfulWord(object):
         sorted_words_power = sorted(words_power, key=lambda d: d[1][6], reverse=True)
         # 双侧正确比例阈值
         dside_corate_rate = 0.7
-        PowerfulWord.dside_word_power.extend(map(lambda x: x[0], filter(lambda x: x[1][6] >= dside_corate_rate, sorted_words_power)))
-        LogUtil.log('INFO', 'Double side power words(%d): %s' % (len(PowerfulWord.dside_word_power), str(PowerfulWord.dside_word_power)))
+        PowerfulWord.dside_word_power.extend(
+            map(lambda x: x[0], filter(lambda x: x[1][6] >= dside_corate_rate, sorted_words_power)))
+        LogUtil.log('INFO', 'Double side power words(%d): %s' % (
+            len(PowerfulWord.dside_word_power), str(PowerfulWord.dside_word_power)))
 
     @staticmethod
     def init_oside_word_power(words_power):
@@ -564,7 +572,6 @@ class PowerfulWord(object):
             else:
                 tags.append(0.0)
         return tags
-
 
     @staticmethod
     def run_dside_word_power(train_data, test_data, words_power_fp, feature_pt):
@@ -800,7 +807,6 @@ class PowerfulWord(object):
         # 筛选双边影响力词表
         PowerfulWord.init_aside_word_power(words_power)
 
-
     @staticmethod
     def demo():
         """
@@ -816,7 +822,8 @@ class PowerfulWord(object):
         # 加载训练子集索引文件（NOTE: 不是训练集）
         train_subset_indexs = Feature.load_index(cf.get('MODEL', 'train_indexs_fp'))
         # 影响力词表路径
-        words_power_fp = '%s/words_power.%s.txt' % (cf.get('DEFAULT', 'feature_stat_pt'), cf.get('MODEL', 'train_subset_name'))
+        words_power_fp = '%s/words_power.%s.txt' % (
+            cf.get('DEFAULT', 'feature_stat_pt'), cf.get('MODEL', 'train_subset_name'))
         # 加载test.csv文件
         test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
         # 特征文件路径
@@ -832,6 +839,7 @@ class QuestionLenDiff(object):
         1.  长度差
         2.  len(短句) / len(长句)
     """
+
     @staticmethod
     def cal_len_diff(row):
         """
@@ -962,5 +970,92 @@ class QuestionLenDiff(object):
         # 提取特征
         QuestionLenDiff.run(train_data, test_data, feature_path)
 
+
+class F00FromKaggle(object):
+    """
+    Kaggle解决方案：https://www.kaggle.com/the1owl/quora-question-pairs/matching-que-for-quora-end-to-end-0-33719-pb
+    """
+
+    tfidf = None
+
+    @staticmethod
+    def init_tfidf(train_data, test_data):
+        F00FromKaggle.tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 1))
+        tfidf_txt = pd.Series(
+            train_data['question1'].tolist() + train_data['question2'].tolist() + test_data['question1'].tolist() +
+            test_data['question2'].tolist()).astype(str)
+        F00FromKaggle.tfidf.fit_transform(tfidf_txt)
+        LogUtil.log("INFO", "init tfidf done ")
+
+    @staticmethod
+    def diff_ratios(st1, st2):
+        seq = difflib.SequenceMatcher()
+        seq.set_seqs(str(st1).lower(), str(st2).lower())
+        return seq.ratio()
+
+    @staticmethod
+    def extract(data):
+        # about nouns
+        data['question1_nouns'] = data.question1.map(
+            lambda x: [w for w, t in nltk.pos_tag(nltk.word_tokenize(str(x).lower().decode('utf-8'))) if
+                       t[:1] in ['N']])
+        data['question2_nouns'] = data.question2.map(
+            lambda x: [w for w, t in nltk.pos_tag(nltk.word_tokenize(str(x).lower().decode('utf-8'))) if
+                       t[:1] in ['N']])
+        data['z_noun_match'] = data.apply(
+            lambda r: sum([1 for w in r.question1_nouns if w in r.question2_nouns]), axis=1)  # takes long
+        # about length
+        data['z_len1'] = data.question1.map(lambda x: len(str(x)))
+        data['z_len2'] = data.question2.map(lambda x: len(str(x)))
+        data['z_word_len1'] = data.question1.map(lambda x: len(str(x).split()))
+        data['z_word_len2'] = data.question2.map(lambda x: len(str(x).split()))
+        # about difflib
+        data['z_match_ratio'] = data.apply(lambda r: F00FromKaggle.diff_ratios(r.question1, r.question2),
+                                           axis=1)  # takes long
+        # abount tfidf
+        data['z_tfidf_sum1'] = data.question1.map(lambda x: np.sum(F00FromKaggle.tfidf.transform([str(x)]).data))
+        data['z_tfidf_sum2'] = data.question2.map(lambda x: np.sum(F00FromKaggle.tfidf.transform([str(x)]).data))
+        data['z_tfidf_mean1'] = data.question1.map(lambda x: np.mean(F00FromKaggle.tfidf.transform([str(x)]).data))
+        data['z_tfidf_mean2'] = data.question2.map(lambda x: np.mean(F00FromKaggle.tfidf.transform([str(x)]).data))
+        data['z_tfidf_len1'] = data.question1.map(lambda x: len(F00FromKaggle.tfidf.transform([str(x)]).data))
+        data['z_tfidf_len2'] = data.question2.map(lambda x: len(F00FromKaggle.tfidf.transform([str(x)]).data))
+
+        # fulfill nan
+        data = data.fillna(0.0)
+
+        # get features
+        features = data.apply(lambda x: [float(x[cn]) for cn in data.columns if cn[:1] == 'z'], axis=1)
+        return features
+
+    @staticmethod
+    def run(train_data, test_data, feature_pt):
+        F00FromKaggle.init_tfidf(train_data, test_data)
+
+        train_features = F00FromKaggle.extract(train_data)
+        Feature.save_dataframe(train_features, feature_pt + '/f00_from_kaggle.train.smat')
+        test_features = F00FromKaggle.extract(test_data)
+        Feature.save_dataframe(test_features, feature_pt + '/f00_from_kaggle.test.smat')
+
+    @staticmethod
+    def demo():
+        """
+        使用示例
+        :return:
+        """
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 加载train.csv文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")#[:100]
+        # 加载test.csv文件
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")#[:100]
+        # 特征文件路径
+        feature_path = cf.get('DEFAULT', 'feature_question_pair_pt')
+
+        # 提取特征
+        F00FromKaggle.run(train_data, test_data, feature_path)
+
+
 if __name__ == "__main__":
-    PowerfulWord.demo()
+    F00FromKaggle.demo()
