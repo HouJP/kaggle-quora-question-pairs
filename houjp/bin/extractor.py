@@ -12,8 +12,8 @@ import math
 import nltk
 import difflib
 from sklearn.feature_extraction.text import TfidfVectorizer
-from nltk import word_tokenize, ngrams
 from utils import LogUtil
+import json
 
 
 class WordMatchShare(object):
@@ -147,7 +147,7 @@ class TFIDFWordMatchShare(object):
 
         shared_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words.keys() if w in q2words] + [
             TFIDFWordMatchShare.weights.get(w, 0) for w in q2words.keys() if w in q1words]
-        total_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words] + [TFIDWordMatchShare.weights.get(w, 0)
+        total_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words] + [TFIDFWordMatchShare.weights.get(w, 0)
                                                                                     for w in q2words]
         if 1e-6 > np.sum(total_weights):
             return [0.]
@@ -1073,6 +1073,127 @@ class F00FromKaggle(object):
         F00FromKaggle.run(train_data, test_data, feature_path)
 
 
+class TreeParser(object):
+    """
+    使用Stanford Parser对语句进行解析
+    特征：
+        1.  叶子节点个数
+        2.  树深度
+        3.  根节点分叉数
+        4.  最大分叉数
+    """
+
+    questions_features = None
+
+    @staticmethod
+    def extract_questions_features(tree_fp):
+        features = {}
+        f = open(tree_fp)
+        for line in f:
+            [qid, json_s] = line.split(' ', 1)
+            # print 'qid=%s' % qid
+            features[qid] = []
+            root = -1
+            parent = {}
+            indegree = {}
+            # print 'len(json_s=%d)' % len(json_s.strip())
+            # 计算入度和父节点
+            if 0 < len(json_s.strip()):
+                tree_obj = json.loads(json_s)
+                assert len(tree_obj) <= 1
+                tree_obj = tree_obj[0]
+                for k, r in sorted(tree_obj.items(), key=lambda x: int(x[0]))[1:]:
+                    head = int(r['head'])
+                    k = int(k)
+                    if 0 == head:
+                        root = k
+                    # print '%s --> %s' % (k, head)
+                    parent[k] = head
+                    indegree[head] = indegree.get(head, 0) + 1
+            # 根节点
+            # print 'root=%d' % root
+            # 计算叶子节点个数
+            n_child = 0
+            for i in parent:
+                if i not in indegree:
+                    n_child += 1
+            # print 'n_child=%d' % n_child
+            # 计算树深度
+            depth = 0
+            for i in parent:
+                if i not in indegree:
+                    temp_id = i
+                    temp_depth = 0
+                    while 0 != parent[temp_id]:
+                        temp_depth += 1
+                        temp_id = parent[temp_id]
+                        # print '\t%d' % temp_id,
+                    depth = max(depth, temp_depth)
+                    # print ''
+            # print 'depth=%d' % depth
+            # 计算根节点分叉数目
+            n_root_braches = indegree.get(root, 0)
+            # print 'n_root_braches=%d' % n_root_braches
+            # 计算最大分叉数目
+            n_max_braches = 0
+            if 0 < len(indegree):
+                n_max_braches = max(indegree.values())
+            # print 'n_max_braches=%d' % n_max_braches
+            features[str(qid)] = [n_child, depth, n_root_braches, n_max_braches]
+        f.close()
+        return features
+
+    @staticmethod
+    def extract_feature(row):
+        q1_id = str(row['qid1'])
+        q2_id = str(row['qid2'])
+        # print q1_id
+        # print q2_id
+        q1_features = TreeParser.questions_features[q1_id]
+        q2_features = TreeParser.questions_features[q2_id]
+
+        return q1_features + q2_features + abs(np.array(q1_features) - np.array(q2_features)).tolist()
+
+    @staticmethod
+    def extract_features(data):
+        assert TreeParser.questions_features is not None, "TreeParser.questions_features is None"
+        features = data.apply(TreeParser.extract_feature, axis=1, raw=True)
+        return features
+
+
+    @staticmethod
+    def run(train_df, test_df, feature_pt, train_tree_fp):
+        """
+        抽取特征
+        :param trian_df:
+        :param test_df:
+        :param feature_pt:
+        :return:
+        """
+        TreeParser.questions_features = TreeParser.extract_questions_features(train_tree_fp)
+        LogUtil.log('INFO', 'extract train questions features done')
+        train_features = TreeParser.extract_features(train_df)
+        LogUtil.log('INFO', 'extract train features done')
+        Feature.save_dataframe(train_features, feature_pt + '/tree_parser.train.smat')
+
+    @staticmethod
+    def demo():
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 加载train.csv文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
+        # 加载test.csv文件
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
+        # 特征文件路径
+        feature_path = cf.get('DEFAULT', 'feature_question_pair_pt')
+        # TreeParser文件路径
+        train_tree_fp = '%s/train_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
+
+        # 提取特征
+        TreeParser.run(train_data, test_data, feature_path, train_tree_fp)
+
 class F01FromKaggle(object):
     """
     Kaggle解决方案：https://www.kaggle.com/sudalairajkumar/quora-question-pairs/simple-exploration-notebook-quora-ques-pair
@@ -1080,4 +1201,4 @@ class F01FromKaggle(object):
 
 
 if __name__ == "__main__":
-    F00FromKaggle.demo()
+    TreeParser.demo()
