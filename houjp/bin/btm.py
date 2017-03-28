@@ -60,7 +60,7 @@ class BTM(object):
 
         # 存储索引
         DataUtil.save_vector(qid2question_qid_fp, all_qid, 'w')
-        DataUtil.save_vector(qid2question_qid_fp, all_question, 'w')
+        DataUtil.save_vector(qid2question_question_fp, all_question, 'w')
 
 
 if __name__ == "__main__":
