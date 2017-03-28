@@ -1091,7 +1091,7 @@ class TreeParser(object):
         f = open(tree_fp)
         for line in f:
             [qid, json_s] = line.split(' ', 1)
-            # print 'qid=%s' % qid
+            print 'qid=%s' % qid
             features[qid] = []
             root = -1
             parent = {}
@@ -1170,11 +1170,11 @@ class TreeParser(object):
         :param feature_pt:
         :return:
         """
-        TreeParser.questions_features = TreeParser.extract_questions_features(train_tree_fp)
-        LogUtil.log('INFO', 'extract train questions features done')
-        train_features = TreeParser.extract_features(train_df)
-        LogUtil.log('INFO', 'extract train features done')
-        Feature.save_dataframe(train_features, feature_pt + '/tree_parser.train.smat')
+        # TreeParser.questions_features = TreeParser.extract_questions_features(train_tree_fp)
+        # LogUtil.log('INFO', 'extract train questions features done')
+        # train_features = TreeParser.extract_features(train_df)
+        # LogUtil.log('INFO', 'extract train features done')
+        # Feature.save_dataframe(train_features, feature_pt + '/tree_parser.train.smat')
 
         TreeParser.questions_features = TreeParser.extract_questions_features(test_tree_fp)
         LogUtil.log('INFO', 'extract test questions features done')
