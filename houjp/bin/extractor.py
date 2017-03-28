@@ -1162,7 +1162,7 @@ class TreeParser(object):
 
 
     @staticmethod
-    def run(train_df, test_df, feature_pt, train_tree_fp):
+    def run(train_df, test_df, feature_pt, train_tree_fp, test_tree_fp):
         """
         抽取特征
         :param trian_df:
@@ -1171,6 +1171,12 @@ class TreeParser(object):
         :return:
         """
         TreeParser.questions_features = TreeParser.extract_questions_features(train_tree_fp)
+        LogUtil.log('INFO', 'extract train questions features done')
+        train_features = TreeParser.extract_features(train_df)
+        LogUtil.log('INFO', 'extract train features done')
+        Feature.save_dataframe(train_features, feature_pt + '/tree_parser.train.smat')
+
+        TreeParser.questions_features = TreeParser.extract_questions_features(test_tree_fp)
         LogUtil.log('INFO', 'extract train questions features done')
         train_features = TreeParser.extract_features(train_df)
         LogUtil.log('INFO', 'extract train features done')

@@ -58,7 +58,6 @@ class Preprocessor(object):
         LogUtil.log("INFO", "len(questions)=%d, len(unique_questions)=%d, rate=%f" % (
         len_questions, len_uniq_questions, 1.0 * len_uniq_questions / len_questions))
 
-
     @staticmethod
     def add_qid_for_test(df):
         """
@@ -66,8 +65,8 @@ class Preprocessor(object):
         :param df:
         :return:
         """
-        df['qid1'] = df.test_id.map(lambda x: 'T%08d' % 2 * int(x))
-        df['qid2'] = df.test_id.map(lambda x: 'T%08d' % 2 * int(x) + 1)
+        df['qid1'] = df.apply(lambda r: ('T%08d' % (2 * r.test_id)), axis=1, raw=True)
+        df['qid2'] = df.apply(lambda r: ('T%08d' % (2 * r.test_id + 1)), axis=1, raw=True)
         return df
 
 
@@ -149,8 +148,11 @@ class PreprocessorRunner(object):
         :return:
         """
         test_df = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt'))
+        LogUtil.log('INFO', 'load test dataframe done')
         test_df = Preprocessor.add_qid_for_test(test_df)
+        LogUtil.log('INFO', 'add qid for test dataframe done')
         test_df.to_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt'))
+        LogUtil.log('INFO', 'save test dataframe with qid done')
 
 
 if __name__ == "__main__":
