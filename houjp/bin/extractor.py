@@ -1086,6 +1086,76 @@ class TreeParser(object):
     questions_features = None
 
     @staticmethod
+    def extract_questions_ind_multi(tree_fp):
+        features = {}
+        f = open(tree_fp)
+        for line in f:
+            [qid, json_s] = line.split(' ', 1)
+            features[qid] = []
+            root = -1
+            parent = {}
+            indegree = {}
+            # 计算入度和父节点
+            if 0 < len(json_s.strip()):
+                tree_obj = json.loads(json_s)
+                assert len(tree_obj) <= 1
+                tree_obj = tree_obj[0]
+                for k, r in sorted(tree_obj.items(), key=lambda x: int(x[0]))[1:]:
+                    if r['word'] is None:
+                        continue
+                    head = int(r['head'])
+                    k = int(k)
+                    if 0 == head:
+                        root = k
+                    parent[k] = head
+                    indegree[head] = indegree.get(head, 0) + 1
+            # 计算入度乘积
+            ind_multi = 1.0
+            for id_node in indegree:
+                ind_multi *= indegree[id_node]
+            features[str(qid)] = [ind_multi]
+        f.close()
+        return features
+
+    @staticmethod
+    def extract_row_ind_multi(row):
+        q1_id = str(row['qid1'])
+        q2_id = str(row['qid2'])
+        q1_features = TreeParser.extract_questions_ind_multi[q1_id]
+        q2_features = TreeParser.extract_questions_ind_multi[q2_id]
+        sum_features = (np.array(q1_features) + np.array(q2_features)).tolist()
+        sub_features = abs(np.array(q1_features) - np.array(q2_features)).tolist()
+        div_features = (np.array(q1_features) / (np.array(q2_features) + 1.)).tolist()
+        mul_features = (np.array(q1_features) * (np.array(q2_features) + 0.)).tolist()
+
+        return q1_features + q2_features + sum_features + sub_features + div_features + mul_features
+
+    @staticmethod
+    def extract_ind_multi(data, tree_fp):
+        TreeParser.questions_features = TreeParser.extract_questions_ind_multi(tree_fp)
+        LogUtil.log('INFO', 'extract questions features done (%s)' % tree_fp)
+        features = data.apply(TreeParser.extract_row_ind_multi, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract data features done')
+        return features
+
+    @staticmethod
+    def run_ind_multi(train_df, test_df, feature_pt, train_tree_fp, test_tree_fp):
+        """
+        抽取特征，语法树入度乘积，及加减乘除变化
+        :param train_df:
+        :param test_df:
+        :param feature_pt:
+        :param train_tree_fp:
+        :param test_tree_fp:
+        :return:
+        """
+        train_features = TreeParser.extract_ind_multi(train_df, train_tree_fp)
+        Feature.save_dataframe(train_features, feature_pt + '/ind_multi.train.smat')
+
+        test_features = TreeParser.extract_ind_multi(test_df, test_tree_fp)
+        Feature.save_dataframe(test_features, feature_pt + '/ind_multi.test.smat')
+
+    @staticmethod
     def extract_questions_features(tree_fp):
         features = {}
         f = open(tree_fp)
@@ -1165,7 +1235,7 @@ class TreeParser(object):
 
 
     @staticmethod
-    def run(train_df, test_df, feature_pt, train_tree_fp, test_tree_fp):
+    def run_tree_parser(train_df, test_df, feature_pt, train_tree_fp, test_tree_fp):
         """
         抽取特征
         :param trian_df:
@@ -1173,11 +1243,11 @@ class TreeParser(object):
         :param feature_pt:
         :return:
         """
-        # TreeParser.questions_features = TreeParser.extract_questions_features(train_tree_fp)
-        # LogUtil.log('INFO', 'extract train questions features done')
-        # train_features = TreeParser.extract_features(train_df)
-        # LogUtil.log('INFO', 'extract train features done')
-        # Feature.save_dataframe(train_features, feature_pt + '/tree_parser.train.smat')
+        TreeParser.questions_features = TreeParser.extract_questions_features(train_tree_fp)
+        LogUtil.log('INFO', 'extract train questions features done')
+        train_features = TreeParser.extract_features(train_df)
+        LogUtil.log('INFO', 'extract train features done')
+        Feature.save_dataframe(train_features, feature_pt + '/tree_parser.train.smat')
 
         TreeParser.questions_features = TreeParser.extract_questions_features(test_tree_fp)
         LogUtil.log('INFO', 'extract test questions features done')
@@ -1202,7 +1272,8 @@ class TreeParser(object):
         test_tree_fp = '%s/test_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
 
         # 提取特征
-        TreeParser.run(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
+        # TreeParser.run_tree_parser(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
+        TreeParser.run_ind_multi(train_data, test_data, feature_path, train_tree_fp,test_tree_fp)
 
 class F01FromKaggle(object):
     """
