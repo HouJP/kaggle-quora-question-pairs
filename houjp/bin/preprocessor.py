@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 # ! /usr/bin/python
 
-import sys
-import numpy as np
 import pandas as pd
 import ConfigParser
 from utils import DataUtil
 from utils import LogUtil
+import nltk
+from nltk.stem import SnowballStemmer
+import re
+
 
 class Preprocessor(object):
     '''
     预处理工具
     '''
+
+    stemmer = SnowballStemmer('english')
 
     def __init__(self):
         return
@@ -56,7 +60,7 @@ class Preprocessor(object):
         len_questions = len(questions)
         len_uniq_questions = len(set(questions))
         LogUtil.log("INFO", "len(questions)=%d, len(unique_questions)=%d, rate=%f" % (
-        len_questions, len_uniq_questions, 1.0 * len_uniq_questions / len_questions))
+            len_questions, len_uniq_questions, 1.0 * len_uniq_questions / len_questions))
 
     @staticmethod
     def add_qid_for_test(df):
@@ -67,6 +71,34 @@ class Preprocessor(object):
         """
         df['qid1'] = df.apply(lambda r: ('T%08d' % (2 * r.test_id)), axis=1, raw=True)
         df['qid2'] = df.apply(lambda r: ('T%08d' % (2 * r.test_id + 1)), axis=1, raw=True)
+        return df
+
+    @staticmethod
+    def clean_text(text):
+        text = re.sub(r"what's ", "what is ", text)
+        text = re.sub(r"\'ve ", " have ", text)
+        text = re.sub(r"can't ", "cannot ", text)
+        text = re.sub(r"n't ", " not ", text)
+        text = re.sub(r"i'm ", "i am ", text)
+        text = re.sub(r"\'re ", " are ", text)
+        text = re.sub(r"\'d ", " would ", text)
+        text = re.sub(r"\'ll ", " will ", text)
+        text = re.sub(r" 60k ", " 60000 ", text)
+        return text
+
+    @staticmethod
+    def to_stem(df):
+        """
+        切词同时进行词干还原
+        :param df:
+        :return:
+        """
+        df['question1'] = df.question1.map(lambda x: ' '.join(
+            [Preprocessor.stemmer.stem(word) for word in
+             nltk.word_tokenize(Preprocessor.clean_text(str(x).lower()).decode('utf-8'))]).encode('utf-8'))
+        df['question2'] = df.question2.map(lambda x: ' '.join(
+            [Preprocessor.stemmer.stem(word) for word in
+             nltk.word_tokenize(Preprocessor.clean_text(str(x).lower()).decode('utf-8'))]).encode('utf-8'))
         return df
 
 
@@ -154,16 +186,34 @@ class PreprocessorRunner(object):
         test_df.to_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt'), index=False)
         LogUtil.log('INFO', 'save test dataframe with qid done')
 
+    @staticmethod
+    def run_get_stem():
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 加载train.csv文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")#[:100]
+        # 加载test.csv文件
+        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")#[:100]
+
+        # 存储文件路径
+        train_stem_fp = '%s/stem.train.csv' % cf.get('DEFAULT', 'devel_pt')
+        test_stem_fp = '%s/stem.test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')
+
+        train_stem_data = Preprocessor.to_stem(train_data)
+        test_stem_data = Preprocessor.to_stem(test_data)
+
+        train_stem_data.to_csv(train_stem_fp, index=False)
+        test_stem_data.to_csv(test_stem_fp, index=False)
+
 
 if __name__ == "__main__":
-    # 读取配置文件
-    cf = ConfigParser.ConfigParser()
-    cf.read("../conf/python.conf")
-
     # PreprocessorRunner.get_qid2question(cf)
     # PreprocessorRunner.static_dul_question(cf)
     # PreprocessorRunner.get_labels(cf)
     # PreprocessorRunner.get_test_ids(cf)
     # PreprocessorRunner.get_test_indexs(cf)
     # PreprocessorRunner.get_test_labels(cf)
-    PreprocessorRunner.add_qid_for_test(cf)
+    # PreprocessorRunner.add_qid_for_test(cf)
+    PreprocessorRunner.run_get_stem()
