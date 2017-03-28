@@ -1121,8 +1121,8 @@ class TreeParser(object):
     def extract_row_ind_multi(row):
         q1_id = str(row['qid1'])
         q2_id = str(row['qid2'])
-        q1_features = TreeParser.extract_questions_ind_multi[q1_id]
-        q2_features = TreeParser.extract_questions_ind_multi[q2_id]
+        q1_features = TreeParser.questions_features[q1_id]
+        q2_features = TreeParser.questions_features[q2_id]
         sum_features = (np.array(q1_features) + np.array(q2_features)).tolist()
         sub_features = abs(np.array(q1_features) - np.array(q2_features)).tolist()
         div_features = (np.array(q1_features) / (np.array(q2_features) + 1.)).tolist()
