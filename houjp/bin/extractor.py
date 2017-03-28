@@ -1177,10 +1177,10 @@ class TreeParser(object):
         Feature.save_dataframe(train_features, feature_pt + '/tree_parser.train.smat')
 
         TreeParser.questions_features = TreeParser.extract_questions_features(test_tree_fp)
-        LogUtil.log('INFO', 'extract train questions features done')
-        train_features = TreeParser.extract_features(train_df)
-        LogUtil.log('INFO', 'extract train features done')
-        Feature.save_dataframe(train_features, feature_pt + '/tree_parser.train.smat')
+        LogUtil.log('INFO', 'extract test questions features done')
+        test_features = TreeParser.extract_features(test_df)
+        LogUtil.log('INFO', 'extract test features done')
+        Feature.save_dataframe(test_features, feature_pt + '/tree_parser.test.smat')
 
     @staticmethod
     def demo():
@@ -1191,14 +1191,15 @@ class TreeParser(object):
         # 加载train.csv文件
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
         # 加载test.csv文件
-        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
+        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
         # 特征文件路径
         feature_path = cf.get('DEFAULT', 'feature_question_pair_pt')
         # TreeParser文件路径
         train_tree_fp = '%s/train_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
+        test_tree_fp = '%s/test_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
 
         # 提取特征
-        TreeParser.run(train_data, test_data, feature_path, train_tree_fp)
+        TreeParser.run(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
 
 class F01FromKaggle(object):
     """
