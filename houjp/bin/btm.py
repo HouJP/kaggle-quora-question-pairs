@@ -17,8 +17,8 @@ class BTM(object):
             q2 = nltk.word_tokenize(str(row['question2']).lower().decode('utf-8'))
             qid1 = str(row['qid1'])
             qid2 = str(row['qid2'])
-            qid2question[qid1] = ' '.join(q1)
-            qid2question[qid2] = ' '.join(q2)
+            qid2question[qid1] = (' '.join(q1)).encode('utf-8')
+            qid2question[qid2] = (' '.join(q2)).encode('utf-8')
         return qid2question
 
     @staticmethod
