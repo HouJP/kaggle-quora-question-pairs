@@ -4,6 +4,7 @@
 import ConfigParser
 import pandas as pd
 from utils import DataUtil
+import nltk
 
 
 class BTM(object):
@@ -12,8 +13,8 @@ class BTM(object):
     def get_qid2question(df):
         qid2question = {}
         for index, row in df.iterrows():
-            q1 = (str(row['question1'])).lower().split()
-            q2 = (str(row['question2'])).lower().split()
+            q1 = nltk.word_tokenize(str(row['question1']).lower().decode('utf-8'))
+            q2 = nltk.word_tokenize(str(row['question2']).lower().decode('utf-8'))
             qid1 = str(row['qid1'])
             qid2 = str(row['qid2'])
             qid2question[qid1] = ' '.join(q1)
