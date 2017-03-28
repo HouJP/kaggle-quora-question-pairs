@@ -147,8 +147,9 @@ class TFIDFWordMatchShare(object):
 
         shared_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words.keys() if w in q2words] + [
             TFIDFWordMatchShare.weights.get(w, 0) for w in q2words.keys() if w in q1words]
-        total_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words] + [TFIDFWordMatchShare.weights.get(w, 0)
-                                                                                    for w in q2words]
+        total_weights = [TFIDFWordMatchShare.weights.get(w, 0) for w in q1words] + [
+            TFIDFWordMatchShare.weights.get(w, 0)
+            for w in q2words]
         if 1e-6 > np.sum(total_weights):
             return [0.]
         R = np.sum(shared_weights) / np.sum(total_weights)
@@ -809,6 +810,25 @@ class PowerfulWord(object):
         PowerfulWord.init_aside_word_power(words_power)
 
     @staticmethod
+    def run():
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 加载stem.train.csv文件
+        train_stem_data = pd.read_csv('%s/stem.train.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+        # 加载训练子集索引文件（NOTE: 不是训练集）
+        train_subset_indexs = Feature.load_index(cf.get('MODEL', 'train_indexs_fp'))
+        # 影响力词表路径
+        words_power_stem_fp = '%s/words_power.stem.%s.%s.txt' % (
+            cf.get('DEFAULT', 'feature_stat_pt'),
+            cf.get('MODEL', 'train_subset_name'),
+            cf.get('MODEL', 'train_rawset_name'))
+
+        # 生成影响力词表
+        PowerfulWord.generate_word_power(train_stem_data, train_subset_indexs, words_power_stem_fp)
+
+    @staticmethod
     def demo():
         """
         使用示例
@@ -1063,9 +1083,9 @@ class F00FromKaggle(object):
         cf.read("../conf/python.conf")
 
         # 加载train.csv文件
-        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")#[:100]
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
         # 加载test.csv文件
-        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")#[:100]
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
         # 特征文件路径
         feature_path = cf.get('DEFAULT', 'feature_question_pair_pt')
 
@@ -1232,7 +1252,6 @@ class TreeParser(object):
         features = data.apply(TreeParser.extract_feature, axis=1, raw=True)
         return features
 
-
     @staticmethod
     def run_tree_parser(train_df, test_df, feature_pt, train_tree_fp, test_tree_fp):
         """
@@ -1261,7 +1280,7 @@ class TreeParser(object):
         cf.read("../conf/python.conf")
 
         # 加载train.csv文件
-        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="") #[:100]
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
         # 加载test.csv文件
         test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
         # 特征文件路径
@@ -1274,6 +1293,7 @@ class TreeParser(object):
         # TreeParser.run_tree_parser(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
         TreeParser.run_ind_multi(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
 
+
 class F01FromKaggle(object):
     """
     Kaggle解决方案：https://www.kaggle.com/sudalairajkumar/quora-question-pairs/simple-exploration-notebook-quora-ques-pair
@@ -1281,4 +1301,4 @@ class F01FromKaggle(object):
 
 
 if __name__ == "__main__":
-    TreeParser.demo()
+    PowerfulWord.run()
