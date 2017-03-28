@@ -1091,7 +1091,7 @@ class TreeParser(object):
         f = open(tree_fp)
         for line in f:
             [qid, json_s] = line.split(' ', 1)
-            print 'qid=%s' % qid
+            # print 'qid=%s' % qid
             features[qid] = []
             root = -1
             parent = {}
@@ -1103,6 +1103,8 @@ class TreeParser(object):
                 assert len(tree_obj) <= 1
                 tree_obj = tree_obj[0]
                 for k, r in sorted(tree_obj.items(), key=lambda x: int(x[0]))[1:]:
+                    if r['word'] is None:
+                        continue
                     head = int(r['head'])
                     k = int(k)
                     if 0 == head:
