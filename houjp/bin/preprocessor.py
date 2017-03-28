@@ -59,6 +59,18 @@ class Preprocessor(object):
         len_questions, len_uniq_questions, 1.0 * len_uniq_questions / len_questions))
 
 
+    @staticmethod
+    def add_qid_for_test(df):
+        """
+        增加qid1, qid2
+        :param df:
+        :return:
+        """
+        df['qid1'] = df.test_id.map(lambda x: 'T%08d' % 2 * int(x))
+        df['qid2'] = df.test_id.map(lambda x: 'T%08d' % 2 * int(x) + 1)
+        return df
+
+
 class PreprocessorRunner(object):
     '''
     预处理业务
@@ -129,15 +141,27 @@ class PreprocessorRunner(object):
         DataUtil.save_vector(test_labels_fp, [0 for i in range(len(test_df))], 'w')
         LogUtil.log("INFO", "save test labels file done (%s)" % test_labels_fp)
 
+    @staticmethod
+    def add_qid_for_test(cf):
+        """
+        为test.csv增加qid
+        :param cf:
+        :return:
+        """
+        test_df = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt'))
+        test_df = Preprocessor.add_qid_for_test(test_df)
+        test_df.to_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt'))
+
 
 if __name__ == "__main__":
     # 读取配置文件
     cf = ConfigParser.ConfigParser()
     cf.read("../conf/python.conf")
 
-    PreprocessorRunner.get_qid2question(cf)
+    # PreprocessorRunner.get_qid2question(cf)
     # PreprocessorRunner.static_dul_question(cf)
     # PreprocessorRunner.get_labels(cf)
     # PreprocessorRunner.get_test_ids(cf)
     # PreprocessorRunner.get_test_indexs(cf)
     # PreprocessorRunner.get_test_labels(cf)
+    PreprocessorRunner.add_qid_for_test(cf)
