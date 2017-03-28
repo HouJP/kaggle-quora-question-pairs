@@ -1091,7 +1091,7 @@ class TreeParser(object):
         f = open(tree_fp)
         for line in f:
             [qid, json_s] = line.split(' ', 1)
-            print 'qid=%s' % qid
+            # print 'qid=%s' % qid
             features[qid] = []
             root = -1
             parent = {}
@@ -1113,8 +1113,8 @@ class TreeParser(object):
                     parent[k] = head
                     indegree[head] = indegree.get(head, 0) + 1
             # 根节点
-            print 'root=%d' % root
-            print parent
+            # print 'root=%d' % root
+            # print parent
             # 计算叶子节点个数
             n_child = 0
             for i in parent:
@@ -1127,12 +1127,12 @@ class TreeParser(object):
                 if i not in indegree:
                     temp_id = i
                     temp_depth = 0
-                    while 0 != parent[temp_id]:
+                    while (temp_id in parent) and (0 != parent[temp_id]):
                         temp_depth += 1
                         temp_id = parent[temp_id]
-                        print '\t%d' % temp_id,
+                        # print '\t%d' % temp_id,
                     depth = max(depth, temp_depth)
-                    print ''
+                    # print ''
             # print 'depth=%d' % depth
             # 计算根节点分叉数目
             n_root_braches = indegree.get(root, 0)
