@@ -151,7 +151,7 @@ class PreprocessorRunner(object):
         LogUtil.log('INFO', 'load test dataframe done')
         test_df = Preprocessor.add_qid_for_test(test_df)
         LogUtil.log('INFO', 'add qid for test dataframe done')
-        test_df.to_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt'))
+        test_df.to_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt'), index=False)
         LogUtil.log('INFO', 'save test dataframe with qid done')
 
 
