@@ -1092,7 +1092,6 @@ class TreeParser(object):
         for line in f:
             [qid, json_s] = line.split(' ', 1)
             features[qid] = []
-            root = -1
             parent = {}
             indegree = {}
             # 计算入度和父节点
@@ -1127,8 +1126,8 @@ class TreeParser(object):
         sub_features = abs(np.array(q1_features) - np.array(q2_features)).tolist()
         div_features = (np.array(q1_features) / (np.array(q2_features) + 1.)).tolist()
         mul_features = (np.array(q1_features) * (np.array(q2_features) + 0.)).tolist()
-
-        return q1_features + q2_features + sum_features + sub_features + div_features + mul_features
+        features = q1_features + q2_features + sum_features + sub_features + div_features + mul_features
+        return features
 
     @staticmethod
     def extract_ind_multi(data, tree_fp):
@@ -1262,7 +1261,7 @@ class TreeParser(object):
         cf.read("../conf/python.conf")
 
         # 加载train.csv文件
-        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="") #[:100]
         # 加载test.csv文件
         test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
         # 特征文件路径
@@ -1273,7 +1272,7 @@ class TreeParser(object):
 
         # 提取特征
         # TreeParser.run_tree_parser(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
-        TreeParser.run_ind_multi(train_data, test_data, feature_path, train_tree_fp,test_tree_fp)
+        TreeParser.run_ind_multi(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
 
 class F01FromKaggle(object):
     """

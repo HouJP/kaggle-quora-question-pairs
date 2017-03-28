@@ -6,6 +6,7 @@ from scipy.sparse import csr_matrix, hstack
 from nltk.corpus import stopwords
 from utils import LogUtil
 import random
+import numpy as np
 
 from utils import DataUtil
 
@@ -97,6 +98,7 @@ class Feature(object):
         '''
         存储DataFrame特征文件
         '''
+        features = np.array(features)
         f = open(ft_pt, 'w')
         f.write('%d %d\n' % (len(features), len(features[0])))
         for row in features:
