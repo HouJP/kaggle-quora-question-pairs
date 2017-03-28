@@ -1135,7 +1135,7 @@ class TreeParser(object):
         TreeParser.questions_features = TreeParser.extract_questions_ind_multi(tree_fp)
         LogUtil.log('INFO', 'extract questions features done (%s)' % tree_fp)
         features = data.apply(TreeParser.extract_row_ind_multi, axis=1, raw=True)
-        LogUtil.log('INFO', 'extract data features done')
+        LogUtil.log('INFO', 'extract data features done, len(features)=%d' % len(features))
         return features
 
     @staticmethod
