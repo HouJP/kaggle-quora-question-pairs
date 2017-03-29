@@ -48,7 +48,7 @@ class Feature(object):
             indptr.append(len(data))
         f.close()
         LogUtil.log("INFO", "load feature file done (%s)" % ft_pt)
-        return csr_matrix((data, indice, indptr), shape=(row_num, col_num))
+        return csr_matrix((data, indice, indptr), shape=(row_num, col_num), dtype=float)
 
     @staticmethod
     def load_all_features(cf, rawset_name):
