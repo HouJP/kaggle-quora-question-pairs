@@ -1353,7 +1353,7 @@ class BTM(object):
 
     @staticmethod
     def run():
-        LogUtil.log('INFO', 'run for BTM')
+        LogUtil.log('INFO', 'extractor run for BTM')
         # 读取配置文件
         cf = ConfigParser.ConfigParser()
         cf.read("../conf/python.conf")
