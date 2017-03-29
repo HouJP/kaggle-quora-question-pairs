@@ -1318,7 +1318,7 @@ class BTM(object):
 
         features = {}
         for index in range(len(qids)):
-            features[qids[index]] = qfs[index]
+            features[str(qids[index]).strip()] = qfs[index].strip()
 
         return features
 
@@ -1353,6 +1353,7 @@ class BTM(object):
 
     @staticmethod
     def run():
+        LogUtil.log('INFO', 'run for BTM')
         # 读取配置文件
         cf = ConfigParser.ConfigParser()
         cf.read("../conf/python.conf")
