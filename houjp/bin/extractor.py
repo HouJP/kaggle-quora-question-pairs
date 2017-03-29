@@ -1300,5 +1300,75 @@ class F01FromKaggle(object):
     """
 
 
+class BTM(object):
+
+    btm_features = {}
+
+    @staticmethod
+    def load_questions_btm(qid_fp, qf_fp):
+        fqid = open(qid_fp, 'r')
+        qids = fqid.readlines()
+        fqid.close()
+
+        fqf = open(qf_fp, 'r')
+        qfs = fqf.readlines()
+        fqf.close()
+
+        assert len(qids) == len(qfs), "len(qid) != len(question)"
+
+        features = {}
+        for index in range(len(qids)):
+            features[qids[index]] = qfs[index]
+
+        return features
+
+    @staticmethod
+    def extract_row_btm(row):
+        q1_id = str(row['qid1'])
+        q2_id = str(row['qid2'])
+
+        q1_features = BTM.btm_features[q1_id].split()
+        q2_features = BTM.btm_features[q2_id].split()
+
+        return q1_features + q2_features
+
+    @staticmethod
+    def extract_btm(data):
+        features = data.apply(BTM.extract_row_btm, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract btm features done, len(features)=%d' % len(features))
+        return features
+
+    @staticmethod
+    def run_btm(train_data, test_data, feature_pt, questions_btm_qid_fp, questions_btm_qf_fp):
+        BTM.btm_features = BTM.load_questions_btm(questions_btm_qid_fp, questions_btm_qf_fp)
+        LogUtil.log('INFO', 'load questions btm feature done')
+
+        train_features = BTM.extract_btm(train_data)
+        LogUtil.log('INFO', 'extract btm from train data done')
+        Feature.save_dataframe(train_features, feature_pt + '/btm_30.train.smat')
+
+        test_features = BTM.extract_btm(test_data)
+        LogUtil.log('INFO', 'extract btm from test data done')
+        Feature.save_dataframe(test_features, feature_pt + '/btm_30.test.smat')
+
+    @staticmethod
+    def run():
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 加载train.csv文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
+        # 加载test.csv文件
+        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
+        # 特征文件路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        # btm文件路径
+        questions_btm_qid_fp = '%s/qid2question.all.qid' % cf.get('DEFAULT', 'devel_pt')
+        questions_btm_qf_fp = '%s/btm_30.all.qf' % cf.get('DEFAULT', 'devel_pt')
+
+        BTM.run_btm(train_data, test_data, feature_pt, questions_btm_qid_fp, questions_btm_qf_fp)
+
+
 if __name__ == "__main__":
     PowerfulWord.run()
