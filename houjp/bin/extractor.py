@@ -1371,4 +1371,4 @@ class BTM(object):
 
 
 if __name__ == "__main__":
-    PowerfulWord.run()
+    BTM.run()
