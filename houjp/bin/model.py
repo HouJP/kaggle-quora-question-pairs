@@ -72,7 +72,7 @@ class Model(object):
         pass
 
     @staticmethod
-    def train_xgb(cf, tag=time.strftime("%Y%m%d%H%M%S", time.localtime(time.time()))):
+    def train_xgb(cf, tag=time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))):
         '''
         训练xgb模型
         '''
