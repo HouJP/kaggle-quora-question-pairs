@@ -1339,17 +1339,17 @@ class BTM(object):
         return features
 
     @staticmethod
-    def run_btm(train_data, test_data, feature_pt, questions_btm_qid_fp, questions_btm_qf_fp):
+    def run_btm(train_data, test_data, train_feature_fp, test_feature_fp, questions_btm_qid_fp, questions_btm_qf_fp):
         BTM.btm_features = BTM.load_questions_btm(questions_btm_qid_fp, questions_btm_qf_fp)
         LogUtil.log('INFO', 'load questions btm feature done')
 
         train_features = BTM.extract_btm(train_data)
         LogUtil.log('INFO', 'extract btm from train data done')
-        Feature.save_dataframe(train_features, feature_pt + '/btm_30.train.smat')
+        Feature.save_dataframe(train_features, train_feature_fp)
 
         test_features = BTM.extract_btm(test_data)
         LogUtil.log('INFO', 'extract btm from test data done')
-        Feature.save_dataframe(test_features, feature_pt + '/btm_30.test.smat')
+        Feature.save_dataframe(test_features, test_feature_fp)
 
     @staticmethod
     def run():
@@ -1364,11 +1364,20 @@ class BTM(object):
         test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
         # 特征文件路径
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+
+        # btm文件路径
+        # questions_btm_qid_fp = '%s/qid2question.all.qid' % cf.get('DEFAULT', 'devel_pt')
+        # questions_btm_qf_fp = '%s/btm_30.all.qf' % cf.get('DEFAULT', 'devel_pt')
+        #
+        # BTM.run_btm(train_data, test_data, feature_pt, questions_btm_qid_fp, questions_btm_qf_fp)
+
         # btm文件路径
         questions_btm_qid_fp = '%s/qid2question.all.qid' % cf.get('DEFAULT', 'devel_pt')
-        questions_btm_qf_fp = '%s/btm_30.all.qf' % cf.get('DEFAULT', 'devel_pt')
-
-        BTM.run_btm(train_data, test_data, feature_pt, questions_btm_qid_fp, questions_btm_qf_fp)
+        questions_btm_qf_fp = '%s/btm_100.all.qf' % cf.get('DEFAULT', 'devel_pt')
+        # 特征存储路径
+        train_feature_fp = '%s/btm_100.train.smat' % feature_pt
+        test_feature_fp = '%s/btm_100.test.smat' % feature_pt
+        BTM.run_btm(train_data, test_data, train_feature_fp, test_feature_fp, questions_btm_qid_fp, questions_btm_qf_fp)
 
 
 if __name__ == "__main__":
