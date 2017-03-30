@@ -51,24 +51,24 @@ class Feature(object):
         return csr_matrix((data, indice, indptr), shape=(row_num, col_num), dtype=float)
 
     @staticmethod
-    def load_all_features(cf, rawset_name):
+    def load_all_features(cf, rawset_name, id_part):
         '''
         加载全部特征矩阵
         '''
         # 加载<Q1,Q2>二元组特征
         feature_qp_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
         feature_qp_names = Feature.get_feature_names_question_pair(cf)
-        features = Feature.load_mul_features(feature_qp_pt, feature_qp_names, rawset_name)
+        features = Feature.load_mul_features(feature_qp_pt, feature_qp_names, rawset_name, id_part)
         # 加载<Question>特征
         # TODO
         return features
 
     @staticmethod
-    def load_mul_features(feature_pt, feature_names, rawset_name):
-        features = Feature.load('%s/%s.%s.smat' % (feature_pt, feature_names[0], rawset_name))
+    def load_mul_features(feature_pt, feature_names, rawset_name, id_part):
+        features = Feature.load('%s/%s.%s.smat.%02d' % (feature_pt, feature_names[0], rawset_name, id_part))
         for index in range(1, len(feature_names)):
             features = Feature.merge(features,
-                                     Feature.load('%s/%s.%s.smat' % (feature_pt, feature_names[index], rawset_name)))
+                                     Feature.load('%s/%s.%s.smat.%02d' % (feature_pt, feature_names[index], rawset_name, id_part)))
         return features
 
     @staticmethod

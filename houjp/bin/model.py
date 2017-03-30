@@ -244,6 +244,8 @@ class Model(object):
 
     @staticmethod
     def predict_xgb(cf):
+        # 加载配置
+        n_part = cf.getint('MODEL', 'test_n_part')
         # 加载模型
         model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
         params = {}
@@ -262,26 +264,32 @@ class Model(object):
         model = xgb.Booster(params)
         model.load_model(model_fp)
 
-        # 加载线上测试集索引文件
-        online_test_indexs = Feature.load_index(cf.get('MODEL', 'online_test_indexs_fp'))
-        # 加载线上测试集标签文件
-        online_test_labels = DataUtil.load_vector(cf.get('MODEL', 'online_test_labels_fp'), True)
-        # 加载线上测试集特征文件
-        online_test_features = Feature.load_all_features(cf, cf.get('MODEL', 'online_test_rawset_name'))
-        # 设置测试集正样本比例
-        online_test_pos_rate = -1.0
-        # 获取线上测试集
-        (online_test_data, online_test_balanced_indexs) = Model.get_DMatrix(online_test_indexs, online_test_labels,
-                                                                            online_test_features, online_test_pos_rate)
-        LogUtil.log("INFO", "online test set generation done")
+        # 全部预测结果
+        all_pred_online_test_data = []
 
-        # 预测线上测试集
-        pred_online_test_data = model.predict(online_test_data, ntree_limit=params['best_ntree_limit'])
+        for id_part in range(n_part):
+            # 加载线上测试集索引文件
+            online_test_indexs = Feature.load_index('%s.%02d' % (cf.get('MODEL', 'online_test_indexs_fp'), id_part))
+            # 加载线上测试集标签文件
+            online_test_labels = DataUtil.load_vector('%s.%02d' % (cf.get('MODEL', 'online_test_labels_fp'), id_part), True)
+            # 加载线上测试集特征文件
+            online_test_features = Feature.load_all_features(cf, cf.get('MODEL', 'online_test_rawset_name'), id_part)
+            # 设置测试集正样本比例
+            online_test_pos_rate = -1.0
+            # 获取线上测试集
+            (online_test_data, online_test_balanced_indexs) = Model.get_DMatrix(online_test_indexs, online_test_labels,
+                                                                                online_test_features, online_test_pos_rate)
+            LogUtil.log("INFO", "online test set (%02d) generation done" % id_part)
+
+            # 预测线上测试集
+            pred_online_test_data = model.predict(online_test_data, ntree_limit=params['best_ntree_limit'])
+            all_pred_online_test_data.extend(pred_online_test_data)
+            LogUtil.log('INFO', 'online test set (%02d) predict done' % id_part)
         # 加载线上测试集ID文件
         online_test_ids = DataUtil.load_vector(cf.get('MODEL', 'online_test_ids_fp'), False)
         # 存储线上测试集预测结果
         pred_online_test_fp = cf.get('MODEL', 'online_test_prediction_fp')
-        Model.save_pred(online_test_ids, pred_online_test_data, pred_online_test_fp)
+        Model.save_pred(online_test_ids, all_pred_online_test_data, pred_online_test_fp)
 
     @staticmethod
     def run_predict_xgb(tag):
