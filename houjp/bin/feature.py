@@ -72,7 +72,7 @@ class Feature(object):
 
         fn_names = []
         fn_sub_names = []
-        p = re.compile('smat$')
+        p = re.compile('test\.smat$')
         for fn in fn_all:
             if None != p.search(fn):
                 fn_names.append(fn)
@@ -282,7 +282,9 @@ class Feature(object):
         cf.read("../conf/python.conf")
 
         # split all features
-        Feature.split_all_features(cf)
+        features = Feature.load('/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature1.demo.smat')
+        Feature.save(features, '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature2.demo.smat')
+        # Feature.split_all_features(cf)
 
 if __name__ == "__main__":
     Feature.test()
