@@ -94,9 +94,6 @@ class Model(object):
             os.mkdir(cf.get('DEFAULT', 'score_pt'))
             LogUtil.log('INFO', 'out path (%s) created ' % out_pt)
 
-        # 保存本次运行配置
-        cf.write(open(cf.get('DEFAULT', 'conf_pt') + 'python.conf', 'w'))
-
         # 设置正样本比例
         pos_rate = float(cf.get('MODEL', 'pos_rate'))
 
@@ -137,7 +134,7 @@ class Model(object):
             test_labels = DataUtil.load_vector(cf.get('MODEL', 'test_labels_fp'), True)
             test_features = Feature.load_all_features(cf, cf.get('MODEL', 'test_rawset_name'))
             test_pos_rate = -1.0
-        # 获取验证集
+        # 获取测试集
         (test_data, test_balanced_indexs) = Model.get_DMatrix(test_indexs, test_labels, test_features, test_pos_rate)
         LogUtil.log("INFO", "test set generation done")
 
@@ -166,9 +163,15 @@ class Model(object):
         # 打印参数
         LogUtil.log("INFO", 'params=%s, best_ntree_limit=%d' % (str(params), model.best_ntree_limit))
 
+        # 新增配置
+        cf.set('XGBOOST_PARAMS', 'best_ntree_limit', model.best_ntree_limit)
+
         # 存储模型
         model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
         model.save_model(model_fp)
+
+        # 保存本次运行配置
+        cf.write(open(cf.get('DEFAULT', 'conf_pt') + 'python.conf', 'w'))
 
         # 进行预测
         pred_train_data = model.predict(train_data, ntree_limit=model.best_ntree_limit)
@@ -238,6 +241,62 @@ class Model(object):
         # 存储线上测试集预测结果
         pred_online_test_fp = cf.get('MODEL', 'online_test_prediction_fp')
         Model.save_pred(online_test_ids, pred_online_test_data, pred_online_test_fp)
+
+    @staticmethod
+    def predict_xgb(cf):
+        # 加载模型
+        model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
+        params = {}
+        params['objective'] = cf.get('XGBOOST_PARAMS', 'objective')
+        params['eval_metric'] = cf.get('XGBOOST_PARAMS', 'eval_metric')
+        params['eta'] = float(cf.get('XGBOOST_PARAMS', 'eta'))
+        params['max_depth'] = cf.getint('XGBOOST_PARAMS', 'max_depth')
+        params['subsample'] = float(cf.get('XGBOOST_PARAMS', 'subsample'))
+        params['colsample_bytree'] = float(cf.get('XGBOOST_PARAMS', 'colsample_bytree'))
+        params['min_child_weight'] = cf.getint('XGBOOST_PARAMS', 'min_child_weight')
+        params['silent'] = cf.getint('XGBOOST_PARAMS', 'silent')
+        params['num_round'] = cf.getint('XGBOOST_PARAMS', 'num_round')
+        params['early_stop'] = cf.getint('XGBOOST_PARAMS', 'early_stop')
+        params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
+        params['best_ntree_limit'] = cf.getint('XGBOOST_PARAMS', 'best_ntree_limit')
+        model = xgb.Booster(params)
+        model.load_model(model_fp)
+
+        # 加载线上测试集索引文件
+        online_test_indexs = Feature.load_index(cf.get('MODEL', 'online_test_indexs_fp'))
+        # 加载线上测试集标签文件
+        online_test_labels = DataUtil.load_vector(cf.get('MODEL', 'online_test_labels_fp'), True)
+        # 加载线上测试集特征文件
+        online_test_features = Feature.load_all_features(cf, cf.get('MODEL', 'online_test_rawset_name'))
+        # 设置测试集正样本比例
+        online_test_pos_rate = -1.0
+        # 获取线上测试集
+        (online_test_data, online_test_balanced_indexs) = Model.get_DMatrix(online_test_indexs, online_test_labels,
+                                                                            online_test_features, online_test_pos_rate)
+        LogUtil.log("INFO", "online test set generation done")
+
+        # 预测线上测试集
+        pred_online_test_data = model.predict(online_test_data, ntree_limit=params['best_ntree_limit'])
+        # 加载线上测试集ID文件
+        online_test_ids = DataUtil.load_vector(cf.get('MODEL', 'online_test_ids_fp'), False)
+        # 存储线上测试集预测结果
+        pred_online_test_fp = cf.get('MODEL', 'online_test_prediction_fp')
+        Model.save_pred(online_test_ids, pred_online_test_data, pred_online_test_fp)
+
+    @staticmethod
+    def run_predict_xgb(tag):
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 新增配置
+        cf.set('DEFAULT', 'tag', str(tag))
+
+        # 重载配置
+        cf.read(cf.get('DEFAULT', 'conf_pt') + 'python.conf')
+
+        # 进行预测
+        Model.predict_xgb(cf)
 
     @staticmethod
     def generate_fault_file(pred_test_data, test_balanced_indexs, df, pos_fault_fp, neg_fault_fp):
