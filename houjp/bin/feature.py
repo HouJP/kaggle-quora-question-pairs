@@ -133,12 +133,13 @@ class Feature(object):
         f.write("%d %d\n" % (row_num, col_num))
         ind_indptr = 1
         for ind_data in range(len(data)):
-            f.write("%d:%f" % (indice[ind_data], data[ind_data]))
-            if (ind_data < indptr[ind_indptr] - 1):
-                f.write(" ")
-            else:
-                f.write("\n")
+            while ind_data == indptr[ind_indptr]:
+                f.write('\n')
                 ind_indptr += 1
+            if ind_data != indptr[ind_indptr - 1]:
+                f.write(' ')
+            f.write("%d:%f" % (indice[ind_data], data[ind_data]))
+        f.write("\n")
         LogUtil.log("INFO", "save feature file done (%s)" % ft_pt)
         f.close()
 
