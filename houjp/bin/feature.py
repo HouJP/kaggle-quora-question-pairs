@@ -7,6 +7,9 @@ from nltk.corpus import stopwords
 from utils import LogUtil
 import random
 import numpy as np
+from os import listdir
+from os.path import isfile, join
+import re
 
 from utils import DataUtil
 
@@ -49,6 +52,52 @@ class Feature(object):
         f.close()
         LogUtil.log("INFO", "load feature file done (%s)" % ft_pt)
         return csr_matrix((data, indice, indptr), shape=(row_num, col_num), dtype=float)
+
+    @staticmethod
+    def split_feature(ft_pt, ft_fn, n_line):
+        features = Feature.load('%s/%s' % (ft_pt, ft_fn))
+        index_start = 0
+        while index_start < features.shape[0]:
+            index_end = min(index_start + n_line, features.shape[0])
+            sub_features = Feature.sample_with_index(features, range(index_start, index_end))
+            Feature.save(sub_features, '%s/%s.%02d' % (ft_pt, ft_fn, index_start / n_line))
+            index_start += n_line
+
+    @staticmethod
+    def split_all_features(cf):
+        # split features of question pair
+        n_line = cf.getint('MODEL', 'n_line')
+        ft_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        fn_all = [ fn for fn in listdir(ft_pt) if isfile(join(ft_pt, fn))]
+
+        fn_names = []
+        fn_sub_names = []
+        p = re.compile('smat$')
+        for fn in fn_all:
+            if None != p.search(fn):
+                fn_names.append(fn)
+            else:
+                fn_sub_names.append(fn)
+
+        # 寻找需要切分的特征文件名
+        fn_names_split = []
+        for fn in fn_names:
+            p = re.compile(fn)
+            need_split = True
+            for sub_fn in fn_sub_names:
+                if p.match(sub_fn):
+                    need_split = False
+                    break
+            if need_split:
+                fn_names_split.append(fn)
+
+        print 'Question Pair Features need to be splited:'
+        for fn in fn_names_split:
+            print '\t%s' % fn
+
+        for fn in fn_names_split:
+            Feature.split_feature(ft_pt, fn, n_line)
+            LogUtil.log('INFO', 'split feature(%s) done' % fn)
 
     @staticmethod
     def load_all_features(cf, rawset_name, id_part):
@@ -231,6 +280,8 @@ class Feature(object):
         cf = ConfigParser.ConfigParser()
         cf.read("../conf/python.conf")
 
+        # split all features
+        Feature.split_all_features(cf)
 
 if __name__ == "__main__":
-    Feature.demo()
+    Feature.test()
