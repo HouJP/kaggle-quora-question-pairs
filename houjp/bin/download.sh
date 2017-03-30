@@ -6,27 +6,32 @@
 #########################################################################
 #! /bin/bash
 
-server_project_pt="/home/fyx/kaggle-quora-question-pairs/"
-local_project_pt="//Users/houjianpeng/Github/kaggle-quora-question-pairs/"
-
 function run() {
-    tag=$1
-    score=$2
+	user=$1
+	address=$2
+    tag=$3
+    score=$4
+	
+	server_project_pt="/home/${user}/kaggle-quora-question-pairs/"
+	local_project_pt="//Users/houjianpeng/Github/kaggle-quora-question-pairs/"
+
     # create directory
     mkdir $local_project_pt/data/out/$tag
     mkdir $local_project_pt/data/out/$tag/pred/
     # download
-    scp -r fyx@kaggle:$server_project_pt/data/out/$tag/pred/full.test.pred $local_project_pt/data/out/$tag/pred/
+    scp -r ${user}@${address}:$server_project_pt/data/out/$tag/pred/full.test.pred $local_project_pt/data/out/$tag/pred/
     # zip
     zip -r $local_project_pt/data/out/$tag/pred/$score.zip $local_project_pt/data/out/$tag/pred/full.test.pred
 }
 
-if [ $# -ne 2 ]; then
-    echo "Usage: download <tag> <score>"
+if [ $# -ne 4 ]; then
+    echo "Usage: download <user> <address> <tag> <score>"
     exit 255
 fi
 
-tag=$1
-score=$2
+user=$1
+address=$2
+tag=$3
+score=$4
 
-run $tag $score
+run $user $address $tag $score

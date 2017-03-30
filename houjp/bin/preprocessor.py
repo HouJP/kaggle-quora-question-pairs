@@ -101,6 +101,19 @@ class Preprocessor(object):
              nltk.word_tokenize(Preprocessor.clean_text(str(x).lower()).decode('utf-8'))]).encode('utf-8'))
         return df
 
+    @staticmethod
+    def swap_question(data, indexs):
+        offset = len(data)
+        add_questions = data.loc[indexs]
+        add_questions = add_questions.apply(lambda x: [int(x.id) + offset,
+                                                       x.qid2,
+                                                       x.qid1,
+                                                       x.question2,
+                                                       x.question1,
+                                                       x.is_duplicate])
+        return add_questions
+
+
 
 class PreprocessorRunner(object):
     '''

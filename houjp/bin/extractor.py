@@ -1290,7 +1290,7 @@ class TreeParser(object):
         test_tree_fp = '%s/test_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
 
         # 提取特征
-        # TreeParser.run_tree_parser(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
+        TreeParser.run_tree_parser(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
         TreeParser.run_ind_multi(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
 
 
