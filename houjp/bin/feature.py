@@ -141,11 +141,12 @@ class Feature(object):
 
     @staticmethod
     def load_mul_features_with_part_id(feature_pt, feature_names, rawset_name, id_part, n_line):
-        f_fp = '%s/%s.%s.smat' % (feature_pt, feature_names[0], rawset_name)
-        features = Feature.load_with_part_id(f_fp, id_part, n_line)
+        features = Feature.load_with_part_id('%s/%s.%s.smat' % (feature_pt, feature_names[0], rawset_name), id_part, n_line)
         for index in range(1, len(feature_names)):
             features = Feature.merge(features,
-                                     Feature.load_with_part_id(f_fp, id_part, n_line))
+                                     Feature.load_with_part_id('%s/%s.%s.smat' % (feature_pt,
+                                                                                  feature_names[index],
+                                                                                  rawset_name), id_part, n_line))
         return features
 
     @staticmethod
