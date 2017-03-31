@@ -83,10 +83,6 @@ class Feature(object):
     def load_with_part_id(ft_fp, id_part, n_line):
         ft_id_fp = '%s.%02d' % (ft_fp, id_part)
         has_part = isfile('%s.npz' % ft_id_fp)
-        print 'ft_fp=%s' % ft_fp
-        print 'id_part=%s' % str(id_part)
-        print 'ft_id_fp=%s' % str(ft_id_fp)
-        print 'has_part=%s' % str(has_part)
         features = None
         if has_part:
             features = Feature.load(ft_id_fp)
