@@ -181,13 +181,18 @@ class Feature(object):
         f = open(ft_pt, 'w')
         f.write("%d %d\n" % (row_num, col_num))
         ind_indptr = 1
+        blank_line = True
         for ind_data in range(len(data)):
             while ind_data == indptr[ind_indptr]:
+                if blank_line:
+                    f.write('0:0')
                 f.write('\n')
+                blank_line = True
                 ind_indptr += 1
             if ind_data != indptr[ind_indptr - 1]:
                 f.write(' ')
             f.write("%d:%f" % (indice[ind_data], data[ind_data]))
+            blank_line = False
         f.write("\n")
         LogUtil.log("INFO", "save smat feature file done (%s)" % ft_pt)
         f.close()
@@ -337,11 +342,6 @@ class Feature(object):
 
         # split all features
         features = Feature.load('/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature1.demo.smat')
-        np.savez('/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature3.demo.smat',
-                 data=features.data,
-                 indices=features.indices,
-                 indptr=features.indptr,
-                 shape=features.shape)
         Feature.save(features, '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature2.demo.smat')
         # Feature.split_all_features(cf)
 
