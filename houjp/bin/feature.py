@@ -201,7 +201,7 @@ class Feature(object):
     @staticmethod
     def save(features, ft_fp):
         Feature.save_npz(features, ft_fp)
-        Feature.save_smat(features, ft_fp)
+        # Feature.save_smat(features, ft_fp)
 
     @staticmethod
     def save_dataframe(features, ft_pt):
