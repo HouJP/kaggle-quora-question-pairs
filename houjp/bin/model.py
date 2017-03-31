@@ -301,8 +301,9 @@ class Model(object):
         cf.set('DEFAULT', 'tag', str(tag))
 
         # 重载配置
+        cf_old_fp = '%s/%s' % (cf.get('DEFAULT', 'conf_pt'), 'python.conf')
         cf_old = ConfigParser.ConfigParser
-        cf_old.read(cf.get('DEFAULT', 'conf_pt') + 'python.conf')
+        cf_old.read(cf_old_fp)
 
         # 进行预测
         Model.predict_xgb(cf_old)
