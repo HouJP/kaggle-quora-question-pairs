@@ -127,7 +127,7 @@ class Feature(object):
         :return:
         """
         # 加载<Q1,Q2>二元组特征
-        n_line = cf.get('MODEL', 'n_line')
+        n_line = cf.getint('MODEL', 'n_line')
         feature_qp_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
         feature_qp_names = Feature.get_feature_names_question_pair(cf)
         features = Feature.load_mul_features_with_part_id(feature_qp_pt,
