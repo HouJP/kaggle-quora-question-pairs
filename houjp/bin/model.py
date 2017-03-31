@@ -55,7 +55,7 @@ class Model(object):
         # 根据索引采样特征
         features = Feature.sample_with_index(features, balanced_indexs)
         # 构造DMatrix
-        return (xgb.DMatrix(features, label=labels), balanced_indexs)
+        return xgb.DMatrix(features, label=labels), balanced_indexs
 
     @staticmethod
     def save_pred(ids, preds, fp):
@@ -164,6 +164,7 @@ class Model(object):
         LogUtil.log("INFO", 'params=%s, best_ntree_limit=%d' % (str(params), model.best_ntree_limit))
 
         # 新增配置
+        params['best_ntree_limit'] = model.best_ntree_limit
         cf.set('XGBOOST_PARAMS', 'best_ntree_limit', model.best_ntree_limit)
 
         # 存储模型
@@ -173,6 +174,11 @@ class Model(object):
         # 保存本次运行配置
         cf.write(open(cf.get('DEFAULT', 'conf_pt') + 'python.conf', 'w'))
 
+        # 线上预测
+        Model.predict_xgb(cf, model, params)
+        return
+
+        # -------- these code reserved for safe -------
         # 进行预测
         pred_train_data = model.predict(train_data, ntree_limit=model.best_ntree_limit)
         pred_valid_data = model.predict(valid_data, ntree_limit=model.best_ntree_limit)
@@ -243,9 +249,7 @@ class Model(object):
         Model.save_pred(online_test_ids, pred_online_test_data, pred_online_test_fp)
 
     @staticmethod
-    def predict_xgb(cf):
-        # 加载配置
-        n_part = cf.getint('MODEL', 'n_part')
+    def load_model(cf):
         # 加载模型
         model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
         params = {}
@@ -263,6 +267,13 @@ class Model(object):
         params['best_ntree_limit'] = cf.getint('XGBOOST_PARAMS', 'best_ntree_limit')
         model = xgb.Booster(params)
         model.load_model(model_fp)
+
+        return model, params
+
+    @staticmethod
+    def predict_xgb(cf, model, params):
+        # 加载配置
+        n_part = cf.getint('MODEL', 'n_part')
 
         # 全部预测结果
         all_pred_online_test_data = []
@@ -305,8 +316,11 @@ class Model(object):
         cf_old = ConfigParser.ConfigParser()
         cf_old.read(cf_old_fp)
 
+        # 加载模型
+        model, params = Model.load_model(cf_old)
+
         # 进行预测
-        Model.predict_xgb(cf_old)
+        Model.predict_xgb(cf_old, model, params)
 
     @staticmethod
     def generate_fault_file(pred_test_data, test_balanced_indexs, df, pos_fault_fp, neg_fault_fp):
