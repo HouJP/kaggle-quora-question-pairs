@@ -113,7 +113,7 @@ class Feature(object):
         index_start = 0
         while index_start < features.shape[0]:
             index_end = min(index_start + n_line, features.shape[0])
-            sub_features = Feature.sample_with_index(features, range(index_start, index_end))
+            sub_features = Feature.sample_with_index(features, index_start, index_end)
             Feature.save(sub_features, '%s.%02d' % (ft_fp, index_start / n_line))
             index_start += n_line
 
@@ -245,6 +245,20 @@ class Feature(object):
         获取针对<问题，问题>二元组的特征池中的特征名
         '''
         return cf.get('FEATURE', 'feature_names_question_pair').split()
+
+    @staticmethod
+    def sample_with_index(features, row_begin, row_end):
+        """
+        根据索引对特征矩阵切片
+        :param features:
+        :param row_begin:
+        :param row_end:
+        :return:
+        """
+        features_sampled = features[row_begin : row_end, :]
+        (row_num, col_num) = features_sampled.shape
+        LogUtil.log("INFO", "sample feature done, shape=(%d,%d)" % (row_num, col_num))
+        return features_sampled
 
     @staticmethod
     def sample_with_index(features, indexs):
