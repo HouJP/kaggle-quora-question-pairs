@@ -245,7 +245,7 @@ class Model(object):
     @staticmethod
     def predict_xgb(cf):
         # 加载配置
-        n_part = cf.getint('MODEL', 'test_n_part')
+        n_part = cf.getint('MODEL', 'n_part')
         # 加载模型
         model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
         params = {}
@@ -268,17 +268,17 @@ class Model(object):
         all_pred_online_test_data = []
 
         for id_part in range(n_part):
-            # 加载线上测试集索引文件
-            online_test_indexs = Feature.load_index('%s.%02d' % (cf.get('MODEL', 'online_test_indexs_fp'), id_part))
-            # 加载线上测试集标签文件
-            online_test_labels = DataUtil.load_vector('%s.%02d' % (cf.get('MODEL', 'online_test_labels_fp'), id_part), True)
             # 加载线上测试集特征文件
-            online_test_features = Feature.load_all_features(cf, cf.get('MODEL', 'online_test_rawset_name'), id_part)
+            online_test_features = Feature.load_all_features_with_part_id(cf,
+                                                                          cf.get('MODEL', 'online_test_rawset_name'),
+                                                                          id_part)
             # 设置测试集正样本比例
             online_test_pos_rate = -1.0
             # 获取线上测试集
-            (online_test_data, online_test_balanced_indexs) = Model.get_DMatrix(online_test_indexs, online_test_labels,
-                                                                                online_test_features, online_test_pos_rate)
+            (online_test_data, online_test_balanced_indexs) = Model.get_DMatrix(range(0, online_test_features.shape[0]),
+                                                                                [0] * online_test_features.shape[0],
+                                                                                online_test_features,
+                                                                                online_test_pos_rate)
             LogUtil.log("INFO", "online test set (%02d) generation done" % id_part)
 
             # 预测线上测试集
@@ -301,10 +301,11 @@ class Model(object):
         cf.set('DEFAULT', 'tag', str(tag))
 
         # 重载配置
-        cf.read(cf.get('DEFAULT', 'conf_pt') + 'python.conf')
+        cf_old = ConfigParser.ConfigParser
+        cf_old.read(cf.get('DEFAULT', 'conf_pt') + 'python.conf')
 
         # 进行预测
-        Model.predict_xgb(cf)
+        Model.predict_xgb(cf_old)
 
     @staticmethod
     def generate_fault_file(pred_test_data, test_balanced_indexs, df, pos_fault_fp, neg_fault_fp):

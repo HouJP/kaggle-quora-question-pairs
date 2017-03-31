@@ -80,6 +80,18 @@ class Feature(object):
         return features
 
     @staticmethod
+    def load_with_part_id(ft_fp, id_part, n_line):
+        ft_id_fp = '%s.%02d' % (ft_fp, id_part)
+        has_part = isfile(ft_id_fp)
+        features = None
+        if has_part:
+            features = Feature.load(ft_id_fp)
+        else:
+            Feature.split_feature(ft_fp, n_line)
+            features = Feature.load(ft_id_fp)
+        return features
+
+    @staticmethod
     def load(ft_fp):
         """
         WARNING: 很容易造成smat格式与npz格式文件内容不一致
@@ -96,14 +108,45 @@ class Feature(object):
         return features
 
     @staticmethod
-    def split_feature(ft_pt, ft_fn, n_line):
-        features = Feature.load('%s/%s' % (ft_pt, ft_fn))
+    def split_feature(ft_fp, n_line):
+        features = Feature.load('%s' % ft_fp)
         index_start = 0
         while index_start < features.shape[0]:
             index_end = min(index_start + n_line, features.shape[0])
             sub_features = Feature.sample_with_index(features, range(index_start, index_end))
-            Feature.save(sub_features, '%s/%s.%02d' % (ft_pt, ft_fn, index_start / n_line))
+            Feature.save(sub_features, '%s.%02d' % (ft_fp, index_start / n_line))
             index_start += n_line
+
+    @staticmethod
+    def load_all_features_with_part_id(cf, rawset_name, id_part):
+        """
+        加载部分数据全部特征
+        :param cf:
+        :param rawset_name:
+        :param id_part:
+        :return:
+        """
+        # 加载<Q1,Q2>二元组特征
+        n_line = cf.get('MODEL', 'n_line')
+        feature_qp_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        feature_qp_names = Feature.get_feature_names_question_pair(cf)
+        features = Feature.load_mul_features_with_part_id(feature_qp_pt,
+                                                          feature_qp_names,
+                                                          rawset_name,
+                                                          id_part,
+                                                          n_line)
+        # 加载<Question>特征
+        # TODO
+        return features
+
+    @staticmethod
+    def load_mul_features_with_part_id(feature_pt, feature_names, rawset_name, id_part, n_line):
+        f_fp = '%s/%s.%s.smat' % (feature_pt, feature_names[0], rawset_name)
+        features = Feature.load_with_part_id(f_fp, id_part, n_line)
+        for index in range(1, len(feature_names)):
+            features = Feature.merge(features,
+                                     Feature.load_with_part_id(f_fp, id_part, n_line))
+        return features
 
     @staticmethod
     def load_all_features(cf, rawset_name):
