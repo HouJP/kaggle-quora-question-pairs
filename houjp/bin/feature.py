@@ -28,7 +28,32 @@ class Feature(object):
         return
 
     @staticmethod
-    def load(ft_pt):
+    def load_npz(ft_fp):
+        loader = np.load('%s.npz' % ft_fp)
+        features = csr_matrix((loader['data'],
+                           loader['indices'],
+                           loader['indptr']),
+                          shape=loader['shape'])
+        LogUtil.log("INFO", "load npz feature file done (%s)" % ft_fp)
+        return features
+
+    @staticmethod
+    def save_npz(features, ft_fp):
+        """
+        存储二进制特征文件
+        :param features:
+        :param ft_fp:
+        :return:
+        """
+        np.savez(ft_fp,
+                 data=features.data,
+                 indices=features.indices,
+                 indptr=features.indptr,
+                 shape=features.shape)
+        LogUtil.log('INFO', 'save npz feature file done (%s)' % ft_fp)
+
+    @staticmethod
+    def load_smat(ft_fp):
         '''
         加载特征文件，特征文件格式如下：
         row_num col_num
@@ -37,7 +62,7 @@ class Feature(object):
         data = []
         indice = []
         indptr = [0]
-        f = open(ft_pt)
+        f = open(ft_fp)
         [row_num, col_num] = [int(num) for num in f.readline().strip().split()]
         for line in f:
             line = line.strip()
@@ -50,8 +75,24 @@ class Feature(object):
                 indice.append(f_index)
             indptr.append(len(data))
         f.close()
-        LogUtil.log("INFO", "load feature file done (%s)" % ft_pt)
-        return csr_matrix((data, indice, indptr), shape=(row_num, col_num), dtype=float)
+        features = csr_matrix((data, indice, indptr), shape=(row_num, col_num), dtype=float)
+        LogUtil.log("INFO", "load smat feature file done (%s)" % ft_fp)
+        return features
+
+    @staticmethod
+    def load(ft_fp):
+        """
+        WARNING: 很容易造成smat格式与npz格式文件内容不一致
+        :param ft_fp:
+        :return:
+        """
+        has_npz = isfile('%s.npz' % ft_fp)
+        features = None
+        if has_npz:
+            features = Feature.load_npz(ft_fp)
+        else:
+            features = Feature.load_smat(ft_fp)
+            Feature.save_npz(features, ft_fp)
 
     @staticmethod
     def split_feature(ft_pt, ft_fn, n_line):
@@ -62,42 +103,6 @@ class Feature(object):
             sub_features = Feature.sample_with_index(features, range(index_start, index_end))
             Feature.save(sub_features, '%s/%s.%02d' % (ft_pt, ft_fn, index_start / n_line))
             index_start += n_line
-
-    @staticmethod
-    def split_all_features(cf):
-        # split features of question pair
-        n_line = cf.getint('MODEL', 'n_line')
-        ft_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
-        fn_all = [ fn for fn in listdir(ft_pt) if isfile(join(ft_pt, fn))]
-
-        fn_names = []
-        fn_sub_names = []
-        p = re.compile('test\.smat$')
-        for fn in fn_all:
-            if None != p.search(fn):
-                fn_names.append(fn)
-            else:
-                fn_sub_names.append(fn)
-
-        # 寻找需要切分的特征文件名
-        fn_names_split = []
-        for fn in fn_names:
-            p = re.compile(fn)
-            need_split = True
-            for sub_fn in fn_sub_names:
-                if p.match(sub_fn):
-                    need_split = False
-                    break
-            if need_split:
-                fn_names_split.append(fn)
-
-        print 'Question Pair Features need to be splited:'
-        for fn in fn_names_split:
-            print '\t%s' % fn
-
-        for fn in fn_names_split:
-            Feature.split_feature(ft_pt, fn, n_line)
-            LogUtil.log('INFO', 'split feature(%s) done' % fn)
 
     @staticmethod
     def load_all_features(cf, rawset_name, id_part):
@@ -121,7 +126,7 @@ class Feature(object):
         return features
 
     @staticmethod
-    def save(features, ft_pt):
+    def save_smat(features, ft_pt):
         '''
         存储特征文件
         '''
@@ -140,8 +145,13 @@ class Feature(object):
                 f.write(' ')
             f.write("%d:%f" % (indice[ind_data], data[ind_data]))
         f.write("\n")
-        LogUtil.log("INFO", "save feature file done (%s)" % ft_pt)
+        LogUtil.log("INFO", "save smat feature file done (%s)" % ft_pt)
         f.close()
+
+    @staticmethod
+    def save(features, ft_fp):
+        Feature.save_npz(features, ft_fp)
+        Feature.save_smat(features, ft_fp)
 
     @staticmethod
     def save_dataframe(features, ft_pt):
@@ -283,6 +293,11 @@ class Feature(object):
 
         # split all features
         features = Feature.load('/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature1.demo.smat')
+        np.savez('/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature3.demo.smat',
+                 data=features.data,
+                 indices=features.indices,
+                 indptr=features.indptr,
+                 shape=features.shape)
         Feature.save(features, '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature2.demo.smat')
         # Feature.split_all_features(cf)
 
