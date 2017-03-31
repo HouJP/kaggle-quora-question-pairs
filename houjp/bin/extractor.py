@@ -1373,10 +1373,10 @@ class BTM(object):
 
         # btm文件路径
         questions_btm_qid_fp = '%s/qid2question.all.qid' % cf.get('DEFAULT', 'devel_pt')
-        questions_btm_qf_fp = '%s/btm_100.all.qf' % cf.get('DEFAULT', 'devel_pt')
+        questions_btm_qf_fp = '%s/btm_30_50.all.qf' % cf.get('DEFAULT', 'devel_pt')
         # 特征存储路径
-        train_feature_fp = '%s/btm_100.train.smat' % feature_pt
-        test_feature_fp = '%s/btm_100.test.smat' % feature_pt
+        train_feature_fp = '%s/btm_30_50.train.smat' % feature_pt
+        test_feature_fp = '%s/btm_30_50.test.smat' % feature_pt
         BTM.run_btm(train_data, test_data, train_feature_fp, test_feature_fp, questions_btm_qid_fp, questions_btm_qf_fp)
 
 
