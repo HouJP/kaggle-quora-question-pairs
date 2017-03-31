@@ -93,6 +93,7 @@ class Feature(object):
         else:
             features = Feature.load_smat(ft_fp)
             Feature.save_npz(features, ft_fp)
+        return features
 
     @staticmethod
     def split_feature(ft_pt, ft_fn, n_line):
@@ -105,24 +106,24 @@ class Feature(object):
             index_start += n_line
 
     @staticmethod
-    def load_all_features(cf, rawset_name, id_part):
+    def load_all_features(cf, rawset_name):
         '''
         加载全部特征矩阵
         '''
         # 加载<Q1,Q2>二元组特征
         feature_qp_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
         feature_qp_names = Feature.get_feature_names_question_pair(cf)
-        features = Feature.load_mul_features(feature_qp_pt, feature_qp_names, rawset_name, id_part)
+        features = Feature.load_mul_features(feature_qp_pt, feature_qp_names, rawset_name)
         # 加载<Question>特征
         # TODO
         return features
 
     @staticmethod
-    def load_mul_features(feature_pt, feature_names, rawset_name, id_part):
-        features = Feature.load('%s/%s.%s.smat.%02d' % (feature_pt, feature_names[0], rawset_name, id_part))
+    def load_mul_features(feature_pt, feature_names, rawset_name):
+        features = Feature.load('%s/%s.%s.smat' % (feature_pt, feature_names[0], rawset_name))
         for index in range(1, len(feature_names)):
             features = Feature.merge(features,
-                                     Feature.load('%s/%s.%s.smat.%02d' % (feature_pt, feature_names[index], rawset_name, id_part)))
+                                     Feature.load('%s/%s.%s.smat' % (feature_pt, feature_names[index], rawset_name)))
         return features
 
     @staticmethod
