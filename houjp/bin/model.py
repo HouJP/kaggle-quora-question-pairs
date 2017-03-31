@@ -262,7 +262,7 @@ class Model(object):
         params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
         params['best_ntree_limit'] = cf.getint('XGBOOST_PARAMS', 'best_ntree_limit')
         model = xgb.Booster(params)
-        # model.load_model(model_fp)
+        model.load_model(model_fp)
 
         # 全部预测结果
         all_pred_online_test_data = []
