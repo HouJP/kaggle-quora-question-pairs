@@ -11,7 +11,7 @@ class LeaderBoard(object):
     def __init__(self):
         self.top_url = 'https://www.kaggle.com/c/6277/leaderboard.json?includeBeforeUser=false&includeAfterUser=false'
         self.all_url = 'https://www.kaggle.com/c/6277/leaderboard.json?includeBeforeUser=true&includeAfterUser=false'
-        self.lb_fp = '/home/houjianpeng/kaggle-quora-question-pairs/data/leaderboard/leaderboard.txt'
+        self.lb_pt = '/home/houjianpeng/kaggle-quora-question-pairs/data/leaderboard/'
 
         self.operate = '' # response对象(不含read)
         self.cj = cookielib.CookieJar()
@@ -24,8 +24,8 @@ class LeaderBoard(object):
         self._save_data(web_content)
 
     def _save_data(self, data):
-        f = open(self.lb_fp, 'a')
-        f.write('%s\t%s' % (TimeUtil.t_now(), data))
+        f = open('%s/lb_%s.txt' % (self.lb_pt, TimeUtil.t_now_YmdH()), 'w')
+        f.write('%s\n' % data)
         f.close()
 
     def _get_response(self, url, data=None):

@@ -55,6 +55,10 @@ class TimeUtil(object):
         '''
         return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
 
+    @staticmethod
+    def t_now_YmdH():
+        return time.strftime("%Y-%m-%d-%H", time.localtime(time.time()))
+
 
 class DataUtil(object):
     '''
