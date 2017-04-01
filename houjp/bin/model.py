@@ -174,11 +174,6 @@ class Model(object):
         # 保存本次运行配置
         cf.write(open(cf.get('DEFAULT', 'conf_pt') + 'python.conf', 'w'))
 
-        # 线上预测
-        Model.predict_xgb(cf, model, params)
-        return
-
-        # -------- these code reserved for safe -------
         # 进行预测
         pred_train_data = model.predict(train_data, ntree_limit=model.best_ntree_limit)
         pred_valid_data = model.predict(valid_data, ntree_limit=model.best_ntree_limit)
@@ -227,6 +222,12 @@ class Model(object):
         neg_fault_fp = cf.get('MODEL', 'neg_fault_fp')
         train_df = pd.read_csv(cf.get('MODEL', 'origin_pt') + '/train.csv')
         Model.generate_fault_file(pred_test_data, test_balanced_indexs, train_df, pos_fault_fp, neg_fault_fp)
+
+        # 线上预测
+        Model.predict_xgb(cf, model, params)
+        return
+
+        # -------- these code reserved for safe -------
 
         # 加载线上测试集索引文件
         online_test_indexs = Feature.load_index(cf.get('MODEL', 'online_test_indexs_fp'))
