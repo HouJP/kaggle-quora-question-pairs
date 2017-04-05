@@ -14,6 +14,7 @@ import difflib
 from sklearn.feature_extraction.text import TfidfVectorizer
 from utils import LogUtil
 import json
+import sys, getopt
 
 
 class WordMatchShare(object):
@@ -1352,8 +1353,19 @@ class BTM(object):
         Feature.save_dataframe(test_features, test_feature_fp)
 
     @staticmethod
-    def run():
-        LogUtil.log('INFO', 'extractor run for BTM')
+    def run(argv):
+        feature_name = ''
+
+        try:
+            opts, args = getopt.getopt(argv, 'f', ['fname='])
+        except getopt.GetoptError:
+            print 'BTM.run -f <feature_name>'
+            sys.exit(2)
+        for opt, arg in opts:
+            if opt in ('-f', '--fname'):
+                feature_name = arg
+
+        LogUtil.log('INFO', 'extractor run for BTM (%s)' % feature_name)
         # 读取配置文件
         cf = ConfigParser.ConfigParser()
         cf.read("../conf/python.conf")
@@ -1373,12 +1385,12 @@ class BTM(object):
 
         # btm文件路径
         questions_btm_qid_fp = '%s/qid2question.all.qid' % cf.get('DEFAULT', 'devel_pt')
-        questions_btm_qf_fp = '%s/btm_30_50.all.qf' % cf.get('DEFAULT', 'devel_pt')
+        questions_btm_qf_fp = '%s/%s.all.qf' % (cf.get('DEFAULT', 'devel_pt'), feature_name)
         # 特征存储路径
-        train_feature_fp = '%s/btm_30_50.train.smat' % feature_pt
-        test_feature_fp = '%s/btm_30_50.test.smat' % feature_pt
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
         BTM.run_btm(train_data, test_data, train_feature_fp, test_feature_fp, questions_btm_qid_fp, questions_btm_qf_fp)
 
 
 if __name__ == "__main__":
-    BTM.run()
+    BTM.run(sys.argv)
