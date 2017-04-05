@@ -22,6 +22,8 @@ function run() {
     scp -r ${user}@${address}:$server_project_pt/data/out/$tag/pred/full.test.pred $local_project_pt/data/out/$tag/pred/
     # zip
     zip -r $local_project_pt/data/out/$tag/pred/$score.zip $local_project_pt/data/out/$tag/pred/full.test.pred
+    # open
+    open $local_project_pt/data/out/$tag/pred/
 }
 
 if [ $# -ne 4 ]; then
