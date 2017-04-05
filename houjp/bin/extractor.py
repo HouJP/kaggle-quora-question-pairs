@@ -1357,7 +1357,7 @@ class BTM(object):
         feature_name = ''
 
         try:
-            opts, args = getopt.getopt(argv, 'f', ['fname='])
+            opts, args = getopt.getopt(argv[1:], 'f:', ['fname='])
         except getopt.GetoptError:
             print 'BTM.run -f <feature_name>'
             sys.exit(2)
