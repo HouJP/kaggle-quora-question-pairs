@@ -62,8 +62,38 @@ class BTM(object):
         DataUtil.save_vector(qid2question_qid_fp, all_qid, 'w')
         DataUtil.save_vector(qid2question_question_fp, all_question, 'w')
 
+    @staticmethod
+    def save_train_qid2question():
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 加载train.csv文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
+
+        # 存储文件路径
+        qid2question_qid_fp = '%s/qid2question.train.qid' % cf.get('DEFAULT', 'devel_pt')
+        qid2question_question_fp = '%s/qid2question.train.question' % cf.get('DEFAULT', 'devel_pt')
+
+        # 获取qid2question
+        train_qid2question = BTM.get_qid2question(train_data)
+
+        train_qid = []
+        train_question = []
+        for qid in train_qid2question:
+            train_qid.append(qid)
+            train_question.append(train_qid2question[qid])
+
+        # 存储索引
+        DataUtil.save_vector(qid2question_qid_fp, train_qid, 'w')
+        DataUtil.save_vector(qid2question_question_fp, train_question, 'w')
+
+
+
 
 if __name__ == "__main__":
     # 存储qid和question文件
-    BTM.save_all_qid2question()
+    # BTM.save_all_qid2question()
+    BTM.save_train_qid2question()
+
 
