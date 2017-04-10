@@ -301,7 +301,7 @@ class Feature(object):
             LogUtil.log("INFO", "increase postive instances ...")
         else:
             LogUtil.log("INFO", "increase negtive instances ...")
-        k = (1. - rate) * origin_rate / rate / (1 - origin_rate)
+        k = 3.  # (1. - rate) * origin_rate / rate / (1 - origin_rate)
         LogUtil.log("INFO", "k=%.4f" % k)
         balance_indexs = pos_indexs
         while k > 1e-6:
