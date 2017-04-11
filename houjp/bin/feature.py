@@ -286,7 +286,7 @@ class Feature(object):
         '''
         增加正样本或者负样本的比例，使得正样本的比例在rate附近
         '''
-        if (rate < 1e-6 or rate > 1. - 1e-6):
+        if rate < 1e-6 or rate > 1. - 1e-6:
             return indexs
         pos_indexs = [index for index in indexs if labels[index] == 1.]
         neg_indexs = [index for index in indexs if labels[index] == 0.]

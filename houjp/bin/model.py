@@ -151,7 +151,7 @@ class Model(object):
         params['num_round'] = cf.getint('XGBOOST_PARAMS', 'num_round')
         params['early_stop'] = cf.getint('XGBOOST_PARAMS', 'early_stop')
         params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
-        params['scale_pos_weight'] = cf.getint('XGBOOST_PARAMS', 'scale_pos_weight')
+        params['scale_pos_weight'] = float(cf.get('XGBOOST_PARAMS', 'scale_pos_weight'))
         watchlist = [(train_data, 'train'), (valid_data, 'valid')]
 
         # 训练模型
