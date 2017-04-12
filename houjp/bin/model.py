@@ -95,8 +95,7 @@ class Model(object):
             LogUtil.log('INFO', 'out path (%s) created ' % out_pt)
 
         # 设置正样本比例
-        pos_rate = float(cf.get('MODEL', 'pos_rate'))
-
+        train_pos_rate = float(cf.get('MODEL', 'train_pos_rate'))
         # 加载训练集索引文件
         train_indexs = Feature.load_index(cf.get('MODEL', 'train_indexs_fp'))
         # 加载训练集标签文件
@@ -104,9 +103,11 @@ class Model(object):
         # 加载特征文件
         train_features = Feature.load_all_features(cf, cf.get('MODEL', 'train_rawset_name'))
         # 获取训练集
-        (train_data, train_balanced_indexs) = Model.get_DMatrix(train_indexs, train_labels, train_features, pos_rate)
+        (train_data, train_balanced_indexs) = Model.get_DMatrix(train_indexs, train_labels, train_features, train_pos_rate)
         LogUtil.log("INFO", "training set generation done")
 
+        # 设置正样本比例
+        valid_pos_rate = float(cf.get('MODEL', 'valid_pos_rate'))
         # 加载验证集索引文件
         valid_indexs = Feature.load_index(cf.get('MODEL', 'valid_indexs_fp'))
         # 加载验证集标签文件
@@ -118,17 +119,17 @@ class Model(object):
             valid_labels = DataUtil.load_vector(cf.get('MODEL', 'valid_labels_fp'), True)
             valid_features = Feature.load_all_features(cf, cf.get('MODEL', 'valid_rawset_name'))
         # 获取验证集
-        (valid_data, valid_balanced_indexs) = Model.get_DMatrix(valid_indexs, valid_labels, valid_features, pos_rate)
+        (valid_data, valid_balanced_indexs) = Model.get_DMatrix(valid_indexs, valid_labels, valid_features, valid_pos_rate)
         LogUtil.log("INFO", "validation set generation done")
 
+        # 设置正样本比例
+        test_pos_rate = float(cf.get('MODEL', 'test_pos_rate'))
         # 加载测试集索引文件
         test_indexs = Feature.load_index(cf.get('MODEL', 'test_indexs_fp'))
         # 加载验证集标签文件
         test_labels = train_labels
         # 加载验证集特征文件
         test_features = train_features
-        # 设置测试集正样本比例
-        test_pos_rate = pos_rate
         # 检查测试集与训练集是否由同一份数据文件生成
         if cf.get('MODEL', 'test_rawset_name') != cf.get('MODEL', 'train_rawset_name'):
             test_labels = DataUtil.load_vector(cf.get('MODEL', 'test_labels_fp'), True)
