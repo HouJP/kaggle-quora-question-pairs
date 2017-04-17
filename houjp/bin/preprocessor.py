@@ -232,8 +232,6 @@ class PreprocessorRunner(object):
         train_swap_data.to_csv(train_swap_fp, index=False)
 
 
-
-
 if __name__ == "__main__":
     # PreprocessorRunner.get_qid2question(cf)
     # PreprocessorRunner.static_dul_question(cf)

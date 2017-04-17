@@ -1276,23 +1276,43 @@ class TreeParser(object):
 
     @staticmethod
     def demo():
+        # # 读取配置文件
+        # cf = ConfigParser.ConfigParser()
+        # cf.read("../conf/python.conf")
+        #
+        # # 加载train.csv文件
+        # train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
+        # # 加载test.csv文件
+        # test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
+        # # 特征文件路径
+        # feature_path = cf.get('DEFAULT', 'feature_question_pair_pt')
+        # # TreeParser文件路径
+        # train_tree_fp = '%s/train_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
+        # test_tree_fp = '%s/test_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
+        #
+        # # 提取特征
+        # TreeParser.run_tree_parser(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
+        # TreeParser.run_ind_multi(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
+
         # 读取配置文件
         cf = ConfigParser.ConfigParser()
         cf.read("../conf/python.conf")
 
         # 加载train.csv文件
-        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
-        # 加载test.csv文件
-        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
+        train_swap_data = pd.read_csv('%s/train_swap.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
         # 特征文件路径
         feature_path = cf.get('DEFAULT', 'feature_question_pair_pt')
         # TreeParser文件路径
         train_tree_fp = '%s/train_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
-        test_tree_fp = '%s/test_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
 
         # 提取特征
-        TreeParser.run_tree_parser(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
-        TreeParser.run_ind_multi(train_data, test_data, feature_path, train_tree_fp, test_tree_fp)
+        TreeParser.questions_features = TreeParser.extract_questions_features(train_tree_fp)
+        LogUtil.log('INFO', 'extract train questions features done')
+        train_swap_features = TreeParser.extract_features(train_swap_data)
+        LogUtil.log('INFO', 'extract train features done')
+        Feature.save_dataframe(train_swap_features, feature_path + '/tree_parser.train_swap.smat')
+
+
 
 
 class F01FromKaggle(object):
@@ -1393,4 +1413,5 @@ class BTM(object):
 
 
 if __name__ == "__main__":
-    BTM.run(sys.argv)
+    TreeParser.demo()
+    # BTM.run(sys.argv)
