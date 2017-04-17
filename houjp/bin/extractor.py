@@ -1391,28 +1391,34 @@ class BTM(object):
         cf = ConfigParser.ConfigParser()
         cf.read("../conf/python.conf")
 
-        # 加载train.csv文件
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
-        # 加载test.csv文件
+        train_swap_data = pd.read_csv('%s/train_swap.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
         test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
-        # 特征文件路径
-        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
 
-        # btm文件路径
-        # questions_btm_qid_fp = '%s/qid2question.all.qid' % cf.get('DEFAULT', 'devel_pt')
-        # questions_btm_qf_fp = '%s/btm_30.all.qf' % cf.get('DEFAULT', 'devel_pt')
-        #
-        # BTM.run_btm(train_data, test_data, feature_pt, questions_btm_qid_fp, questions_btm_qf_fp)
-
-        # btm文件路径
         questions_btm_qid_fp = '%s/qid2question.all.qid' % cf.get('DEFAULT', 'devel_pt')
         questions_btm_qf_fp = '%s/%s.all.qf' % (cf.get('DEFAULT', 'devel_pt'), feature_name)
-        # 特征存储路径
+
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
         train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        train_swap_feature_fp = '%s/%s.train_swap.smat' % (feature_pt, feature_name)
         test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
-        BTM.run_btm(train_data, test_data, train_feature_fp, test_feature_fp, questions_btm_qid_fp, questions_btm_qf_fp)
+
+        BTM.btm_features = BTM.load_questions_btm(questions_btm_qid_fp, questions_btm_qf_fp)
+        LogUtil.log('INFO', 'load questions btm feature done')
+
+        train_features = BTM.extract_btm(train_data)
+        LogUtil.log('INFO', 'extract btm from train data done')
+        Feature.save_dataframe(train_features, train_feature_fp)
+
+        train_swap_features = BTM.extract_btm(train_swap_data)
+        LogUtil.log('INFO', 'extract btm from train_swap data done')
+        Feature.save_dataframe(train_swap_features, train_swap_feature_fp)
+
+        test_features = BTM.extract_btm(test_data)
+        LogUtil.log('INFO', 'extract btm from test data done')
+        Feature.save_dataframe(test_features, test_feature_fp)
 
 
 if __name__ == "__main__":
-    TreeParser.demo()
-    # BTM.run(sys.argv)
+    # TreeParser.demo()
+    BTM.run(sys.argv)

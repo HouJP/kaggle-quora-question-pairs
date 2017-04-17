@@ -372,7 +372,7 @@ class Model(object):
 def print_help():
     print 'model -->'
     print '\ttrain'
-    print '\tmerge_all_feature'
+    print '\tsave_all_feature'
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -386,7 +386,7 @@ if __name__ == "__main__":
     cmd = sys.argv[1]
     if 'train' == cmd:
         Model.train_xgb(cf)
-    elif 'merge_all_feature' == cmd:
+    elif 'save_all_feature' == cmd:
         Model.save_all_feature(cf)
     else:
         print_help()
