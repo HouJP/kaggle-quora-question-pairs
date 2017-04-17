@@ -229,28 +229,6 @@ class Model(object):
         Model.predict_xgb(cf, model, params)
         return
 
-        # -------- these code reserved for safe -------
-
-        # 加载线上测试集索引文件
-        online_test_indexs = Feature.load_index(cf.get('MODEL', 'online_test_indexs_fp'))
-        # 加载线上测试集标签文件
-        online_test_labels = DataUtil.load_vector(cf.get('MODEL', 'online_test_labels_fp'), True)
-        # 加载线上测试集特征文件
-        online_test_features = Feature.load_all_features(cf, cf.get('MODEL', 'online_test_rawset_name'))
-        # 设置测试集正样本比例
-        online_test_pos_rate = -1.0
-        # 获取线上测试集
-        (online_test_data, online_test_balanced_indexs) = Model.get_DMatrix(online_test_indexs, online_test_labels, online_test_features, online_test_pos_rate)
-        LogUtil.log("INFO", "online test set generation done")
-
-        # 预测线上测试集
-        pred_online_test_data = model.predict(online_test_data, ntree_limit=model.best_ntree_limit)
-        # 加载线上测试集ID文件
-        online_test_ids = DataUtil.load_vector(cf.get('MODEL', 'online_test_ids_fp'), False)
-        # 存储线上测试集预测结果
-        pred_online_test_fp = cf.get('MODEL', 'online_test_prediction_fp')
-        Model.save_pred(online_test_ids, pred_online_test_data, pred_online_test_fp)
-
     @staticmethod
     def load_model(cf):
         # 加载模型
