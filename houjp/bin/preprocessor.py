@@ -101,19 +101,6 @@ class Preprocessor(object):
              nltk.word_tokenize(Preprocessor.clean_text(str(x).lower()).decode('utf-8'))]).encode('utf-8'))
         return df
 
-    @staticmethod
-    def swap_question(data, indexs):
-        offset = len(data)
-        add_questions = data.loc[indexs]
-        add_questions = add_questions.apply(lambda x: [int(x.id) + offset,
-                                                       x.qid2,
-                                                       x.qid1,
-                                                       x.question2,
-                                                       x.question1,
-                                                       x.is_duplicate])
-        return add_questions
-
-
 
 class PreprocessorRunner(object):
     '''
@@ -220,6 +207,32 @@ class PreprocessorRunner(object):
         train_stem_data.to_csv(train_stem_fp, index=False)
         test_stem_data.to_csv(test_stem_fp, index=False)
 
+    # @staticmethod
+    # def swap_question(row):
+    #     return [row["id"], row["qid2"],row["qid1"],row["question2"],row["question1"],row["is_duplicate"]]
+
+    @staticmethod
+    def run_question_swap():
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+        train_swap_fp = '%s/train_swap.csv' % cf.get('DEFAULT', 'devel_pt')
+
+        # 加载train.csv文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
+
+        # 交换question
+        offset = len(train_data)
+        train_swap_data = train_data.apply(lambda x: [int(x.id) + offset,
+                                                      x.qid2,
+                                                      x.qid1,
+                                                      x.question2,
+                                                      x.question1,
+                                                      x.is_duplicate])
+        train_swap_data.to_csv(train_swap_fp)
+
+
+
 
 if __name__ == "__main__":
     # PreprocessorRunner.get_qid2question(cf)
@@ -229,4 +242,5 @@ if __name__ == "__main__":
     # PreprocessorRunner.get_test_indexs(cf)
     # PreprocessorRunner.get_test_labels(cf)
     # PreprocessorRunner.add_qid_for_test(cf)
-    PreprocessorRunner.run_get_stem()
+    # PreprocessorRunner.run_get_stem()
+    PreprocessorRunner.run_question_swap()
