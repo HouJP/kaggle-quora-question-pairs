@@ -252,7 +252,7 @@ class PreprocessorRunner(object):
 
         train_with_swap_index = train_index + train_swap_index
 
-        DataUtil.save_vector(train_with_swap_index_fp, train_with_swap_index, 'r')
+        DataUtil.save_vector(train_with_swap_index_fp, train_with_swap_index, 'w')
 
 
 if __name__ == "__main__":
