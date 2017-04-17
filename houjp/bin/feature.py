@@ -119,7 +119,7 @@ class Feature(object):
             index_start += n_line
 
     @staticmethod
-    def load_all_features_with_part_id(cf, rawset_name, id_part):
+    def load_all_features_with_part_id(cf, rawset_name, id_part, will_save=False):
         """
         加载部分数据全部特征
         :param cf:
@@ -135,13 +135,13 @@ class Feature(object):
                                                           feature_qp_names,
                                                           rawset_name,
                                                           id_part,
-                                                          n_line)
+                                                          n_line, will_save)
         # 加载<Question>特征
         # TODO
         return features
 
     @staticmethod
-    def load_mul_features_with_part_id(feature_pt, feature_names, rawset_name, id_part, n_line):
+    def load_mul_features_with_part_id(feature_pt, feature_names, rawset_name, id_part, n_line, will_save):
         index_begin = 0
         features = None
         for index in reversed(range(1, len(feature_names))):
@@ -160,27 +160,29 @@ class Feature(object):
                                      Feature.load_with_part_id('%s/%s.%s.smat' % (feature_pt,
                                                                                   feature_names[index],
                                                                                   rawset_name), id_part, n_line))
-            f_names_s = '|'.join(feature_names[0:index + 1]) + '|' + rawset_name + '|' + str(id_part) + '|' + str(
+
+        if will_save and (index_begin < len(feature_names) - 1):
+            f_names_s = '|'.join(feature_names) + '|' + rawset_name + '|' + str(id_part) + '|' + str(
                 n_line)
             f_names_md5 = hashlib.md5(f_names_s).hexdigest()
             Feature.save(features, '%s/md5_%s.smat' % (feature_pt, f_names_md5))
         return features
 
     @staticmethod
-    def load_all_features(cf, rawset_name):
+    def load_all_features(cf, rawset_name, will_save=False):
         '''
         加载全部特征矩阵
         '''
         # 加载<Q1,Q2>二元组特征
         feature_qp_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
         feature_qp_names = Feature.get_feature_names_question_pair(cf)
-        features = Feature.load_mul_features(feature_qp_pt, feature_qp_names, rawset_name)
+        features = Feature.load_mul_features(feature_qp_pt, feature_qp_names, rawset_name, will_save)
         # 加载<Question>特征
         # TODO
         return features
 
     @staticmethod
-    def load_mul_features(feature_pt, feature_names, rawset_name):
+    def load_mul_features(feature_pt, feature_names, rawset_name, will_save):
         index_begin = 0
         features = None
         for index in reversed(range(1, len(feature_names))):
@@ -197,7 +199,9 @@ class Feature(object):
         for index in range(index_begin + 1, len(feature_names)):
             features = Feature.merge_col(features,
                                      Feature.load('%s/%s.%s.smat' % (feature_pt, feature_names[index], rawset_name)))
-            f_names_s = '|'.join(feature_names[0:index + 1]) + '|' + rawset_name
+
+        if will_save and (index_begin < len(feature_names) - 1):
+            f_names_s = '|'.join(feature_names) + '|' + rawset_name
             f_names_md5 = hashlib.md5(f_names_s).hexdigest()
             Feature.save(features, '%s/md5_%s.smat' % (feature_pt, f_names_md5))
         return features

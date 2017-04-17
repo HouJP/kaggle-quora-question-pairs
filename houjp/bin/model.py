@@ -304,6 +304,18 @@ class Model(object):
         Model.predict_xgb(cf_old, model, params)
 
     @staticmethod
+    def save_all_feature(cf):
+        # 存储训练集特征文件
+        Feature.load_all_features(cf, cf.get('MODEL', 'train_rawset_name'), True)
+        # 存储预测集特征文件
+        n_part = cf.getint('MODEL', 'n_part')
+        for id_part in range(n_part):
+            Feature.load_all_features_with_part_id(cf,
+                                                   cf.get('MODEL', 'online_test_rawset_name'),
+                                                   id_part, True)
+
+
+    @staticmethod
     def generate_fault_file(pred_test_data, test_balanced_indexs, df, pos_fault_fp, neg_fault_fp):
         """
         生成预测成绩不佳的实例文件
