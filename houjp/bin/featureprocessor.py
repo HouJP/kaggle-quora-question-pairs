@@ -82,6 +82,38 @@ class FeatureProcessor(object):
             rawset_name = 'train'
             FeatureProcessor.swap_feature(feature_pt, f_name, f_index, rawset_name)
 
+    @staticmethod
+    def run_gen_feature_with_swap():
+        """
+        生成线下特征文件，包含swap部分
+        :return:
+        """
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+
+        feature_qp_names = Feature.get_feature_names_question_pair(cf)
+        rawset_name = 'train'
+
+        for f_name in feature_qp_names:
+            feature_fp = '%s/%s.%s.smat' % (feature_pt, f_name, rawset_name)
+            feature_swap_fp = '%s/%s.%s_swap.smat' % (feature_pt, f_name, rawset_name)
+            feature_with_swap_fp = '%s/%s.%s_with_swap.smat' % (feature_pt, f_name, rawset_name)
+
+            has_with_swap = isfile(feature_with_swap_fp + '.npz')
+
+            if not has_with_swap:
+                features = Feature.load(feature_fp)
+                features_swap = Feature.load(feature_swap_fp)
+                features_with_swap = Feature.merge_row(features, features_swap)
+                Feature.save(features_with_swap, feature_with_swap_fp)
+                LogUtil.log('INFO', '%s generate with_swap feature done' % f_name)
+            else:
+                LogUtil.log('INFO', '%s already has with_swap feature' % f_name)
+
+
 
 if __name__ == "__main__":
-    FeatureProcessor.run_feature_swap()
+    # FeatureProcessor.run_feature_swap()
+    FeatureProcessor.run_gen_feature_with_swap()

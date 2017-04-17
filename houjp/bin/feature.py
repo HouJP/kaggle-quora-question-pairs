@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import ConfigParser
-from scipy.sparse import csr_matrix, hstack
+from scipy.sparse import csr_matrix, hstack, vstack
 from nltk.corpus import stopwords
 from utils import LogUtil
 import random
@@ -143,7 +143,7 @@ class Feature(object):
     def load_mul_features_with_part_id(feature_pt, feature_names, rawset_name, id_part, n_line):
         features = Feature.load_with_part_id('%s/%s.%s.smat' % (feature_pt, feature_names[0], rawset_name), id_part, n_line)
         for index in range(1, len(feature_names)):
-            features = Feature.merge(features,
+            features = Feature.merge_col(features,
                                      Feature.load_with_part_id('%s/%s.%s.smat' % (feature_pt,
                                                                                   feature_names[index],
                                                                                   rawset_name), id_part, n_line))
@@ -166,7 +166,7 @@ class Feature(object):
     def load_mul_features(feature_pt, feature_names, rawset_name):
         features = Feature.load('%s/%s.%s.smat' % (feature_pt, feature_names[0], rawset_name))
         for index in range(1, len(feature_names)):
-            features = Feature.merge(features,
+            features = Feature.merge_col(features,
                                      Feature.load('%s/%s.%s.smat' % (feature_pt, feature_names[index], rawset_name)))
         return features
 
@@ -223,14 +223,28 @@ class Feature(object):
         return
 
     @staticmethod
-    def merge(features_1, features_2):
+    def merge_col(features_1, features_2):
         '''
-        横向合并特征矩阵，即为每个实例增加特征
+        纵向合并特征矩阵，即为每个实例增加特征
         '''
         features = hstack([features_1, features_2])
         (row_num, col_num) = features.shape
-        LogUtil.log("INFO", "merge feature done, shape=(%d,%d)" % (row_num, col_num))
+        LogUtil.log("INFO", "merge col done, shape=(%d,%d)" % (row_num, col_num))
         return features.tocsr()
+
+    @staticmethod
+    def merge_row(features_1, features_2):
+        """
+        横向合并特征矩阵，即合并两份数据集
+        :param feature_1:
+        :param feature_2:
+        :return:
+        """
+        features = vstack([features_1, features_2])
+        (row_num, col_num) = features.shape
+        LogUtil.log("INFO", "merge row done, shape=(%d,%d)" % (row_num, col_num))
+        return features.tocsr()
+
 
     @staticmethod
     def get_feature_names_question(cf):
@@ -344,7 +358,7 @@ class Feature(object):
         # 存储特征文件
         Feature.save(features, "%s/feature2.demo.smat" % cf.get('DEFAULT', 'feature_question_pt'))
         # 合并特征
-        Feature.merge(features, features)
+        Feature.merge_col(features, features)
         # 获取<问题>特征池中的特征名
         Feature.get_feature_names_question(cf)
         # 加载索引文件

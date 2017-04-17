@@ -255,6 +255,9 @@ class PreprocessorRunner(object):
         DataUtil.save_vector(train_with_swap_index_fp, train_with_swap_index, 'w')
 
 
+
+
+
 if __name__ == "__main__":
     # PreprocessorRunner.get_qid2question(cf)
     # PreprocessorRunner.static_dul_question(cf)
