@@ -144,7 +144,7 @@ class Feature(object):
     def load_mul_features_with_part_id(feature_pt, feature_names, rawset_name, id_part, n_line):
         index_begin = 0
         features = None
-        for index in range(1, len(feature_names)).reverse():
+        for index in reversed(range(1, len(feature_names))):
             f_names_s = '|'.join(feature_names[0:index + 1]) + '|' + rawset_name + '|' + str(id_part) + '|' + str(n_line)
             f_names_md5 = hashlib.md5(f_names_s).hexdigest()
             if isfile('%s/%s.smat.npz' % (feature_pt, f_names_md5)):
@@ -183,7 +183,7 @@ class Feature(object):
     def load_mul_features(feature_pt, feature_names, rawset_name):
         index_begin = 0
         features = None
-        for index in range(1, len(feature_names)).reverse():
+        for index in reversed(range(1, len(feature_names))):
             f_names_s = '|'.join(feature_names[0:index + 1]) + '|' + rawset_name
             f_names_md5 = hashlib.md5(f_names_s).hexdigest()
             if isfile('%s/%s.smat.npz' % (feature_pt, f_names_md5)):
