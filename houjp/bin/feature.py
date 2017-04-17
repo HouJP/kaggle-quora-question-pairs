@@ -147,9 +147,9 @@ class Feature(object):
         for index in reversed(range(1, len(feature_names))):
             f_names_s = '|'.join(feature_names[0:index + 1]) + '|' + rawset_name + '|' + str(id_part) + '|' + str(n_line)
             f_names_md5 = hashlib.md5(f_names_s).hexdigest()
-            if isfile('%s/%s.smat.npz' % (feature_pt, f_names_md5)):
+            if isfile('%s/md5_%s.smat.npz' % (feature_pt, f_names_md5)):
                 index_begin = index
-                features = Feature.load('%s/%s.smat.npz' % (feature_pt, f_names_md5))
+                features = Feature.load('%s/md5_%s.smat.npz' % (feature_pt, f_names_md5))
                 break
         LogUtil.log('INFO', 'load %s features(id_part=%d, n_lilne=%d) from index(%d)' % (rawset_name, id_part, n_line, index_begin))
 
@@ -163,7 +163,7 @@ class Feature(object):
             f_names_s = '|'.join(feature_names[0:index + 1]) + '|' + rawset_name + '|' + str(id_part) + '|' + str(
                 n_line)
             f_names_md5 = hashlib.md5(f_names_s).hexdigest()
-            Feature.save(features, '%s/%s.smat' % (feature_pt, f_names_md5))
+            Feature.save(features, '%s/md5_%s.smat' % (feature_pt, f_names_md5))
         return features
 
     @staticmethod
@@ -186,9 +186,9 @@ class Feature(object):
         for index in reversed(range(1, len(feature_names))):
             f_names_s = '|'.join(feature_names[0:index + 1]) + '|' + rawset_name
             f_names_md5 = hashlib.md5(f_names_s).hexdigest()
-            if isfile('%s/%s.smat.npz' % (feature_pt, f_names_md5)):
+            if isfile('%s/md5_%s.smat.npz' % (feature_pt, f_names_md5)):
                 index_begin = index
-                features = Feature.load('%s/%s.smat.npz' % (feature_pt, f_names_md5))
+                features = Feature.load('%s/md5_%s.smat.npz' % (feature_pt, f_names_md5))
                 break
         LogUtil.log('INFO', 'load %s features from index(%d)' % (rawset_name, index_begin))
 
@@ -199,7 +199,7 @@ class Feature(object):
                                      Feature.load('%s/%s.%s.smat' % (feature_pt, feature_names[index], rawset_name)))
             f_names_s = '|'.join(feature_names[0:index + 1]) + '|' + rawset_name
             f_names_md5 = hashlib.md5(f_names_s).hexdigest()
-            Feature.save(features, '%s/%s.smat' % (feature_pt, f_names_md5))
+            Feature.save(features, '%s/md5_%s.smat' % (feature_pt, f_names_md5))
         return features
 
     @staticmethod
