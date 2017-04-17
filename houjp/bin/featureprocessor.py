@@ -82,9 +82,6 @@ class FeatureProcessor(object):
             rawset_name = 'train'
             FeatureProcessor.swap_feature(feature_pt, f_name, f_index, rawset_name)
 
-            rawset_name = 'test'
-            FeatureProcessor.swap_feature(feature_pt, f_name, f_index, rawset_name)
-
 
 if __name__ == "__main__":
     FeatureProcessor.run_feature_swap()
