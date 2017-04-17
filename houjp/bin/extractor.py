@@ -1306,11 +1306,12 @@ class TreeParser(object):
         train_tree_fp = '%s/train_qid_query_detparse.txt' % cf.get('DEFAULT', 'devel_pt')
 
         # 提取特征
-        TreeParser.questions_features = TreeParser.extract_questions_features(train_tree_fp)
-        LogUtil.log('INFO', 'extract train questions features done')
-        train_swap_features = TreeParser.extract_features(train_swap_data)
-        LogUtil.log('INFO', 'extract train features done')
-        Feature.save_dataframe(train_swap_features, feature_path + '/tree_parser.train_swap.smat')
+        TreeParser.questions_features = TreeParser.extract_questions_ind_multi(train_tree_fp)
+        LogUtil.log('INFO', 'extract questions features done (%s)' % train_tree_fp)
+        features = train_swap_data.apply(TreeParser.extract_row_ind_multi, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract data features done, len(features)=%d' % len(features))
+
+        Feature.save_dataframe(features, feature_path + '/ind_multi.train_swap.smat')
 
 
 
