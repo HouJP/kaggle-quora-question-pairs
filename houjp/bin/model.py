@@ -369,5 +369,26 @@ class Model(object):
         Model.train_xgb(cf)
 
 
+def print_help():
+    print 'model -->'
+    print '\ttrain'
+    print '\tmerge_all_feature'
+
 if __name__ == "__main__":
-    Model.demo()
+    if len(sys.argv) < 2:
+        print_help()
+        exit(0)
+
+    # 读取配置文件
+    cf = ConfigParser.ConfigParser()
+    cf.read("../conf/python.conf")
+
+    cmd = sys.argv[1]
+    if 'train' == cmd:
+        Model.train_xgb(cf)
+    elif 'merge_all_feature' == cmd:
+        Model.save_all_feature(cf)
+    else:
+        print_help()
+
+
