@@ -229,7 +229,7 @@ class PreprocessorRunner(object):
                                                       x.question2,
                                                       x.question1,
                                                       x.is_duplicate], axis=1, raw=True)
-        train_swap_data.to_csv(train_swap_fp)
+        train_swap_data.to_csv(train_swap_fp, index=False)
 
 
 
