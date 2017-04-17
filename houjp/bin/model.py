@@ -53,7 +53,7 @@ class Model(object):
         # 根据索引采样标签
         labels = [labels[index] for index in balanced_indexs]
         # 根据索引采样特征
-        features = Feature.sample_with_index(features, balanced_indexs)
+        features = Feature.sample_row(features, balanced_indexs)
         # 构造DMatrix
         return xgb.DMatrix(features, label=labels), balanced_indexs
 

@@ -31,9 +31,9 @@ class Feature(object):
     def load_npz(ft_fp):
         loader = np.load('%s.npz' % ft_fp)
         features = csr_matrix((loader['data'],
-                           loader['indices'],
-                           loader['indptr']),
-                          shape=loader['shape'])
+                               loader['indices'],
+                               loader['indptr']),
+                              shape=loader['shape'])
         LogUtil.log("INFO", "load npz feature file done (%s)" % ft_fp)
         return features
 
@@ -261,13 +261,26 @@ class Feature(object):
         return features_sampled
 
     @staticmethod
-    def sample_with_index(features, indexs):
+    def sample_row(features, indexs):
         '''
-        根据索引采样特征向量
+        根据索引行采样
         '''
         features_sampled = features[indexs, :]
         (row_num, col_num) = features_sampled.shape
-        LogUtil.log("INFO", "sample feature done, shape=(%d,%d)" % (row_num, col_num))
+        LogUtil.log("INFO", "row sample done, shape=(%d,%d)" % (row_num, col_num))
+        return features_sampled
+
+    @staticmethod
+    def sample_col(features, indexs):
+        """
+        根据索引列采样
+        :param features:
+        :param indexs:
+        :return:
+        """
+        features_sampled = features[:, indexs]
+        (row_num, col_num) = features_sampled.shape
+        LogUtil.log("INFO", "col sample done, shape=(%d,%d)" % (row_num, col_num))
         return features_sampled
 
     @staticmethod
@@ -337,7 +350,7 @@ class Feature(object):
         # 加载索引文件
         indexs = Feature.load_index("%s/vali.demo.index" % cf.get('DEFAULT', 'feature_index_pt'))
         # 根据索引对特征采样
-        features = Feature.sample_with_index(features, indexs)
+        features = Feature.sample_row(features, indexs)
         # 正负样本均衡化
         rate = 0.165
         train311_train_indexs_fp = '%s/train_311.train.index' % cf.get('DEFAULT', 'feature_index_pt')
