@@ -231,6 +231,29 @@ class PreprocessorRunner(object):
                                                       x.is_duplicate], axis=1, raw=True)
         train_swap_data.to_csv(train_swap_fp, index=False)
 
+    @staticmethod
+    def run_gen_index_with_swap():
+        """
+        生成线下训练集索引文件，包含swap部分
+        :return:
+        """
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        train_index_fp = '%s/train_311.train.index' % cf.get('DEFAULT', 'feature_index_pt')
+        train_with_swap_index_fp = '%s/train_311.train_with_swap.index' % cf.get('DEFAULT', 'feature_index_pt')
+
+        train_index = DataUtil.load_vector(train_index_fp, False)
+        train_index = [int(x) for x in train_index]
+
+        offset = 404290
+        train_swap_index = [x + offset for x in train_index]
+
+        train_with_swap_index = train_index + train_swap_index
+
+        DataUtil.save_vector(train_with_swap_index_fp, train_with_swap_index, 'r')
+
 
 if __name__ == "__main__":
     # PreprocessorRunner.get_qid2question(cf)
@@ -241,4 +264,5 @@ if __name__ == "__main__":
     # PreprocessorRunner.get_test_labels(cf)
     # PreprocessorRunner.add_qid_for_test(cf)
     # PreprocessorRunner.run_get_stem()
-    PreprocessorRunner.run_question_swap()
+    # PreprocessorRunner.run_question_swap()
+    PreprocessorRunner.run_gen_index_with_swap()
