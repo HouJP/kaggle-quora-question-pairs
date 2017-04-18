@@ -1478,10 +1478,10 @@ class WordEmbedding(object):
     @staticmethod
     def extract_ave_dis(cf, argv):
         # 运行需要设置的参数
-        word_embedding_fp = argv[0] # word embedding 路径
-        feature_name = argv[1] # 特征名字
-        WordEmbedding.len_vec = 300 # word embedding 维度
-        WordEmbedding.to_lower = True # 是否需要转化为小写
+        word_embedding_fp = argv[0]  # word embedding 路径
+        feature_name = argv[1]  # 特征名字
+        WordEmbedding.len_vec = int(argv[2])  # word embedding 维度
+        WordEmbedding.to_lower = bool(argv[3])  # 是否需要转化为小写
 
         # 加载 word embedding 词典
         WordEmbedding.we_dict = WordEmbedding.load_word_embedding(word_embedding_fp)
