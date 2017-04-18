@@ -1610,7 +1610,7 @@ class WordEmbedding(object):
         cf.read("../conf/python.conf")
 
         # 运行抽取器
-        cmd = sys.argv[0]
+        cmd = argv[0]
         if 'extract_ave_dis' == cmd:
             WordEmbedding.extract_ave_dis(cf, argv[1:])
         elif 'extract_tfidf_dis' == cmd:
