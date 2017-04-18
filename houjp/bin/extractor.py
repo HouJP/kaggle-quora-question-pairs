@@ -1520,10 +1520,10 @@ class WordEmbedding(object):
         for word in q2_words:
             q2_words_cnt[word] = q2_words_cnt.get(word, 0.) + 1.
 
-        for word in q1_words:
+        for word in q1_words_cnt:
             if word in WordEmbedding.we_dict:
                 q1_vec = q1_vec + WordEmbedding.idf.get(word, 0.) * q1_words_cnt[word] * WordEmbedding.we_dict[word]
-        for word in q2_words:
+        for word in q2_words_cnt:
             if word in WordEmbedding.we_dict:
                 q2_vec = q2_vec + WordEmbedding.idf.get(word, 0.) * q2_words_cnt[word] * WordEmbedding.we_dict[word]
 
