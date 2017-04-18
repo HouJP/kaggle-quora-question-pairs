@@ -1455,7 +1455,12 @@ class WordEmbedding(object):
         we_dic = {}
         f = open(fp, 'r')
         for line in f:
-            word, vec = line.strip().split(None, 1)
+            subs = line.strip().split(None, 1)
+            if 2 > len(subs):
+                continue
+            else:
+                word = subs[0]
+                vec = subs[1]
             we_dic[word] = np.array([float(s) for s in vec.split()])
         f.close()
         return we_dic
@@ -1520,7 +1525,7 @@ class WordEmbedding(object):
                 q1_vec = q1_vec + WordEmbedding.idf.get(word, 0.) * q1_words_cnt[word] * WordEmbedding.we_dict[word]
         for word in q2_words:
             if word in WordEmbedding.we_dict:
-                q2_vec = q2_vec + WordEmbedding.idf.get(word, 0.) * q1_words_cnt[word] * WordEmbedding.we_dict[word]
+                q2_vec = q2_vec + WordEmbedding.idf.get(word, 0.) * q2_words_cnt[word] * WordEmbedding.we_dict[word]
 
         cos_sim = 0.
 
