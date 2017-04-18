@@ -15,6 +15,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from utils import LogUtil
 import json
 import sys, getopt
+from numpy import linalg
 
 
 class WordMatchShare(object):
@@ -1387,7 +1388,7 @@ class BTM(object):
                 feature_name = arg
 
         LogUtil.log('INFO', 'extractor run for BTM (%s)' % feature_name)
-        # 读取配置文件
+        #读取配置文件
         cf = ConfigParser.ConfigParser()
         cf.read("../conf/python.conf")
 
@@ -1419,6 +1420,119 @@ class BTM(object):
         Feature.save_dataframe(test_features, test_feature_fp)
 
 
+class WordEmbedding(object):
+
+    we_dict = {}
+    to_lower = True
+    len_vec = 300
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def load_word_embedding(fp):
+        """
+        加载 Map(word, vector) 词典
+        :param fp:
+        :return:
+        """
+        we_dic = {}
+        f = open(fp, 'r')
+        for line in f:
+            word, vec = line.strip().split(None, 1)
+            we_dic[word] = np.array([float(s) for s in vec.split()])
+        f.close()
+        return we_dic
+
+    @staticmethod
+    def extract_row_ave_dis(row):
+        """
+        按行抽取特征
+        :param row:
+        :return:
+        """
+        q1_words = str(row['question1']).strip().split() if WordEmbedding.to_lower else str(row['question1']).lower().strip().split()
+        q2_words = str(row['question2']).strip().split() if WordEmbedding.to_lower else str(row['question1']).lower().strip().split()
+
+        q1_vec = np.array(WordEmbedding.len_vec * [0.])
+        q2_vec = np.array(WordEmbedding.len_vec * [0.])
+
+        for word in q1_words:
+            if word in WordEmbedding.we_dict:
+                q1_vec = q1_vec + WordEmbedding.we_dict[word]
+        for word in q2_words:
+            if word in WordEmbedding.we_dict:
+                q2_vec = q2_vec + WordEmbedding.we_dict[word]
+
+        cos_sim = 0.
+
+        q1_vec = np.mat(q1_vec)
+        q2_vec = np.mat(q2_vec)
+
+        factor = linalg.norm(q1_vec) * linalg.norm(q2_vec)
+        if 1e-6 < factor:
+            cos_sim = float(q1_vec * q2_vec.T) / factor
+
+        return [cos_sim]
+
+    @staticmethod
+    def extract_ave_dis(cf, argv):
+        # 运行需要设置的参数
+        word_embedding_fp = argv[0] # word embedding 路径
+        feature_name = argv[1] # 特征名字
+        WordEmbedding.len_vec = 300 # word embedding 维度
+        WordEmbedding.to_lower = True # 是否需要转化为小写
+
+        # 加载 word embedding 词典
+        WordEmbedding.we_dict = WordEmbedding.load_word_embedding(word_embedding_fp)
+        LogUtil.log('INFO', 'load word embedding dict done')
+
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        train_features = train_data.apply(WordEmbedding.extract_row_ave_dis, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features done')
+        test_features = test_data.apply(WordEmbedding.extract_row_ave_dis, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features done')
+
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features done')
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features done')
+
+    @staticmethod
+    def run(argv):
+        """
+        运行所有 Word Embedding 特征抽取器
+        :return:
+        """
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 运行抽取器
+        WordEmbedding.extract_ave_dis(cf, argv)
+
+
+def print_help():
+    print 'extractor -->'
+    print '\tword_embedding'
+
 if __name__ == "__main__":
     # TreeParser.demo()
-    BTM.run(sys.argv)
+    # BTM.run(sys.argv)
+
+    if 2 > len(sys.argv):
+        print_help()
+        exit(1)
+
+    cmd = sys.argv[1]
+    if 'word_embedding' == cmd:
+        WordEmbedding.run(sys.argv[2:])
+    else:
+        print_help()
+

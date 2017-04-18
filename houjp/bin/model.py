@@ -377,7 +377,7 @@ def print_help():
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print_help()
-        exit(0)
+        exit(1)
 
     # 读取配置文件
     cf = ConfigParser.ConfigParser()
