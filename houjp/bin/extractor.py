@@ -1315,8 +1315,6 @@ class TreeParser(object):
         Feature.save_dataframe(features, feature_path + '/ind_multi.train_swap.smat')
 
 
-
-
 class F01FromKaggle(object):
     """
     Kaggle解决方案：https://www.kaggle.com/sudalairajkumar/quora-question-pairs/simple-exploration-notebook-quora-ques-pair
@@ -1324,7 +1322,6 @@ class F01FromKaggle(object):
 
 
 class BTM(object):
-
     btm_features = {}
 
     @staticmethod
@@ -1388,7 +1385,7 @@ class BTM(object):
                 feature_name = arg
 
         LogUtil.log('INFO', 'extractor run for BTM (%s)' % feature_name)
-        #读取配置文件
+        # 读取配置文件
         cf = ConfigParser.ConfigParser()
         cf.read("../conf/python.conf")
 
@@ -1421,13 +1418,32 @@ class BTM(object):
 
 
 class WordEmbedding(object):
-
+    idf = {}
     we_dict = {}
     to_lower = True
     len_vec = 300
 
     def __init__(self):
         pass
+
+    @staticmethod
+    def init_idf(data):
+        """
+        根据文档计算IDF，包括停用词
+        :param data:
+        :return:
+        """
+        idf = {}
+        for index, row in data.iterrows():
+            words = str(row['question']).strip().split() if WordEmbedding.to_lower else str(
+                row['question']).lower().strip().split()
+            for word in words:
+                idf[word] = idf.get(word, 0) + 1
+        num_docs = len(data)
+        for word in idf:
+            idf[word] = math.log(num_docs / (idf[word] + 1.)) / math.log(2.)
+        LogUtil.log("INFO", "IDF calculation done, len(idf)=%d" % len(idf))
+        WordEmbedding.idf = idf
 
     @staticmethod
     def load_word_embedding(fp):
@@ -1451,8 +1467,10 @@ class WordEmbedding(object):
         :param row:
         :return:
         """
-        q1_words = str(row['question1']).strip().split() if WordEmbedding.to_lower else str(row['question1']).lower().strip().split()
-        q2_words = str(row['question2']).strip().split() if WordEmbedding.to_lower else str(row['question1']).lower().strip().split()
+        q1_words = str(row['question1']).strip().split() if WordEmbedding.to_lower else str(
+            row['question1']).lower().strip().split()
+        q2_words = str(row['question2']).strip().split() if WordEmbedding.to_lower else str(
+            row['question2']).lower().strip().split()
 
         q1_vec = np.array(WordEmbedding.len_vec * [0.])
         q2_vec = np.array(WordEmbedding.len_vec * [0.])
@@ -1463,6 +1481,46 @@ class WordEmbedding(object):
         for word in q2_words:
             if word in WordEmbedding.we_dict:
                 q2_vec = q2_vec + WordEmbedding.we_dict[word]
+
+        cos_sim = 0.
+
+        q1_vec = np.mat(q1_vec)
+        q2_vec = np.mat(q2_vec)
+
+        factor = linalg.norm(q1_vec) * linalg.norm(q2_vec)
+        if 1e-6 < factor:
+            cos_sim = float(q1_vec * q2_vec.T) / factor
+
+        return [cos_sim]
+
+    @staticmethod
+    def extract_row_tfidf_dis(row):
+        """
+        按行抽取特征
+        :param row:
+        :return:
+        """
+        q1_words = str(row['question1']).strip().split() if WordEmbedding.to_lower else str(
+            row['question1']).lower().strip().split()
+        q2_words = str(row['question2']).strip().split() if WordEmbedding.to_lower else str(
+            row['question2']).lower().strip().split()
+
+        q1_vec = np.array(WordEmbedding.len_vec * [0.])
+        q2_vec = np.array(WordEmbedding.len_vec * [0.])
+
+        q1_words_cnt = {}
+        q2_words_cnt = {}
+        for word in q1_words:
+            q1_words_cnt[word] = q1_words_cnt.get(word, 0.) + 1.
+        for word in q2_words:
+            q2_words_cnt[word] = q2_words_cnt.get(word, 0.) + 1.
+
+        for word in q1_words:
+            if word in WordEmbedding.we_dict:
+                q1_vec = q1_vec + WordEmbedding.idf.get(word, 0.) * q1_words_cnt[word] * WordEmbedding.we_dict[word]
+        for word in q2_words:
+            if word in WordEmbedding.we_dict:
+                q2_vec = q2_vec + WordEmbedding.idf.get(word, 0.) * q1_words_cnt[word] * WordEmbedding.we_dict[word]
 
         cos_sim = 0.
 
@@ -1505,6 +1563,43 @@ class WordEmbedding(object):
         LogUtil.log('INFO', 'save test features done')
 
     @staticmethod
+    def extract_tfidf_dis(cf, argv):
+        # 运行需要设置的参数
+        word_embedding_fp = argv[0]  # word embedding 路径
+        feature_name = argv[1]  # 特征名字
+        WordEmbedding.len_vec = int(argv[2])  # word embedding 维度
+        WordEmbedding.to_lower = bool(argv[3])  # 是否需要转化为小写
+
+        # 加载 word embedding 词典
+        WordEmbedding.we_dict = WordEmbedding.load_word_embedding(word_embedding_fp)
+        LogUtil.log('INFO', 'load word embedding dict done')
+
+        # 计算IDF词表
+        train_qid2q_fp = '%s/train_qid2question.csv' % cf.get('DEFAULT', 'devel_pt')
+        train_qid2q = pd.read_csv(train_qid2q_fp).fillna(value="")
+        WordEmbedding.init_idf(train_qid2q)
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(WordEmbedding.extract_row_tfidf_dis, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (tfidf) done')
+        test_features = test_data.apply(WordEmbedding.extract_row_tfidf_dis, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (tfidf) done')
+        # 抽取特征: test.csv
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (tfidf) done')
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (tfidf) done')
+
+    @staticmethod
     def run(argv):
         """
         运行所有 Word Embedding 特征抽取器
@@ -1535,4 +1630,3 @@ if __name__ == "__main__":
         WordEmbedding.run(sys.argv[2:])
     else:
         print_help()
-
