@@ -370,20 +370,20 @@ class Model(object):
 
 
 def print_help():
-    print 'model -->'
+    print 'model <conf_file_path> -->'
     print '\ttrain'
     print '\tsave_all_feature'
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         print_help()
         exit(1)
 
     # 读取配置文件
     cf = ConfigParser.ConfigParser()
-    cf.read("../conf/python.conf")
+    cf.read(sys.argv[1])
 
-    cmd = sys.argv[1]
+    cmd = sys.argv[2]
     if 'train' == cmd:
         Model.train_xgb(cf)
     elif 'save_all_feature' == cmd:
