@@ -60,7 +60,7 @@ class FeatureProcessor(object):
         return f_names, f_indexs
 
     @staticmethod
-    def run_feature_swap():
+    def run_gen_feature_swap():
         """
         交换<Q1,Q2>特征
         :return:
@@ -115,5 +115,5 @@ class FeatureProcessor(object):
 
 
 if __name__ == "__main__":
-    # FeatureProcessor.run_feature_swap()
+    FeatureProcessor.run_gen_feature_swap()
     FeatureProcessor.run_gen_feature_with_swap()

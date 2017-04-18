@@ -1404,7 +1404,7 @@ class BTM(object):
         test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
 
         BTM.btm_features = BTM.load_questions_btm(questions_btm_qid_fp, questions_btm_qf_fp)
-        LogUtil.log('INFO', 'load questions btm feature done')
+        LogUtil.log('INFO', 'load questions btm feature done (%s)' % questions_btm_qf_fp)
 
         train_features = BTM.extract_btm(train_data)
         LogUtil.log('INFO', 'extract btm from train data done')
