@@ -309,11 +309,12 @@ class Model(object):
     def run_show_feature_xgb(cf, argv):
         # 加载参数
         max_num_features = int(argv[0])
+        ylim_end = int(argv[1])
         # 加载模型
         model, params = Model.load_model(cf)
 
         # 输出重要性
-        plot_importance(model, max_num_features=max_num_features, ylim=(0, 5))
+        plot_importance(model, max_num_features=max_num_features, ylim=(0, ylim_end))
         pyplot.show()
 
     @staticmethod
@@ -385,7 +386,7 @@ def print_help():
     print 'model <conf_file_path> -->'
     print '\ttrain'
     print '\tsave_all_feature'
-    print '\tshow_feature_xgb'
+    print '\tshow_feature_xgb <max_num_features> <ylim_end>'
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
