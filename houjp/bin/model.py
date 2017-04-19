@@ -287,6 +287,11 @@ class Model(object):
 
     @staticmethod
     def run_predict_xgb(tag):
+        """
+        使用xgb进行模型预测
+        :param tag:
+        :return:
+        """
         # 读取配置文件
         cf = ConfigParser.ConfigParser()
         cf.read("../conf/python.conf")
