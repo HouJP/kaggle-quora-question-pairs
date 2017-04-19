@@ -226,7 +226,8 @@ class Model(object):
         Model.generate_fault_file(pred_test_data, test_balanced_indexs, train_df, pos_fault_fp, neg_fault_fp)
 
         # 线上预测
-        Model.predict_xgb(cf, model, params)
+        if 'True' == cf.get('MODEL', 'online'):
+            Model.predict_xgb(cf, model, params)
         return
 
     @staticmethod

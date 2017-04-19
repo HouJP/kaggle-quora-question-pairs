@@ -1505,9 +1505,9 @@ class WordEmbedding(object):
         :param row:
         :return:
         """
-        q1_words = str(row['question1']).strip().split() if WordEmbedding.to_lower else str(
+        q1_words = str(row['question1']).strip().split() if 'True' == WordEmbedding.to_lower else str(
             row['question1']).lower().strip().split()
-        q2_words = str(row['question2']).strip().split() if WordEmbedding.to_lower else str(
+        q2_words = str(row['question2']).strip().split() if 'True' == WordEmbedding.to_lower else str(
             row['question2']).lower().strip().split()
 
         q1_vec = np.array(WordEmbedding.len_vec * [0.])
