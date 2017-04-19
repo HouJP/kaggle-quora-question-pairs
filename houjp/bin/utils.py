@@ -7,9 +7,9 @@ import sys
 
 
 class StrUtil(object):
-    '''
-    字符串工具
-    '''
+    """
+    字符串工具类
+    """
 
     def __init__(self):
         pass
