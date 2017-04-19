@@ -61,14 +61,14 @@ class FeatureProcessor(object):
         return f_names, f_indexs
 
     @staticmethod
-    def run_gen_feature_swap():
+    def run_gen_feature_swap(conf_fp):
         """
         交换<Q1,Q2>特征
         :return:
         """
         # 读取配置文件
         cf = ConfigParser.ConfigParser()
-        cf.read("../conf/python.conf")
+        cf.read(conf_fp)
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
 
         # 加载配置文件
@@ -127,5 +127,5 @@ if __name__ == "__main__":
 
     conf_fp = sys.argv[1]
 
-    FeatureProcessor.run_gen_feature_swap()
+    FeatureProcessor.run_gen_feature_swap(conf_fp)
     FeatureProcessor.run_gen_feature_with_swap(conf_fp)
