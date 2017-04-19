@@ -3,6 +3,7 @@
 import re
 import time
 import random
+import sys
 
 
 class StrUtil(object):
@@ -37,6 +38,7 @@ class LogUtil(object):
         打印输出日志信息
         '''
         print "[%s]\t[%s]\t%s" % (TimeUtil.t_now(), typ, str(msg))
+        sys.stdout.flush()
         return
 
 
