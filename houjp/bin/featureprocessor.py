@@ -5,6 +5,7 @@ from feature import Feature
 import ConfigParser
 from os.path import isfile, join
 from utils import LogUtil
+import sys
 
 class FeatureProcessor(object):
     """
@@ -83,14 +84,14 @@ class FeatureProcessor(object):
             FeatureProcessor.swap_feature(feature_pt, f_name, f_index, rawset_name)
 
     @staticmethod
-    def run_gen_feature_with_swap():
+    def run_gen_feature_with_swap(conf_fp):
         """
         生成线下特征文件，包含swap部分
         :return:
         """
         # 读取配置文件
         cf = ConfigParser.ConfigParser()
-        cf.read("../conf/python.conf")
+        cf.read(conf_fp)
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
 
         feature_qp_names = Feature.get_feature_names_question_pair(cf)
@@ -113,7 +114,18 @@ class FeatureProcessor(object):
                 LogUtil.log('INFO', '%s already has with_swap feature' % f_name)
 
 
+def print_help():
+    print 'featureprocessor <conf_file_path> -->'
+    print '\tGO'
+
 
 if __name__ == "__main__":
+
+    if 2 > len(sys.argv):
+        print_help()
+        exit(1)
+
+    conf_fp = sys.argv[1]
+
     FeatureProcessor.run_gen_feature_swap()
-    FeatureProcessor.run_gen_feature_with_swap()
+    FeatureProcessor.run_gen_feature_with_swap(conf_fp)
