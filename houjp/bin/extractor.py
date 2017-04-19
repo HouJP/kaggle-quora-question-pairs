@@ -1747,10 +1747,64 @@ class WordEmbedding(object):
             WordEmbedding.extract_tfidf_vec(cf, argv[1:])
 
 
+class ID(object):
+
+    question2id = {}
+
+    @staticmethod
+    def extract_row_id(row):
+        """
+        按行抽取特征
+        :param row:
+        :return:
+        """
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        v = max(ID.question2id.setdefault(q1, len(ID.question2id)), ID.question2id.setdefault(q2, len(ID.question2id)))
+
+        return [v]
+
+
+    @staticmethod
+    def extract_id(cf, argv):
+        # 设置参数
+        feature_name = 'id'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(ID.extract_row_id, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        test_features = test_data.apply(ID.extract_row_id, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        # 抽取特征: test.csv
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+    @staticmethod
+    def run(argv):
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 运行抽取器
+        ID.extract_id(cf, argv)
+
 
 def print_help():
     print 'extractor -->'
     print '\tword_embedding'
+    print '\tid'
 
 if __name__ == "__main__":
     # TreeParser.demo()
@@ -1763,5 +1817,7 @@ if __name__ == "__main__":
     cmd = sys.argv[1]
     if 'word_embedding' == cmd:
         WordEmbedding.run(sys.argv[2:])
+    elif 'id' == cmd:
+        ID.run(sys.argv[2:])
     else:
         print_help()

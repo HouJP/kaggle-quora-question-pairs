@@ -305,6 +305,26 @@ class Model(object):
         Model.predict_xgb(cf_old, model, params)
 
     @staticmethod
+    def run_show_xgb(tag):
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 新增配置
+        cf.set('DEFAULT', 'tag', str(tag))
+
+        # 重载配置
+        cf_old_fp = '%s/%s' % (cf.get('DEFAULT', 'conf_pt'), 'python.conf')
+        cf_old = ConfigParser.ConfigParser()
+        cf_old.read(cf_old_fp)
+
+        # 加载模型
+        model, params = Model.load_model(cf_old)
+
+        # 输出重要性
+
+
+    @staticmethod
     def save_all_feature(cf):
         # 存储训练集特征文件
         Feature.load_all_features(cf, cf.get('MODEL', 'train_rawset_name'), True)
