@@ -18,6 +18,8 @@ function run() {
     # create directory
     mkdir $local_project_pt/data/out/$tag
     mkdir $local_project_pt/data/out/$tag/pred/
+    mkdir $local_project_pt/data/out/$tag/model/
+    mkdir $local_project_pt/data/out/$tag/conf/
     # download
     scp -r ${user}@${address}:$server_project_pt/data/out/$tag/pred/full.test.pred $local_project_pt/data/out/$tag/pred/
     # zip

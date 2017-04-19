@@ -8,7 +8,8 @@ import pandas as pd
 import math
 import time
 import os
-
+from xgboost import plot_importance
+from matplotlib import pyplot
 from utils import LogUtil, DataUtil
 from feature import Feature
 
@@ -305,24 +306,13 @@ class Model(object):
         Model.predict_xgb(cf_old, model, params)
 
     @staticmethod
-    def run_show_xgb(tag):
-        # 读取配置文件
-        cf = ConfigParser.ConfigParser()
-        cf.read("../conf/python.conf")
-
-        # 新增配置
-        cf.set('DEFAULT', 'tag', str(tag))
-
-        # 重载配置
-        cf_old_fp = '%s/%s' % (cf.get('DEFAULT', 'conf_pt'), 'python.conf')
-        cf_old = ConfigParser.ConfigParser()
-        cf_old.read(cf_old_fp)
-
+    def run_show_feature_xgb(cf):
         # 加载模型
-        model, params = Model.load_model(cf_old)
+        model, params = Model.load_model(cf)
 
         # 输出重要性
-
+        plot_importance(model)
+        pyplot.show()
 
     @staticmethod
     def save_all_feature(cf):
@@ -334,7 +324,6 @@ class Model(object):
             Feature.load_all_features_with_part_id(cf,
                                                    cf.get('MODEL', 'online_test_rawset_name'),
                                                    id_part, True)
-
 
     @staticmethod
     def generate_fault_file(pred_test_data, test_balanced_indexs, df, pos_fault_fp, neg_fault_fp):
@@ -394,6 +383,7 @@ def print_help():
     print 'model <conf_file_path> -->'
     print '\ttrain'
     print '\tsave_all_feature'
+    print '\tshow_feature_xgb'
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -409,6 +399,8 @@ if __name__ == "__main__":
         Model.train_xgb(cf)
     elif 'save_all_feature' == cmd:
         Model.save_all_feature(cf)
+    elif 'show_feature_xgb' == cmd:
+        Model.run_show_feature_xgb(cf)
     else:
         print_help()
 
