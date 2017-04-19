@@ -306,12 +306,14 @@ class Model(object):
         Model.predict_xgb(cf_old, model, params)
 
     @staticmethod
-    def run_show_feature_xgb(cf):
+    def run_show_feature_xgb(cf, argv):
+        # 加载参数
+        max_num_features = int(argv[0])
         # 加载模型
         model, params = Model.load_model(cf)
 
         # 输出重要性
-        plot_importance(model)
+        plot_importance(model, max_num_features=max_num_features)
         pyplot.show()
 
     @staticmethod
@@ -400,7 +402,7 @@ if __name__ == "__main__":
     elif 'save_all_feature' == cmd:
         Model.save_all_feature(cf)
     elif 'show_feature_xgb' == cmd:
-        Model.run_show_feature_xgb(cf)
+        Model.run_show_feature_xgb(cf, sys.argv[3:])
     else:
         print_help()
 
