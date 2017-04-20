@@ -1869,6 +1869,7 @@ class POSTag(object):
         POSTag.postag = {}
         train_data.apply(POSTag.init_row_postag, axis=1, raw=True)
         test_data.apply(POSTag.init_row_postag, axis=1, raw=True)
+        LogUtil.log('INFO', 'len(postag)=%d, postag=%s' % (len(POSTag.postag), str(POSTag.postag)))
 
         # 抽取特征：train.csv
         train_features = train_data.apply(POSTag.extract_row_postag_cnt, axis=1, raw=True)
