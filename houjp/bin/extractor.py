@@ -1884,16 +1884,12 @@ class POSTag(object):
 
     @staticmethod
     def run(argv):
-        # 读取配置文件
-        cf = ConfigParser.ConfigParser()
-        cf.read("../conf/python.conf")
-
         # 运行抽取器
         POSTag.extract_postag_cnt(cf, argv)
 
 
 def print_help():
-    print 'extractor -->'
+    print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
     print '\tid'
     print '\tpostag'
@@ -1902,16 +1898,20 @@ if __name__ == "__main__":
     # TreeParser.demo()
     # BTM.run(sys.argv)
 
-    if 2 > len(sys.argv):
+    if 3 > len(sys.argv):
         print_help()
         exit(1)
 
-    cmd = sys.argv[1]
+    # 读取配置文件
+    cf = ConfigParser.ConfigParser()
+    cf.read(sys.argv[1])
+
+    cmd = sys.argv[2]
     if 'word_embedding' == cmd:
-        WordEmbedding.run(sys.argv[2:])
+        WordEmbedding.run(sys.argv[3:])
     elif 'id' == cmd:
-        ID.run(sys.argv[2:])
+        ID.run(sys.argv[3:])
     elif 'postag' == cmd:
-        POSTag.run(sys.argv[2:])
+        POSTag.run(sys.argv[3:])
     else:
         print_help()
