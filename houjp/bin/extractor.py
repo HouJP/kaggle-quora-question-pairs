@@ -1801,10 +1801,102 @@ class ID(object):
         ID.extract_id(cf, argv)
 
 
+class POSTag(object):
+
+    def __init__(self):
+        pass
+
+    postag = {}
+
+    @staticmethod
+    def init_row_postag(row):
+        q1_postag = json.loads(row['question1_postag'])
+        for sentence in q1_postag:
+            for kv in sentence:
+                POSTag.postag.setdefault(kv[1], len(POSTag.postag))
+
+        q2_postag = json.loads(row['question2_postag'])
+        for sentence in q2_postag:
+            for kv in sentence:
+                POSTag.postag.setdefault(kv[1], len(POSTag.postag))
+
+
+    @staticmethod
+    def extract_row_postag_cnt(row):
+        q1_vec = len(POSTag.postag) * [0]
+        q1_postag = json.loads(row['question1_postag'])
+        for s in q1_postag:
+            for kv in s:
+                id = POSTag.postag[kv[1]]
+                q1_vec[id] += 1
+
+        q2_vec = len(POSTag.postag) * [0]
+        q2_postag = json.loads(row['question2_postag'])
+        for s in q2_postag:
+            for kv in s:
+                id = POSTag.postag[kv[1]]
+                q2_vec[id] += 1
+
+        q1_vec = np.array(q1_vec)
+        q2_vec = np.array(q2_vec)
+
+        sum_vec = q1_vec + q2_vec
+        sub_vec = abs(q1_vec - q2_vec)
+        dot_vec = q1_vec.dot(q2_vec)
+        q1_len = np.sqrt(q1_vec.dot(q1_vec))
+        q2_len = np.sqrt(q2_vec.dot(q2_vec))
+        cos_sim = 0.
+        if q1_len * q2_len > 1e-6:
+            cos_sim = dot_vec / q1_len / q2_len
+
+        return list(q1_vec) + list(q2_vec) + list(sum_vec) + list(sub_vec) + [dot_vec, q1_len, q2_len, cos_sim]
+
+    @staticmethod
+    def extract_postag_cnt(cf, argv):
+        # 设置参数
+        feature_name = 'postag_cnt'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train_postag.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test_postag.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 初始化
+        POSTag.postag = {}
+        train_data.apply(POSTag.init_row_postag, axis=1, raw=True)
+        test_data.apply(POSTag.init_row_postag, axis=1, raw=True)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(POSTag.extract_row_postag_cnt, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        test_features = test_data.apply(POSTag.extract_row_postag_cnt, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        # 抽取特征: test.csv
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+
+    @staticmethod
+    def run(argv):
+        # 读取配置文件
+        cf = ConfigParser.ConfigParser()
+        cf.read("../conf/python.conf")
+
+        # 运行抽取器
+        POSTag.extract_postag_cnt(cf, argv)
+
+
 def print_help():
     print 'extractor -->'
     print '\tword_embedding'
     print '\tid'
+    print '\tpostag'
 
 if __name__ == "__main__":
     # TreeParser.demo()
@@ -1819,5 +1911,7 @@ if __name__ == "__main__":
         WordEmbedding.run(sys.argv[2:])
     elif 'id' == cmd:
         ID.run(sys.argv[2:])
+    elif 'postag' == cmd:
+        POSTag.run(sys.argv[2:])
     else:
         print_help()
