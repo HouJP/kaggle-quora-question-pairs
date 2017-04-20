@@ -288,23 +288,14 @@ class Model(object):
         Model.save_pred(online_test_ids, all_pred_online_test_data, pred_online_test_fp)
 
     @staticmethod
-    def run_predict_xgb(tag):
+    def run_predict_xgb(conf_file_path):
         """
         使用xgb进行模型预测
         :param tag:
         :return:
         """
-        # 读取配置文件
-        cf = ConfigParser.ConfigParser()
-        cf.read("../conf/python.conf")
-
-        # 新增配置
-        cf.set('DEFAULT', 'tag', str(tag))
-
-        # 重载配置
-        cf_old_fp = '%s/%s' % (cf.get('DEFAULT', 'conf_pt'), 'python.conf')
         cf_old = ConfigParser.ConfigParser()
-        cf_old.read(cf_old_fp)
+        cf_old.read(conf_file_path)
 
         # 加载模型
         model, params = Model.load_model(cf_old)
