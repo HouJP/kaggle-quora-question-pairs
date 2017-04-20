@@ -102,7 +102,8 @@ class Model(object):
         # 加载训练集标签文件
         train_labels = DataUtil.load_vector(cf.get('MODEL', 'train_labels_fp'), True)
         # 加载特征文件
-        train_features = Feature.load_all_features(cf, cf.get('MODEL', 'train_rawset_name'))
+        will_save = ('True' == cf.get('FEATURE', 'will_save'))
+        train_features = Feature.load_all_features(cf, cf.get('MODEL', 'train_rawset_name'), will_save=will_save)
         # 获取训练集
         (train_data, train_balanced_indexs) = Model.get_DMatrix(train_indexs, train_labels, train_features, train_pos_rate)
         LogUtil.log("INFO", "training set generation done")
@@ -263,9 +264,10 @@ class Model(object):
 
         for id_part in range(n_part):
             # 加载线上测试集特征文件
+            will_save = ('True' == cf.get('FEATURE', 'will_save'))
             online_test_features = Feature.load_all_features_with_part_id(cf,
                                                                           cf.get('MODEL', 'online_test_rawset_name'),
-                                                                          id_part)
+                                                                          id_part, will_save=will_save)
             # 设置测试集正样本比例
             online_test_pos_rate = -1.0
             # 获取线上测试集
