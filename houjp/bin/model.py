@@ -22,6 +22,12 @@ class Model(object):
         return
 
     @staticmethod
+    def adj(x, te=0.173, tr=0.369):
+        a = te / tr
+        b = (1 - te) / (1 - tr)
+        return a * x / (a * x + b * (1 - x))
+
+    @staticmethod
     def entropy_loss(labels, pred_fp):
         '''
         根据预测文件计算Entropy Loss
@@ -183,6 +189,11 @@ class Model(object):
         pred_valid_data = model.predict(valid_data, ntree_limit=model.best_ntree_limit)
         pred_test_data = model.predict(test_data, ntree_limit=model.best_ntree_limit)
 
+        # 后处理
+        pred_train_data = [Model.adj(x) for x in pred_train_data]
+        pred_valid_data = [Model.adj(x) for x in pred_valid_data]
+        pred_test_data = [Model.adj(x) for x in pred_test_data]
+
         # 加载训练集ID文件
         train_ids = range(train_data.num_row())
         # 存储训练集预测结果
@@ -281,6 +292,9 @@ class Model(object):
             pred_online_test_data = model.predict(online_test_data, ntree_limit=params['best_ntree_limit'])
             all_pred_online_test_data.extend(pred_online_test_data)
             LogUtil.log('INFO', 'online test set (%02d) predict done' % id_part)
+        # 后处理
+        all_pred_online_test_data = [Model.adj(x) for x in all_pred_online_test_data]
+
         # 加载线上测试集ID文件
         online_test_ids = DataUtil.load_vector(cf.get('MODEL', 'online_test_ids_fp'), False)
         # 存储线上测试集预测结果
