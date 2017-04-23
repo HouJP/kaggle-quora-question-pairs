@@ -330,6 +330,17 @@ class Model(object):
         pyplot.show()
 
     @staticmethod
+    def run_select_feature_xgb(cf, argv):
+        # 加载参数
+        amx_num_features = int(argv[0])
+        # 加载模型
+        model, params = Model.load_model(cf)
+
+        # 输出重要性
+
+
+
+    @staticmethod
     def save_all_feature(cf):
         # 存储训练集特征文件
         Feature.load_all_features(cf, cf.get('MODEL', 'train_rawset_name'), True)

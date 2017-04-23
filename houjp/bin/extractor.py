@@ -1966,8 +1966,6 @@ def print_help():
     print '\tdul_num'
 
 if __name__ == "__main__":
-    # TreeParser.demo()
-    # BTM.run(sys.argv)
 
     if 3 > len(sys.argv):
         print_help()
