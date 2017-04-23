@@ -1889,11 +1889,77 @@ class POSTag(object):
         POSTag.extract_postag_cnt(cf, argv)
 
 
+class DulNum(object):
+
+    dul_num = {}
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def init_dul_num(train_data, test_data):
+        for index, row in train_data.iterrows():
+            DulNum.dul_num[row.question1] = DulNum.dul_num.get(row.question1, 0) + 1
+            if row.question1 != row.question2:
+                DulNum.dul_num[row.question2] = DulNum.dul_num.get(row.question2, 0) + 1
+
+        for index, row in test_data.iterrows():
+            DulNum.dul_num[row.question1] = DulNum.dul_num.get(row.question1, 0) + 1
+            if row.question1 != row.question2:
+                DulNum.dul_num[row.question2] = DulNum.dul_num.get(row.question2, 0) + 1
+
+    @staticmethod
+    def extract_row_dul_num(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        dn1 = DulNum.dul_num[q1]
+        dn2 = DulNum.dul_num[q2]
+
+        return [dn1, dn2, max(dn1, dn2), min(dn1, dn2)]
+
+    @staticmethod
+    def extract_dul_num(cf, argv):
+        # 设置参数
+        feature_name = 'dul_num'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train_postag.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test_postag.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 初始化
+        DulNum.init_dul_num(train_data, test_data)
+        LogUtil.log('INFO', 'len(dul_num)=%d' % (len(DulNum.dul_num)))
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(DulNum.extract_row_dul_num, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        test_features = test_data.apply(DulNum.extract_row_dul_num, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        # 抽取特征: test.csv
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+    @staticmethod
+    def run(argv):
+        # 运行抽取器
+        DulNum.extract_dul_num(cf, argv)
+
+
+
 def print_help():
     print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
     print '\tid'
     print '\tpostag'
+    print '\tdul_num'
 
 if __name__ == "__main__":
     # TreeParser.demo()
@@ -1914,5 +1980,7 @@ if __name__ == "__main__":
         ID.run(sys.argv[3:])
     elif 'postag' == cmd:
         POSTag.run(sys.argv[3:])
+    elif 'dul_num' == cmd:
+        DulNum.run(sys.argv[3:])
     else:
         print_help()
