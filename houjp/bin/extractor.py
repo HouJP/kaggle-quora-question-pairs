@@ -1899,14 +1899,18 @@ class DulNum(object):
     @staticmethod
     def init_dul_num(train_data, test_data):
         for index, row in train_data.iterrows():
-            DulNum.dul_num[row.question1] = DulNum.dul_num.get(row.question1, 0) + 1
-            if row.question1 != row.question2:
-                DulNum.dul_num[row.question2] = DulNum.dul_num.get(row.question2, 0) + 1
+            q1 = str(row.question1).strip()
+            q2 = str(row.question2).strip()
+            DulNum.dul_num[q1] = DulNum.dul_num.get(q1, 0) + 1
+            if q1 != q2:
+                DulNum.dul_num[q2] = DulNum.dul_num.get(q2, 0) + 1
 
         for index, row in test_data.iterrows():
-            DulNum.dul_num[row.question1] = DulNum.dul_num.get(row.question1, 0) + 1
-            if row.question1 != row.question2:
-                DulNum.dul_num[row.question2] = DulNum.dul_num.get(row.question2, 0) + 1
+            q1 = str(row.question1).strip()
+            q2 = str(row.question2).strip()
+            DulNum.dul_num[q1] = DulNum.dul_num.get(q1, 0) + 1
+            if q1 != q2:
+                DulNum.dul_num[q2] = DulNum.dul_num.get(q2, 0) + 1
 
     @staticmethod
     def extract_row_dul_num(row):
