@@ -38,7 +38,7 @@ std::vector<double>* cal_vector_length(std::vector<std::vector<double>* >* vecs)
     for (size_t i = 0; i < vecs->size(); ++i) {
         lens->push_back(cal_vector_length((*vecs)[i]));
     }
-    printf("cal btm vector length done\n");
+    printf("cal btm vector length done, len(lens)=%d\n", (int)lens->size());
     return lens;
 }
 
@@ -74,7 +74,7 @@ void* cos_sim(void* argv) {
     printf("into thread: begin=%d, t_id=%d, t_begin=%d, t_end=%d\n", begin, t_id, t_begin, t_end);
 
     for (int i = t_begin; i < t_end; ++i) {
-        for (size_t j = 0; j < vecs->size(); ++j) {
+        for (int j = 0; j < vecs->size(); ++j) {
             double cos_sim = cal_vector_cos_sim((*vecs)[begin + i], (*vecs)[j], (*lens)[begin + i], (*lens)[j]);
             int offset = int(cos_sim * LEN_BINS);
             int id_begin = i * (LEN_BINS + 4);
@@ -84,7 +84,7 @@ void* cos_sim(void* argv) {
                 (*fs)[id_begin + LEN_BINS + 1] = std::min((*fs)[id_begin + LEN_BINS + 1], cos_sim);
             (*fs)[id_begin + LEN_BINS + 2] += cos_sim;
             (*fs)[id_begin + LEN_BINS + 3] += cos_sim * cos_sim;
-            printf("into thread: begin=%d, t_begin=%d, i=%d, j=%d, cos_sim=%f\n", begin, t_begin, i, j, cos_sim);
+//            printf("into thread: begin=%d, t_begin=%d, i=%d, j=%d, cos_sim=%f\n", begin, t_begin, i, j, cos_sim);
         }
         if (9 == ((i - t_begin) % 10)) {
             printf("into thread: begin=%d, t_begin=%d, index=%d done\n", begin ,t_begin, i);
