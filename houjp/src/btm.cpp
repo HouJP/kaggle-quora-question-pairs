@@ -84,6 +84,7 @@ void* cos_sim(void* argv) {
                 (*fs)[id_begin + LEN_BINS + 1] = std::min((*fs)[id_begin + LEN_BINS + 1], cos_sim);
             (*fs)[id_begin + LEN_BINS + 2] += cos_sim;
             (*fs)[id_begin + LEN_BINS + 3] += cos_sim * cos_sim;
+            printf("into thread: begin=%d, t_begin=%d, i=%d, j=%d, cos_sim=%f\n", begin, t_begin, i, j, cos_sim);
         }
         if (9 == ((i - t_begin) % 10)) {
             printf("into thread: begin=%d, t_begin=%d, index=%d done\n", begin ,t_begin, i);
