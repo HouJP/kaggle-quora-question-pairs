@@ -141,13 +141,6 @@ int main(int argc, char* argv[]) {
     std::vector<std::vector<double>* >* vecs = load_vector_file(btm_vec_fp);
     std::vector<double>* lens = cal_vector_length(vecs);
 
-//    for (int i = 0; i < vecs->size(); ++i) {
-//        for (int j = 0; j < vecs->size(); ++j) {
-//            std::cout << cal_vector_cos_sim((*vecs)[i], (*vecs)[j], (*lens)[i], (*lens)[j]) << "\t";
-//        }
-//        std::cout << std::endl;
-//    }
-
     int begin = int(round(1.0 * vecs->size() / n_parts * id_part));
     int end = int(round(1.0 * vecs->size() / n_parts * (id_part + 1)));
 
@@ -156,7 +149,7 @@ int main(int argc, char* argv[]) {
     // num_bins = LEN_BINS, max, min, sum, sum(^2)
     std::vector<double>* fs = new std::vector<double>((unsigned long)((end - begin) * (LEN_BINS + 4)), 0.);
     printf("create fs vector done\n");
-    for (size_t i = 0; i < vecs->size(); ++i) {
+    for (size_t i = 0; i < end - begin; ++i) {
         (*fs)[i * (LEN_BINS + 4) + (LEN_BINS + 1)] = 1.0;
     }
 
