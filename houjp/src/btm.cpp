@@ -11,7 +11,7 @@
 #include "StrUtil.h"
 
 #define NUM_THREADS 30
-#define LEN_BINS 100
+#define LEN_BINS 10
 #define EPS (1e-12)
 
 struct ThreadData {
@@ -38,7 +38,7 @@ std::vector<double>* cal_vector_length(std::vector<std::vector<double>* >* vecs)
     for (size_t i = 0; i < vecs->size(); ++i) {
         lens->push_back(cal_vector_length((*vecs)[i]));
     }
-
+    printf("cal btm vector length done\n");
     return lens;
 }
 
@@ -155,6 +155,7 @@ int main(int argc, char* argv[]) {
 
     // num_bins = LEN_BINS, max, min, sum, sum(^2)
     std::vector<double>* fs = new std::vector<double>((unsigned long)((end - begin) * (LEN_BINS + 4)), 0.);
+    printf("create fs vector done\n");
     for (size_t i = 0; i < fs->size(); ++i) {
         (*fs)[i * (LEN_BINS + 4) + (LEN_BINS + 1)] = 1.0;
     }
