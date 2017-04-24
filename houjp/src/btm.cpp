@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     // num_bins = LEN_BINS, max, min, sum, sum(^2)
     std::vector<double>* fs = new std::vector<double>((unsigned long)((end - begin) * (LEN_BINS + 4)), 0.);
     printf("create fs vector done\n");
-    for (size_t i = 0; i < fs->size(); ++i) {
+    for (size_t i = 0; i < vecs->size(); ++i) {
         (*fs)[i * (LEN_BINS + 4) + (LEN_BINS + 1)] = 1.0;
     }
 
