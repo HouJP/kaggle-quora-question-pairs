@@ -76,7 +76,10 @@ void* cos_sim(void* argv) {
     for (int i = t_begin; i < t_end; ++i) {
         for (int j = 0; j < vecs->size(); ++j) {
             double cos_sim = cal_vector_cos_sim((*vecs)[begin + i], (*vecs)[j], (*lens)[begin + i], (*lens)[j]);
-            printf("into thread: begin=%d, t_begin=%d, i=%d, j=%d, cos_sim=%f\n", begin, t_begin, i, j, cos_sim);
+            if (isnan(cos_sim)) {
+                cos_sim = 0.0;
+            }
+//            printf("into thread: t_id=%d, begin=%d, t_begin=%d, i=%d, j=%d, cos_sim=%f\n", tid, begin, t_begin, i, j, cos_sim);
             int offset = int(cos_sim * LEN_BINS);
             int id_begin = i * (LEN_BINS + 4);
             (*fs)[id_begin + offset] += 1.0;
@@ -87,7 +90,7 @@ void* cos_sim(void* argv) {
             (*fs)[id_begin + LEN_BINS + 3] += cos_sim * cos_sim;
         }
         if (9 == ((i - t_begin) % 10)) {
-            printf("into thread: begin=%d, t_begin=%d, index=%d done\n", begin ,t_begin, i);
+            printf("into thread: t_id=%d, begin=%d, t_begin=%d, index=%d done\n", t_id, begin ,t_begin, i);
         }
     }
 
