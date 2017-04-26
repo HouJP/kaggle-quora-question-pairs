@@ -93,7 +93,6 @@ class Preprocessor(object):
         text = re.sub(r"\'re", " are ", text)
         text = re.sub(r"\'d", " would ", text)
         text = re.sub(r"\'ll", " will ", text)
-        text = re.sub(r"ph\.d", "phd", text)
         text = re.sub(r"c\+\+", "cplusplus", text)
         text = re.sub(r"c \+\+", "cplusplus", text)
         text = re.sub(r"c \+ \+", "cplusplus", text)
@@ -130,10 +129,12 @@ class Preprocessor(object):
         text = re.sub(r"|", " or ", text)
         text = re.sub(r"=", " equal ", text)
         text = re.sub(r"\+", " plus ", text)
-        text = re.sub(ur"₹", " rs ", text)      # 测试！
+        text = re.sub(r"₹", " rs ", text)      # 测试！
         text = re.sub(r"\$", " dollar ", text)
 
-        # 拼写矫正
+        # 拼写矫正及词条化
+        text = re.sub(r"ph\.d", "phd", text)
+        text = re.sub(r"PhD", "phd", text)
         text = re.sub(r"pokemons", "pokemon", text)
         text = re.sub(r"pokémon", "pokemon", text)
         text = re.sub(r"pokemon go ", "pokemon-go ", text)
@@ -176,8 +177,6 @@ class Preprocessor(object):
         text = re.sub(r" rs(\d+)", lambda m: ' rs ' + m.group(1), text)
         text = re.sub(r"(\d+)rs", lambda m: ' rs ' + m.group(1), text)
         text = re.sub(r"the european union", " eu ", text)
-
-        # 词条化
         text = re.sub(r"dollars", " dollar ", text)
 
         # 去除多余空格
