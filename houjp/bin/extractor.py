@@ -2117,11 +2117,11 @@ class BTMVecCosSimDis(object):
 
         # 统计
         # 负例
-        neg_train_features = train_features[train_data['is_duplicate'] == 0].apply(lambda x: x[9])
+        neg_train_features = train_features[train_data['is_duplicate'] == 0].apply(lambda x: x[9], axis=1, raw=True)
         LogUtil.log("INFO", 'neg: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
             neg_train_features.mean(), neg_train_features.std(), neg_train_features.max(), neg_train_features.min()))
         # 正例
-        pos_train_features = train_features[train_data['is_duplicate'] == 1].apply(lambda x: x[9])
+        pos_train_features = train_features[train_data['is_duplicate'] == 1].apply(lambda x: x[9], axis=1, raw=True)
         LogUtil.log("INFO", 'pos: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
             pos_train_features.mean(), pos_train_features.std(), pos_train_features.max(), pos_train_features.min()))
 
