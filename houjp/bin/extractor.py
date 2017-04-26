@@ -2055,6 +2055,62 @@ class MathTag(object):
         MathTag.extract_math_tag(cf, argv)
 
 
+class BTMVecCosSimDis(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def load_btm_vec_cos_sim_dis(cf):
+        features = []
+        for index in range(9):
+            f = open(cf.get('DEFAULT', 'devel_pt') + '/btm_all_wordtoken_100_50.fs.0%d' % index)
+            new_line = True
+            for line in f:
+                vec = [float(s) for s in line.strip().split()]
+                if new_line:
+                    new_line = False
+                    features.append(vec)
+                else:
+                    new_line = True
+                    features[len(features) - 1].extend(vec)
+            f.close()
+        return features
+
+    @staticmethod
+    def extract_btm_vec_cos_sim_dis(cf, argv):
+        # 设置参数
+        feature_name = 'btm_vec_cos_sim_dis'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+
+        # 初始化特征向量表
+        features = BTMVecCosSimDis.load_btm_vec_cos_sim_dis(cf)
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = features[0:len(train_data)]
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        # test_features = test_data.apply(MathTag.extract_row_math_tag, axis=1, raw=True)
+        # LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        # 抽取特征: test.csv
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+        # Feature.save_dataframe(test_features, test_feature_fp)
+        # LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+
+    @staticmethod
+    def run(argv):
+        # 运行抽取器
+        BTMVecCosSimDis.extract_btm_vec_cos_sim_dis(cf, argv)
+
+
 def print_help():
     print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
@@ -2062,6 +2118,7 @@ def print_help():
     print '\tpostag'
     print '\tdul_num'
     print '\tmath_tag'
+    print '\tbtm_vec_cos_sim_dis'
 
 if __name__ == "__main__":
 
@@ -2084,5 +2141,7 @@ if __name__ == "__main__":
         DulNum.run(sys.argv[3:])
     elif 'math_tag' == cmd:
         MathTag.run(sys.argv[3:])
+    elif 'btm_vec_cos_sim_dis' == cmd:
+        BTMVecCosSimDis.run(sys.argv[3:])
     else:
         print_help()
