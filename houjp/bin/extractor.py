@@ -2004,12 +2004,64 @@ class DulNum(object):
             DulNum.extract_dul_num_ratio(cf, argv[1:])
 
 
+class MathTag(object):
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def extract_row_math_tag(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        q1_cnt = q1.count('[math]')
+        q2_cnt = q2.count('[math]')
+
+        pair_and = int((0 < q1_cnt) and (0 < q2_cnt))
+        pair_or = int((0 < q1_cnt) or (0 < q2_cnt))
+
+        return [q1_cnt, q2_cnt, pair_and, pair_or]
+
+
+    @staticmethod
+    def extract_math_tag(cf, argv):
+        # 设置参数
+        feature_name = 'math_tag'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(MathTag.extract_row_math_tag, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        test_features = test_data.apply(MathTag.extract_row_math_tag, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        # 抽取特征: test.csv
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+
+    @staticmethod
+    def run(argv):
+        # 运行抽取器
+        MathTag.extract_math_tag(cf, argv)
+
+
 def print_help():
     print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
     print '\tid'
     print '\tpostag'
     print '\tdul_num'
+    print '\tmath_tag'
 
 if __name__ == "__main__":
 
@@ -2030,5 +2082,7 @@ if __name__ == "__main__":
         POSTag.run(sys.argv[3:])
     elif 'dul_num' == cmd:
         DulNum.run(sys.argv[3:])
+    elif 'math_tag' == cmd:
+        MathTag.run(sys.argv[3:])
     else:
         print_help()
