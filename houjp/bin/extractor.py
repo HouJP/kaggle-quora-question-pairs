@@ -2104,11 +2104,47 @@ class BTMVecCosSimDis(object):
         # Feature.save_dataframe(test_features, test_feature_fp)
         # LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
+    @staticmethod
+    def plot_btm_vec_cos_sim_dis(cf, argv):
+        # 设置参数
+        feature_name = 'btm_vec_cos_sim_dis'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+
+        # 加载特征
+        train_features = Feature.load('%s/%s.train.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), feature_name))
+
+        # 统计
+        # 负例
+        neg_train_features = train_features[train_data['is_duplicate'] == 0].apply(lambda x: x[9])
+        LogUtil.log("INFO", 'neg: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            neg_train_features.mean(), neg_train_features.std(), neg_train_features.max(), neg_train_features.min()))
+        # 正例
+        pos_train_features = train_features[train_data['is_duplicate'] == 1].apply(lambda x: x[9])
+        LogUtil.log("INFO", 'pos: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
+            pos_train_features.mean(), pos_train_features.std(), pos_train_features.max(), pos_train_features.min()))
+
+        # 绘图
+        plt.figure(figsize=(15, 5))
+        plt.xlim([0, 1])
+        plt.hist(neg_train_features, bins=100, normed=False, label='Not Duplicate', edgecolor='None')
+        plt.hist(pos_train_features, bins=100, normed=False, alpha=0.7, label='Duplicate', edgecolor='None')
+        plt.legend()
+        plt.title('Label distribution over %s' % feature_name, fontsize=15)
+        plt.xlabel(feature_name, fontsize=15)
+        plt.show()
+
 
     @staticmethod
     def run(argv):
+        cmd = argv[0]
+
         # 运行抽取器
-        BTMVecCosSimDis.extract_btm_vec_cos_sim_dis(cf, argv)
+        if 'extract_btm_vec_cos_sim_dis' == cmd:
+            BTMVecCosSimDis.extract_btm_vec_cos_sim_dis(cf, argv[1:])
+        elif 'plot_btm_vec_cos_sim_dis' == cmd:
+            BTMVecCosSimDis.plot_btm_vec_cos_sim_dis(cf, argv[1:])
 
 
 def print_help():
@@ -2141,7 +2177,7 @@ if __name__ == "__main__":
         DulNum.run(sys.argv[3:])
     elif 'math_tag' == cmd:
         MathTag.run(sys.argv[3:])
-    elif 'btm_vec_cos_sim_dis' == cmd:
+    elif 'BTMVecCosSimDis' == cmd:
         BTMVecCosSimDis.run(sys.argv[3:])
     else:
         print_help()
