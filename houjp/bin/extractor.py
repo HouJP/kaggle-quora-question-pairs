@@ -2113,7 +2113,7 @@ class BTMVecCosSimDis(object):
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
 
         # 加载特征
-        train_features = Feature.load('%s/%s.train.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), feature_name))
+        train_features = pd.DataFrame(Feature.load('%s/%s.train.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), feature_name)).toarray())
 
         # 统计
         # 负例
