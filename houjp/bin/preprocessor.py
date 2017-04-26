@@ -79,6 +79,8 @@ class Preprocessor(object):
         text = re.sub(r"(\d+)kgs ", lambda m: m.group(1) + ' kg ', text)        # e.g. 4kgs => 4 kg
         text = re.sub(r"(\d+)kg ", lambda m: m.group(1) + ' kg ', text)         # e.g. 4kg => 4 kg
         text = re.sub(r"(\d+)k ", lambda m: m.group(1) + '000 ', text)          # e.g. 4k => 4000
+        text = re.sub(r"\$(\d+)", lambda m: m.group(1) + ' dollar ', text)
+        text = re.sub(r"(\d+)\$", lambda m: m.group(1) + ' dollar ', text)
 
         # 缩略词处理
         text = re.sub(r"\'s", " ", text)
@@ -108,6 +110,7 @@ class Preprocessor(object):
         text = re.sub(r"\'", " ", text)
         text = re.sub(r"-", " - ", text)
         text = re.sub(r"/", " / ", text)
+        text = re.sub(r"\\", " \ ", text)
         text = re.sub(r"=", " = ", text)
         text = re.sub(r"\^", " ^ ", text)
         text = re.sub(r":", " : ", text)
@@ -128,6 +131,7 @@ class Preprocessor(object):
         text = re.sub(r"=", " equal ", text)
         text = re.sub(r"\+", " plus ", text)
         text = re.sub(ur"₹", " rs ", text)      # 测试！
+        text = re.sub(r"\$", " dollar ", text)
 
         # 拼写矫正
         text = re.sub(r"pokemons", "pokemon", text)
@@ -147,6 +151,10 @@ class Preprocessor(object):
         text = re.sub(r" usa ", " america ", text)
         text = re.sub(r" us ", " america ", text)
         text = re.sub(r" u s ", " america ", text)
+        text = re.sub(r" U\.S\. ", " america ", text)
+        text = re.sub(r" US ", " america ", text)
+        text = re.sub(r" American ", " america ", text)
+        text = re.sub(r" America ", " america ", text)
         text = re.sub(r" quaro ", " quora ", text)
         text = re.sub(r" mbp ", " macbook-pro ", text)
         text = re.sub(r" mac ", " macbook ", text)
@@ -168,6 +176,9 @@ class Preprocessor(object):
         text = re.sub(r" rs(\d+)", lambda m: ' rs ' + m.group(1), text)
         text = re.sub(r"(\d+)rs", lambda m: ' rs ' + m.group(1), text)
         text = re.sub(r"the european union", " eu ", text)
+
+        # 词条化
+        text = re.sub(r"dollars", " dollar ", text)
 
         # 去除多余空格
         text = ' '.join(text.split())
