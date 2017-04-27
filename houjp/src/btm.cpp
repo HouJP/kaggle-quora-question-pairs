@@ -94,7 +94,7 @@ void* cos_sim(void* argv) {
                 offset = 0;
             }
             int id_begin = i * (LEN_BINS + 4);
-            printf("into thread: t_id=%d, source_begin=%d, t_source_begin=%d, i=%d, j=%d, cos_sim=%f, offset=%d\n", t_id, source_begin, t_source_begin, i, j, cos_sim, offset);
+//            printf("into thread: t_id=%d, source_begin=%d, t_source_begin=%d, i=%d, j=%d, cos_sim=%f, offset=%d\n", t_id, source_begin, t_source_begin, i, j, cos_sim, offset);
             (*source_fs)[id_begin + offset] += 1.0;
             (*source_fs)[id_begin + LEN_BINS + 0] = std::max((*source_fs)[id_begin + LEN_BINS + 0], cos_sim);
             if (cos_sim > EPS)
