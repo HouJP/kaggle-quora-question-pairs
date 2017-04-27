@@ -11,7 +11,7 @@
 #include "StrUtil.h"
 
 #define NUM_THREADS 30
-#define LEN_BINS 10
+#define LEN_BINS 50
 #define EPS (1e-12)
 
 struct ThreadData {
@@ -84,11 +84,14 @@ void* cos_sim(void* argv) {
                 cos_sim = 0.0;
             }
             // 归一化
-            cos_sim = 0.5 * cos_sim + 0.5;
+//            cos_sim = 0.5 * cos_sim + 0.5;
 
             int offset = int(cos_sim * LEN_BINS);
-            if (10 == offset) {
-                offset -= 1;
+            if (LEN_BINS <= offset) {
+                offset = LEN_BINS - 1;
+            }
+            if (0 > offset) {
+                offset = 0;
             }
             int id_begin = i * (LEN_BINS + 4);
             printf("into thread: t_id=%d, source_begin=%d, t_source_begin=%d, i=%d, j=%d, cos_sim=%f, offset=%d\n", t_id, source_begin, t_source_begin, i, j, cos_sim, offset);
