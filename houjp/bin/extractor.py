@@ -2272,7 +2272,7 @@ class PowerfulWordV2(object):
         f.close()
 
     @staticmethod
-    def generate_powerful_word(cf):
+    def generate_powerful_word(cf, argv):
         # 加载train.csv文件
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
 
@@ -2323,9 +2323,9 @@ class PowerfulWordV2(object):
         cmd = argv[0]
 
         if 'generate_powerful_word' == cmd:
-            PowerfulWordV2.generate_powerful_word(cf)
+            PowerfulWordV2.generate_powerful_word(cf, argv[1:])
         elif 'extract_dside_word_power_v2' == cmd:
-            PowerfulWordV2.extract_dside_word_power_v2(cf)
+            PowerfulWordV2.extract_dside_word_power_v2(cf, argv[1:])
 
 
 def print_help():
