@@ -2117,11 +2117,12 @@ class BTMVecCosSimDis(object):
 
         # 统计
         # 负例
-        neg_train_features = train_features[train_data['is_duplicate'] == 0].apply(lambda x: x[9], axis=1, raw=True)
+        neg_train_features = train_features[train_data['is_duplicate'] == 0].apply(lambda x: x[10], axis=1, raw=True)
         LogUtil.log("INFO", 'neg: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
             neg_train_features.mean(), neg_train_features.std(), neg_train_features.max(), neg_train_features.min()))
+        print neg_train_features
         # 正例
-        pos_train_features = train_features[train_data['is_duplicate'] == 1].apply(lambda x: x[9], axis=1, raw=True)
+        pos_train_features = train_features[train_data['is_duplicate'] == 1].apply(lambda x: x[10], axis=1, raw=True)
         LogUtil.log("INFO", 'pos: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
             pos_train_features.mean(), pos_train_features.std(), pos_train_features.max(), pos_train_features.min()))
 
@@ -2133,7 +2134,7 @@ class BTMVecCosSimDis(object):
         plt.legend()
         plt.title('Label distribution over %s' % feature_name, fontsize=15)
         plt.xlabel(feature_name, fontsize=15)
-        plt.show()
+        # plt.show()
 
 
     @staticmethod
