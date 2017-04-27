@@ -18,6 +18,7 @@ import sys, getopt
 from numpy import linalg
 from preprocessor import Preprocessor
 from nltk.stem import PorterStemmer
+from nltk.stem import SnowballStemmer
 
 class WordMatchShare(object):
     """
@@ -2150,6 +2151,7 @@ class BTMVecCosSimDis(object):
 
 
 class PowerfulWordV2(object):
+    snowball_stemmer = SnowballStemmer('english')
     """
     寻找最优影响力的词
     """
@@ -2169,9 +2171,8 @@ class PowerfulWordV2(object):
         words_power = {}
         for index, row in train_data.iterrows():
             label = int(row['is_duplicate'])
-            print index
-            q1_words = [PorterStemmer().stem(word).encode('utf-8') for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question1']).decode('utf-8')))]
-            q2_words = [PorterStemmer().stem(word).encode('utf-8') for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question2']).decode('utf-8')))]
+            q1_words = [PowerfulWordV2.snowball_stemmer.stem(word).encode('utf-8') for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question1']).decode('utf-8')))]
+            q2_words = [PowerfulWordV2.snowball_stemmer.stem(word).encode('utf-8') for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question2']).decode('utf-8')))]
             all_words = set(q1_words + q2_words)
             q1_words = set(q1_words)
             q2_words = set(q2_words)
