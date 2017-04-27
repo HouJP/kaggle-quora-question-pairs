@@ -2170,8 +2170,8 @@ class PowerfulWordV2(object):
         for index, row in train_data.iterrows():
             label = int(row['is_duplicate'])
 
-            q1_words = [PorterStemmer().stem(word).encode('utf-8') for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question1'])).decode('utf-8'))]
-            q2_words = [PorterStemmer().stem(word).encode('utf-8') for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question2'])).decode('utf-8'))]
+            q1_words = [PorterStemmer().stem(word).encode('utf-8') for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question1']).decode('utf-8')))]
+            q2_words = [PorterStemmer().stem(word).encode('utf-8') for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question2']).decode('utf-8')))]
             all_words = set(q1_words + q2_words)
             q1_words = set(q1_words)
             q2_words = set(q2_words)
