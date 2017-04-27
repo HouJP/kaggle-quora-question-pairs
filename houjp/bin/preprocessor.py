@@ -83,7 +83,6 @@ class Preprocessor(object):
         text = re.sub(r"(\d+)\$", lambda m: m.group(1) + ' dollar ', text)
 
         # 缩略词处理
-        text = re.sub(r"\'s", " ", text)
         text = re.sub(r"can\'t", "can not", text)
         text = re.sub(r"cannot", "can not ", text)
         text = re.sub(r"what\'s", "what is", text)
@@ -103,34 +102,7 @@ class Preprocessor(object):
         text = re.sub(r" e \- mail ", " email ", text)
         text = re.sub(r" e\-mail ", " email ", text)
         text = re.sub(r",000", '000', text)
-
-        # 标点符号处理
-        text = re.sub(r"\+", " + ", text)
-        text = re.sub(r"\'", " ", text)
-        text = re.sub(r"-", " - ", text)
-        text = re.sub(r"/", " / ", text)
-        text = re.sub(r"\\", " \ ", text)
-        text = re.sub(r"=", " = ", text)
-        text = re.sub(r"\^", " ^ ", text)
-        text = re.sub(r":", " : ", text)
-        text = re.sub(r"\b\.", " . ", text)     # 单词与 . 之间插入空格
-        text = re.sub(r"\b,", " , ", text)      # 单词与 , 之间插入空格
-        text = re.sub(r"\b\?", " ? ", text)     # 单词与 ? 之间插入空格
-        text = re.sub(r"\b!", " ! ", text)      # 单词与 ! 之间插入空格
-        text = re.sub(r"\"", " \" ", text)      # " 左右插入空格
-        text = re.sub(r"&", " & ", text)        # & 左右插入空格
-        text = re.sub(r"|", " | ", text)        # | 左右插入空格
-        text = re.sub(r";", " ; ", text)        # ; 左右插入空格
-        text = re.sub(r"\(", " ( ", text)       # ( 左右插入空格
-        text = re.sub(r"\)", " ( ", text)       # ) 左右插入空格
-
-        # 符号替换为单词
-        text = re.sub(r"&", " and ", text)
-        text = re.sub(r"|", " or ", text)
-        text = re.sub(r"=", " equal ", text)
-        text = re.sub(r"\+", " plus ", text)
-        text = re.sub(r"₹", " rs ", text)      # 测试！
-        text = re.sub(r"\$", " dollar ", text)
+        text = re.sub(r"\'s", " ", text)
 
         # 拼写矫正及词条化
         text = re.sub(r"ph\.d", "phd", text)
@@ -178,6 +150,34 @@ class Preprocessor(object):
         text = re.sub(r"(\d+)rs", lambda m: ' rs ' + m.group(1), text)
         text = re.sub(r"the european union", " eu ", text)
         text = re.sub(r"dollars", " dollar ", text)
+
+        # 标点符号处理
+        text = re.sub(r"\+", " + ", text)
+        text = re.sub(r"'", " ", text)
+        text = re.sub(r"-", " - ", text)
+        text = re.sub(r"/", " / ", text)
+        text = re.sub(r"\\", " \ ", text)
+        text = re.sub(r"=", " = ", text)
+        text = re.sub(r"\^", " ^ ", text)
+        text = re.sub(r":", " : ", text)
+        text = re.sub(r"\.", " . ", text)     # 单词与 . 之间插入空格
+        text = re.sub(r",", " , ", text)      # 单词与 , 之间插入空格
+        text = re.sub(r"\?", " ? ", text)     # 单词与 ? 之间插入空格
+        text = re.sub(r"!", " ! ", text)      # 单词与 ! 之间插入空格
+        text = re.sub(r"\"", " \" ", text)      # " 左右插入空格
+        text = re.sub(r"&", " & ", text)        # & 左右插入空格
+        text = re.sub(r"\|", " | ", text)        # | 左右插入空格
+        text = re.sub(r";", " ; ", text)        # ; 左右插入空格
+        text = re.sub(r"\(", " ( ", text)       # ( 左右插入空格
+        text = re.sub(r"\)", " ( ", text)       # ) 左右插入空格
+
+        # 符号替换为单词
+        text = re.sub(r"&", " and ", text)
+        text = re.sub(r"\|", " or ", text)
+        text = re.sub(r"=", " equal ", text)
+        text = re.sub(r"\+", " plus ", text)
+        text = re.sub(r"₹", " rs ", text)      # 测试！
+        text = re.sub(r"\$", " dollar ", text)
 
         # 去除多余空格
         text = ' '.join(text.split())
@@ -366,4 +366,6 @@ if __name__ == "__main__":
     # PreprocessorRunner.add_qid_for_test(cf)
     # PreprocessorRunner.run_get_stem()
     # PreprocessorRunner.run_question_swap()
-    PreprocessorRunner.run_gen_index_with_swap()
+    # PreprocessorRunner.run_gen_index_with_swap()
+    text = 'hello| ph.d what\'s i\'m you\'re i\'d c ++ c# e mail i\'s PhD U.S.  rs123 1-2 fefefe. 1.2 world'
+    print Preprocessor.clean_text(text)
