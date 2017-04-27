@@ -2286,6 +2286,25 @@ class PowerfulWordV2(object):
         PowerfulWordV2.save_word_power(words_power, words_power_fp)
 
     @staticmethod
+    def extract_row_dside_word_power(row):
+        """
+        针对一个Pair抽取特征：是否包含双边影响力词表
+        :param row: 一个Pair实例
+        :return: Tags
+        """
+        tags = []
+        q1_words = [PowerfulWordV2.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(str(row['question1']).decode('utf-8')))]
+        q2_words = [PowerfulWordV2.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(str(row['question2']).decode('utf-8')))]
+        for word in PowerfulWordV2.dside_word_power:
+            if (word in q1_words) and (word in q2_words):
+                tags.append(1.0)
+            else:
+                tags.append(0.0)
+        return tags
+
+    @staticmethod
     def extract_dside_word_power_v2(cf, argv):
         # 设置参数
         feature_name = 'dside_word_power_v2'
@@ -2307,15 +2326,15 @@ class PowerfulWordV2(object):
 
 
         # 抽取特征：train.csv
-        # train_features = train_data.apply(DulNum.extract_row_dul_num_ratio, axis=1, raw=True)
-        # LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
-        # test_features = test_data.apply(DulNum.extract_row_dul_num_ratio, axis=1, raw=True)
-        # LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        train_features = train_data.apply(PowerfulWordV2.extract_row_dside_word_power, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        test_features = test_data.apply(PowerfulWordV2.extract_row_dside_word_power, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
         # 抽取特征: test.csv
-        # Feature.save_dataframe(train_features, train_feature_fp)
-        # LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
-        # Feature.save_dataframe(test_features, test_feature_fp)
-        # LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
 
     @staticmethod
