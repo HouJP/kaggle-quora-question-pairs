@@ -2064,24 +2064,24 @@ class BTMVecCosSimDis(object):
     @staticmethod
     def load_btm_vec_cos_sim_dis(cf):
         features = []
-        for index in range(9):
-            f = open(cf.get('DEFAULT', 'devel_pt') + '/btm_all_wordtoken_100_50.fs.0%d' % index)
+        for index in range(2):
+            f = open(cf.get('DEFAULT', 'devel_pt') + '/btm_train_wordtoken_100_50.fs.0%d' % index)
             new_line = True
             for line in f:
                 vec = [float(s) for s in line.strip().split()]
                 if new_line:
                     new_line = False
-                    features.append(vec)
+                    features.append(vec[0:50])
                 else:
                     new_line = True
-                    features[len(features) - 1].extend(vec)
+                    features[len(features) - 1].extend(vec[0:50])
             f.close()
         return features
 
     @staticmethod
     def extract_btm_vec_cos_sim_dis(cf, argv):
         # 设置参数
-        feature_name = 'btm_vec_cos_sim_dis'
+        feature_name = 'btm_train_wordtoken_100_50'
 
         # 加载数据文件
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
