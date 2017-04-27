@@ -138,7 +138,7 @@ class Feature(object):
                                                           n_line, will_save)
         # 加载<Question>特征
         # TODO
-        return features
+        return features.tocsc()
 
     @staticmethod
     def load_mul_features_with_part_id(feature_pt, feature_names, rawset_name, id_part, n_line, will_save):
@@ -179,7 +179,7 @@ class Feature(object):
         features = Feature.load_mul_features(feature_qp_pt, feature_qp_names, rawset_name, will_save)
         # 加载<Question>特征
         # TODO
-        return features
+        return features.tocsc()
 
     @staticmethod
     def load_mul_features(feature_pt, feature_names, rawset_name, will_save):
