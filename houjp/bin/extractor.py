@@ -16,7 +16,8 @@ from utils import LogUtil
 import json
 import sys, getopt
 from numpy import linalg
-
+from preprocessor import Preprocessor
+from nltk.stem import PorterStemmer
 
 class WordMatchShare(object):
     """
@@ -2117,12 +2118,12 @@ class BTMVecCosSimDis(object):
 
         # 统计
         # 负例
-        neg_train_features = train_features[train_data['is_duplicate'] == 0].apply(lambda x: x[10], axis=1, raw=True)
+        neg_train_features = train_features[train_data['is_duplicate'] == 0].apply(lambda x: x[11], axis=1, raw=True)
         LogUtil.log("INFO", 'neg: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
             neg_train_features.mean(), neg_train_features.std(), neg_train_features.max(), neg_train_features.min()))
-        print neg_train_features
+        # print neg_train_features
         # 正例
-        pos_train_features = train_features[train_data['is_duplicate'] == 1].apply(lambda x: x[10], axis=1, raw=True)
+        pos_train_features = train_features[train_data['is_duplicate'] == 1].apply(lambda x: x[11], axis=1, raw=True)
         LogUtil.log("INFO", 'pos: mean=%.2f, std=%.2f, max=%.2f, min=%.2f' % (
             pos_train_features.mean(), pos_train_features.std(), pos_train_features.max(), pos_train_features.min()))
 
@@ -2148,6 +2149,112 @@ class BTMVecCosSimDis(object):
             BTMVecCosSimDis.plot_btm_vec_cos_sim_dis(cf, argv[1:])
 
 
+class PowerfulWordV2(object):
+    """
+    寻找最优影响力的词
+    """
+    dside_word_power = []
+    oside_word_power = []
+    aside_word_power = []
+    word_power_dict = []
+
+    @staticmethod
+    def cal_word_power(train_data):
+        """
+        计算数据中词语的影响力，格式如下：
+            词语 --> [0. 出现语句对数量，1. 出现语句对比例，2. 正确语句对比例，3. 单侧语句对比例，4. 单侧语句对正确比例，5. 双侧语句对比例，6. 双侧语句对正确比例]
+        :param data: 训练数据
+        :return: 影响力词典
+        """
+        words_power = {}
+        for index, row in train_data.iterrows():
+            label = int(row['is_duplicate'])
+
+            q1_words = [PorterStemmer().stem(word) for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question1'])).decode('utf-8'))]
+            q2_words = [PorterStemmer().stem(word) for word in nltk.word_tokenize(Preprocessor.clean_text(str(row['question2'])).decode('utf-8'))]
+            all_words = set(q1_words + q2_words)
+            q1_words = set(q1_words)
+            q2_words = set(q2_words)
+            for word in all_words:
+                if word not in words_power:
+                    words_power[word] = [0. for i in range(7)]
+                # 计算出现语句对数量
+                words_power[word][0] += 1.
+                words_power[word][1] += 1.
+
+                if ((word in q1_words) and (word not in q2_words)) or ((word not in q1_words) and (word in q2_words)):
+                    # 计算单侧语句数量
+                    words_power[word][3] += 1.
+                    if 0 == label:
+                        # 计算正确语句对数量
+                        words_power[word][2] += 1.
+                        # 计算单侧语句正确比例
+                        words_power[word][4] += 1.
+                if (word in q1_words) and (word in q2_words):
+                    # 计算双侧语句数量
+                    words_power[word][5] += 1.
+                    if 1 == label:
+                        # 计算正确语句对数量
+                        words_power[word][2] += 1.
+                        # 计算双侧语句正确比例
+                        words_power[word][6] += 1.
+        for word in words_power:
+            # 计算出现语句对比例
+            words_power[word][1] /= len(train_data)
+            # 计算正确语句对比例
+            words_power[word][2] /= words_power[word][0]
+            # 计算单侧语句对正确比例
+            if words_power[word][3] > 1e-6:
+                words_power[word][4] /= words_power[word][3]
+            # 计算单侧语句对比例
+            words_power[word][3] /= words_power[word][0]
+            # 计算双侧语句对正确比例
+            if words_power[word][5] > 1e-6:
+                words_power[word][6] /= words_power[word][5]
+            # 计算双侧语句对比例
+            words_power[word][5] /= words_power[word][0]
+        sorted_words_power = sorted(words_power.iteritems(), key=lambda d: d[1][0], reverse=True)
+        LogUtil.log("INFO", "power words calculation done, len(words_power)=%d" % len(sorted_words_power))
+        return sorted_words_power
+
+    @staticmethod
+    def save_word_power(words_power, fp):
+        """
+        存储影响力词表
+        :param words_power: 影响力词表
+        :param fp: 存储路径
+        :return: NONE
+        """
+        f = open(fp, 'w')
+        for ele in words_power:
+            f.write("%s" % ele[0])
+            for num in ele[1]:
+                f.write("\t%.6f" % num)
+            f.write("\n")
+        f.close()
+
+    @staticmethod
+    def generate_powerful_word(cf):
+        # 加载train.csv文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+
+        # 影响力词表路径
+        words_power_fp = '%s/words_power_v2.train.txt' % (cf.get('DEFAULT', 'feature_stat_pt'))
+
+        # 生成影响力词表
+        words_power = PowerfulWordV2.cal_word_power(train_data)
+
+        # 存储影响力词表
+        PowerfulWordV2.save_word_power(words_power, words_power_fp)
+
+    @staticmethod
+    def run(cf, argv):
+        cmd = argv[0]
+
+        if 'generate_powerful_word' == cmd:
+            PowerfulWordV2.generate_powerful_word(cf)
+
+
 def print_help():
     print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
@@ -2156,6 +2263,7 @@ def print_help():
     print '\tdul_num'
     print '\tmath_tag'
     print '\tbtm_vec_cos_sim_dis'
+    print '\tPowerfulWordV2'
 
 if __name__ == "__main__":
 
@@ -2180,5 +2288,7 @@ if __name__ == "__main__":
         MathTag.run(sys.argv[3:])
     elif 'BTMVecCosSimDis' == cmd:
         BTMVecCosSimDis.run(sys.argv[3:])
+    elif 'PowerfulWordV2' == cmd:
+        PowerfulWordV2.run(cf, sys.argv[3:])
     else:
         print_help()
