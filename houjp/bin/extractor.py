@@ -2239,6 +2239,24 @@ class PowerfulWordV2(object):
             len(PowerfulWordV2.dside_word_power), str(PowerfulWordV2.dside_word_power)))
 
     @staticmethod
+    def init_oside_word_power(words_power):
+        """
+        初始化单边影响力词表
+        :param words_power:
+        :return:
+        """
+        PowerfulWordV2.oside_word_power = []
+        # 在单边pair中最少出现次数
+        num_least = 500
+        words_power = filter(lambda x: x[1][0] * x[1][3] >= num_least, words_power)
+        # 单边正确比例阈值
+        oside_corate_rate = 0.9
+        PowerfulWordV2.oside_word_power.extend(
+            map(lambda x: x[0], filter(lambda x: x[1][4] >= oside_corate_rate, words_power)))
+        LogUtil.log('INFO', 'One side power words(%d): %s' % (
+            len(PowerfulWordV2.oside_word_power), str(PowerfulWordV2.oside_word_power)))
+
+    @staticmethod
     def load_word_power(fp):
         """
         加载影响力词表
@@ -2336,6 +2354,37 @@ class PowerfulWordV2(object):
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
+    @staticmethod
+    def extract_oside_word_power_v2(cf, argv):
+        # 设置参数
+        feature_name = 'oside_word_power_v2'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 加载词表
+        words_power_fp = '%s/words_power_v2.train.txt' % (cf.get('DEFAULT', 'feature_stat_pt'))
+        words_power = PowerfulWordV2.load_word_power(words_power_fp)
+
+        PowerfulWordV2.init_oside_word_power(words_power)
+
+        # 抽取特征：train.csv
+        # train_features = train_data.apply(PowerfulWordV2.extract_row_dside_word_power, axis=1, raw=True)
+        # LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        # test_features = test_data.apply(PowerfulWordV2.extract_row_dside_word_power, axis=1, raw=True)
+        # LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        # 抽取特征: test.csv
+        # Feature.save_dataframe(train_features, train_feature_fp)
+        # LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+        # Feature.save_dataframe(test_features, test_feature_fp)
+        # LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
 
     @staticmethod
     def run(cf, argv):
@@ -2345,6 +2394,8 @@ class PowerfulWordV2(object):
             PowerfulWordV2.generate_powerful_word(cf, argv[1:])
         elif 'extract_dside_word_power_v2' == cmd:
             PowerfulWordV2.extract_dside_word_power_v2(cf, argv[1:])
+        elif 'extract_oside_word_power_v2' == cmd:
+            PowerfulWordV2.extract_oside_word_power_v2(cf, argv[1:])
 
 
 def print_help():
