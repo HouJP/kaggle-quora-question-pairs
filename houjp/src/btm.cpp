@@ -15,13 +15,15 @@
 #define EPS (1e-12)
 
 struct ThreadData {
-    int begin;
+    int source_begin;
     int t_id;
-    int t_begin;
-    int t_end;
-    std::vector<std::vector<double>* >* vecs;
-    std::vector<double>* fs;
-    std::vector<double>* lens;
+    int t_source_begin;
+    int t_source_end;
+    std::vector<std::vector<double>* >* source_vecs;
+    std::vector<std::vector<double>* >* dest_vecs;
+    std::vector<double>* source_fs;
+    std::vector<double>* source_lens;
+    std::vector<double>* dest_lens;
 };
 
 double cal_vector_length(std::vector<double>* vec) {
@@ -64,33 +66,35 @@ double cal_vector_cos_sim(std::vector<double>* v1, std::vector<double>* v2, doub
 
 void* cos_sim(void* argv) {
     struct ThreadData* thread_data = (struct ThreadData *)argv;
-    int begin = thread_data->begin;
+    int source_begin = thread_data->source_begin;
     int t_id = thread_data->t_id;
-    int t_begin = thread_data->t_begin;
-    int t_end = thread_data->t_end;
-    std::vector<std::vector<double>* >* vecs = thread_data->vecs;
-    std::vector<double>* fs = thread_data->fs;
-    std::vector<double>* lens = thread_data->lens;
-    printf("into thread: begin=%d, t_id=%d, t_begin=%d, t_end=%d\n", begin, t_id, t_begin, t_end);
+    int t_source_begin = thread_data->t_source_begin;
+    int t_source_end = thread_data->t_source_end;
+    std::vector<std::vector<double>* >* source_vecs = thread_data->source_vecs;
+    std::vector<std::vector<double>* >* dest_vecs = thread_data->dest_vecs;
+    std::vector<double>* source_fs = thread_data->source_fs;
+    std::vector<double>* source_lens = thread_data->source_lens;
+    std::vector<double>* dest_lens = thread_data->dest_lens;
+    printf("into thread: source_begin=%d, t_id=%d, t_source_begin=%d, t_source_end=%d\n", source_begin, t_id, t_source_begin, t_source_end);
 
-    for (int i = t_begin; i < t_end; ++i) {
-        for (int j = 0; j < vecs->size(); ++j) {
-            double cos_sim = cal_vector_cos_sim((*vecs)[begin + i], (*vecs)[j], (*lens)[begin + i], (*lens)[j]);
+    for (int i = t_source_begin; i < t_source_end; ++i) {
+        for (int j = 0; j < dest_vecs->size(); ++j) {
+            double cos_sim = cal_vector_cos_sim((*source_vecs)[source_begin + i], (*dest_vecs)[j], (*source_lens)[source_begin + i], (*dest_lens)[j]);
             if (isnan(cos_sim)) {
                 cos_sim = 0.0;
             }
 //            printf("into thread: t_id=%d, begin=%d, t_begin=%d, i=%d, j=%d, cos_sim=%f\n", tid, begin, t_begin, i, j, cos_sim);
             int offset = int(cos_sim * LEN_BINS);
             int id_begin = i * (LEN_BINS + 4);
-            (*fs)[id_begin + offset] += 1.0;
-            (*fs)[id_begin + LEN_BINS + 0] = std::max((*fs)[id_begin + LEN_BINS + 0], cos_sim);
+            (*source_fs)[id_begin + offset] += 1.0;
+            (*source_fs)[id_begin + LEN_BINS + 0] = std::max((*source_fs)[id_begin + LEN_BINS + 0], cos_sim);
             if (cos_sim > EPS)
-                (*fs)[id_begin + LEN_BINS + 1] = std::min((*fs)[id_begin + LEN_BINS + 1], cos_sim);
-            (*fs)[id_begin + LEN_BINS + 2] += cos_sim;
-            (*fs)[id_begin + LEN_BINS + 3] += cos_sim * cos_sim;
+                (*source_fs)[id_begin + LEN_BINS + 1] = std::min((*source_fs)[id_begin + LEN_BINS + 1], cos_sim);
+            (*source_fs)[id_begin + LEN_BINS + 2] += cos_sim;
+            (*source_fs)[id_begin + LEN_BINS + 3] += cos_sim * cos_sim;
         }
-        if (9 == ((i - t_begin) % 10)) {
-            printf("into thread: t_id=%d, begin=%d, t_begin=%d, index=%d done\n", t_id, begin ,t_begin, i);
+        if (9 == ((i - t_source_begin) % 10)) {
+            printf("into thread: t_id=%d, source_begin=%d, t_source_begin=%d, index=%d done\n", t_id, source_begin ,t_source_begin, i);
         }
     }
 
@@ -129,7 +133,7 @@ void save_features(std::vector<double>* fs, std::string fp) {
 }
 
 void print_help() {
-    std::cout << "btm <btm_vec_fp> <btm_fs_fp> <n_parts> <id_part>" << std::endl;
+    std::cout << "btm <source_btm_vec_fp> <dest_btm_vec_fp> <btm_fs_fp> <n_parts> <id_part>" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -137,24 +141,27 @@ int main(int argc, char* argv[]) {
         print_help();
         return -1;
     }
-    std::string btm_vec_fp = argv[1];
-    std::string btm_fs_fp = argv[2];
-    int n_parts = std::stoi(argv[3]);
-    int id_part = std::stoi(argv[4]);
+    std::string source_btm_vec_fp = argv[1];
+    std::string dest_btm_vec_fp = argv[2];
+    std::string btm_fs_fp = argv[3];
+    int n_parts = std::stoi(argv[4]);
+    int id_part = std::stoi(argv[5]);
 
-    std::vector<std::vector<double>* >* vecs = load_vector_file(btm_vec_fp);
-    std::vector<double>* lens = cal_vector_length(vecs);
+    std::vector<std::vector<double>* >* source_vecs = load_vector_file(source_btm_vec_fp);
+    std::vector<std::vector<double>* >* dest_vecs = load_vector_file(dest_btm_vec_fp);
+    std::vector<double>* source_lens = cal_vector_length(source_vecs);
+    std::vector<double>* dest_lens = cal_vector_length(dest_vecs);
 
-    int begin = int(round(1.0 * vecs->size() / n_parts * id_part));
-    int end = int(round(1.0 * vecs->size() / n_parts * (id_part + 1)));
+    int source_begin = int(round(1.0 * source_vecs->size() / n_parts * id_part));
+    int source_end = int(round(1.0 * source_vecs->size() / n_parts * (id_part + 1)));
 
-    printf("n_parts=%d, id_part=%d, begin=%d, end=%d\n", n_parts, id_part, begin, end);
+    printf("n_parts=%d, id_part=%d, source_begin=%d, source_end=%d\n", n_parts, id_part, source_begin, source_end);
 
     // num_bins = LEN_BINS, max, min, sum, sum(^2)
-    std::vector<double>* fs = new std::vector<double>((unsigned long)((end - begin) * (LEN_BINS + 4)), 0.);
+    std::vector<double>* source_fs = new std::vector<double>((unsigned long)((source_end - source_begin) * (LEN_BINS + 4)), 0.);
     printf("create fs vector done\n");
-    for (size_t i = 0; i < end - begin; ++i) {
-        (*fs)[i * (LEN_BINS + 4) + (LEN_BINS + 1)] = 1.0;
+    for (size_t i = 0; i < source_end - source_begin; ++i) {
+        (*source_fs)[i * (LEN_BINS + 4) + (LEN_BINS + 1)] = 1.0;
     }
 
     // data
@@ -170,17 +177,19 @@ int main(int argc, char* argv[]) {
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     for (t = 0; t < NUM_THREADS; ++t) {
-        int t_begin = int(round(1.0 * (end - begin) / NUM_THREADS * t));
-        int t_end = int(round(1.0 * (end - begin) / NUM_THREADS * (t + 1)));
-        printf("create thread id=%d, t_begin=%d, t_end=%d\n", t, t_begin, t_end);
+        int t_source_begin = int(round(1.0 * (source_end - source_begin) / NUM_THREADS * t));
+        int t_source_end = int(round(1.0 * (source_end - source_begin) / NUM_THREADS * (t + 1)));
+        printf("create thread id=%d, t_begin=%d, t_end=%d\n", t, t_source_begin, t_source_end);
 
-        thread_data[t].begin = begin;
+        thread_data[t].source_begin = source_begin;
         thread_data[t].t_id = t;
-        thread_data[t].t_begin = t_begin;
-        thread_data[t].t_end = t_end;
-        thread_data[t].vecs = vecs;
-        thread_data[t].fs = fs;
-        thread_data[t].lens = lens;
+        thread_data[t].t_source_begin = t_source_begin;
+        thread_data[t].t_source_end = t_source_end;
+        thread_data[t].source_vecs = source_vecs;
+        thread_data[t].dest_vecs = dest_vecs;
+        thread_data[t].source_fs = source_fs;
+        thread_data[t].source_lens = source_lens;
+        thread_data[t].dest_lens = dest_lens;
 
         rc = pthread_create(&thread[t], &attr, cos_sim, (void *)&thread_data[t]);
         if (rc) {
@@ -200,7 +209,7 @@ int main(int argc, char* argv[]) {
         printf("Completed join with thread %d status=%ld\n",t, (long)status);
     }
 
-    save_features(fs, btm_fs_fp);
+    save_features(source_fs, btm_fs_fp);
 
     pthread_exit(NULL);
 }

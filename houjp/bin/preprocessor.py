@@ -75,15 +75,103 @@ class Preprocessor(object):
 
     @staticmethod
     def clean_text(text):
-        text = re.sub(r"what's ", "what is ", text)
+        # 单位处理
+        text = re.sub(r"(\d+)kgs ", lambda m: m.group(1) + ' kg ', text)        # e.g. 4kgs => 4 kg
+        text = re.sub(r"(\d+)kg ", lambda m: m.group(1) + ' kg ', text)         # e.g. 4kg => 4 kg
+        text = re.sub(r"(\d+)k ", lambda m: m.group(1) + '000 ', text)          # e.g. 4k => 4000
+
+        # 缩略词处理
+        text = re.sub(r"\'s", " ", text)
+        text = re.sub(r"can\'t", "can not", text)
+        text = re.sub(r"cannot", "can not ", text)
+        text = re.sub(r"what\'s", "what is", text)
         text = re.sub(r"\'ve ", " have ", text)
-        text = re.sub(r"can't ", "cannot ", text)
-        text = re.sub(r"n't ", " not ", text)
-        text = re.sub(r"i'm ", "i am ", text)
-        text = re.sub(r"\'re ", " are ", text)
-        text = re.sub(r"\'d ", " would ", text)
-        text = re.sub(r"\'ll ", " will ", text)
-        text = re.sub(r" 60k ", " 60000 ", text)
+        text = re.sub(r"n\'t", " not ", text)
+        text = re.sub(r"i\'m", "i am ", text)
+        text = re.sub(r"\'re", " are ", text)
+        text = re.sub(r"\'d", " would ", text)
+        text = re.sub(r"\'ll", " will ", text)
+        text = re.sub(r"ph\.d", "phd", text)
+        text = re.sub(r"c\+\+", "cplusplus", text)
+        text = re.sub(r"c \+\+", "cplusplus", text)
+        text = re.sub(r"c \+ \+", "cplusplus", text)
+        text = re.sub(r"c#", "csharp", text)
+        text = re.sub(r"f#", "fsharp", text)
+        text = re.sub(r"g#", "gsharp", text)
+        text = re.sub(r" e mail ", " email ", text)
+        text = re.sub(r" e \- mail ", " email ", text)
+        text = re.sub(r" e\-mail ", " email ", text)
+        text = re.sub(r",000", '000', text)
+
+        # 标点符号处理
+        text = re.sub(r"\+", " + ", text)
+        text = re.sub(r"\'", " ", text)
+        text = re.sub(r"-", " - ", text)
+        text = re.sub(r"/", " / ", text)
+        text = re.sub(r"=", " = ", text)
+        text = re.sub(r"\^", " ^ ", text)
+        text = re.sub(r":", " : ", text)
+        text = re.sub(r"\b\.", " . ", text)     # 单词与 . 之间插入空格
+        text = re.sub(r"\b,", " , ", text)      # 单词与 , 之间插入空格
+        text = re.sub(r"\b\?", " ? ", text)     # 单词与 ? 之间插入空格
+        text = re.sub(r"\b!", " ! ", text)      # 单词与 ! 之间插入空格
+        text = re.sub(r"\"", " \" ", text)      # " 左右插入空格
+        text = re.sub(r"&", " & ", text)        # & 左右插入空格
+        text = re.sub(r"|", " | ", text)        # | 左右插入空格
+        text = re.sub(r";", " ; ", text)        # ; 左右插入空格
+        text = re.sub(r"\(", " ( ", text)       # ( 左右插入空格
+        text = re.sub(r"\)", " ( ", text)       # ) 左右插入空格
+
+        # 符号替换为单词
+        text = re.sub(r"&", " and ", text)
+        text = re.sub(r"|", " or ", text)
+        text = re.sub(r"=", " equal ", text)
+        text = re.sub(r"\+", " plus ", text)
+        text = re.sub(ur"₹", " rs ", text)      # 测试！
+
+        # 拼写矫正
+        text = re.sub(r"pokemons", "pokemon", text)
+        text = re.sub(r"pokémon", "pokemon", text)
+        text = re.sub(r"pokemon go ", "pokemon-go ", text)
+        text = re.sub(r" e g ", " eg ", text)
+        text = re.sub(r" b g ", " bg ", text)
+        text = re.sub(r" 9 11 ", " 911 ", text)
+        text = re.sub(r" j k ", " jk ", text)
+        text = re.sub(r" fb ", " facebook ", text)
+        text = re.sub(r"facebooks", " facebook ", text)
+        text = re.sub(r"facebooking", " facebook ", text)
+        text = re.sub(r"insidefacebook", "inside facebook", text)
+        text = re.sub(r"donald trump", "trump", text)
+        text = re.sub(r"the big bang", "big-bang", text)
+        text = re.sub(r"the european union", "eu", text)
+        text = re.sub(r" usa ", " america ", text)
+        text = re.sub(r" us ", " america ", text)
+        text = re.sub(r" u s ", " america ", text)
+        text = re.sub(r" quaro ", " quora ", text)
+        text = re.sub(r" mbp ", " macbook-pro ", text)
+        text = re.sub(r" mac ", " macbook ", text)
+        text = re.sub(r"macbook pro", "macbook-pro", text)
+        text = re.sub(r"macbook-pros", "macbook-pro", text)
+        text = re.sub(r" 1 ", " one ", text)
+        text = re.sub(r" 2 ", " two ", text)
+        text = re.sub(r" 3 ", " three ", text)
+        text = re.sub(r" 4 ", " four ", text)
+        text = re.sub(r" 5 ", " five ", text)
+        text = re.sub(r" 6 ", " six ", text)
+        text = re.sub(r" 7 ", " seven ", text)
+        text = re.sub(r" 8 ", " eight ", text)
+        text = re.sub(r" 9 ", " nine ", text)
+        text = re.sub(r"googling", " google ", text)
+        text = re.sub(r"googled", " google ", text)
+        text = re.sub(r"googleable", " google ", text)
+        text = re.sub(r"googles", " google ", text)
+        text = re.sub(r" rs(\d+)", lambda m: ' rs ' + m.group(1), text)
+        text = re.sub(r"(\d+)rs", lambda m: ' rs ' + m.group(1), text)
+        text = re.sub(r"the european union", " eu ", text)
+
+        # 去除多余空格
+        text = ' '.join(text.split())
+
         return text
 
     @staticmethod
