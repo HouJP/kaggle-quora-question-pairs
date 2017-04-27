@@ -268,7 +268,8 @@ class Feature(object):
         features = hstack([features_1, features_2])
         (row_num, col_num) = features.shape
         LogUtil.log("INFO", "merge col done, shape=(%d,%d)" % (row_num, col_num))
-        return features.tocsr()
+        return features
+        # return features.tocsr()
 
     @staticmethod
     def merge_row(features_1, features_2):
@@ -281,7 +282,8 @@ class Feature(object):
         features = vstack([features_1, features_2])
         (row_num, col_num) = features.shape
         LogUtil.log("INFO", "merge row done, shape=(%d,%d)" % (row_num, col_num))
-        return features.tocsr()
+        return features
+        # return features.tocsr()
 
 
     @staticmethod
