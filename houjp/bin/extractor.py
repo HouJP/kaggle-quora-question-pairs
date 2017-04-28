@@ -2098,15 +2098,15 @@ class BTMVecCosSimDis(object):
         # 抽取特征：train.csv
         train_features = features[0 : len(train_data)]
         LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+
         test_features = features[len(train_data) : len(train_data) + len(test_data)]
         # 增加一个自身向量的修正
         # for i in range(len(test_features)):
         #     test_features[i][49] += 1.0
         #     test_features[i][99] += 1.0
         LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
-        # 抽取特征: test.csv
-        Feature.save_dataframe(train_features, train_feature_fp)
-        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
