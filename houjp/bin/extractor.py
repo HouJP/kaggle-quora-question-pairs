@@ -2064,7 +2064,7 @@ class BTMVecCosSimDis(object):
     @staticmethod
     def load_btm_vec_cos_sim_dis(cf):
         features = []
-        for index in range(2):
+        for index in range(10):
             f = open(cf.get('DEFAULT', 'devel_pt') + '/btm_train_wordtoken_100_50.fs.0%d' % index)
             new_line = True
             for line in f:
@@ -2096,15 +2096,15 @@ class BTMVecCosSimDis(object):
         test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
 
         # 抽取特征：train.csv
-        train_features = features[0:len(train_data)]
+        train_features = features[0 : len(train_data)]
         LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
-        # test_features = test_data.apply(MathTag.extract_row_math_tag, axis=1, raw=True)
-        # LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        test_features = features[len(train_data) : len(train_data) + len(test_data)]
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
         # 抽取特征: test.csv
         Feature.save_dataframe(train_features, train_feature_fp)
         LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
-        # Feature.save_dataframe(test_features, test_feature_fp)
-        # LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
     @staticmethod
     def plot_btm_vec_cos_sim_dis(cf, argv):
