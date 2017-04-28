@@ -2101,6 +2101,7 @@ class BTMVecCosSimDis(object):
         test_features = features[len(train_data) : len(train_data) + len(test_data)]
         # 增加一个自身向量的修正
         for i in range(len(test_features)):
+            print i
             test_features[i][49] += 1.0
             test_features[i][99] += 1.0
         LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
