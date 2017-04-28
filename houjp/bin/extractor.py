@@ -2071,17 +2071,17 @@ class BTMVecCosSimDis(object):
                 vec = [float(s) for s in line.strip().split()]
                 if new_line:
                     new_line = False
-                    features.append(vec[25:40])
+                    features.append(vec[0:49])
                 else:
                     new_line = True
-                    features[len(features) - 1].extend(vec[25:40])
+                    features[len(features) - 1].extend(vec[0:49])
             f.close()
         return features
 
     @staticmethod
     def extract_btm_vec_cos_sim_dis(cf, argv):
         # 设置参数
-        feature_name = 'btm_all_wordtoken_100_50_dis_30'
+        feature_name = 'btm_train_wordtoken_100_50_dis_98'
 
         # 加载数据文件
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
