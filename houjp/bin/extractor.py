@@ -2071,17 +2071,17 @@ class BTMVecCosSimDis(object):
                 vec = [float(s) for s in line.strip().split()]
                 if new_line:
                     new_line = False
-                    features.append(vec[0:50])
+                    features.append(vec[0:25])
                 else:
                     new_line = True
-                    features[len(features) - 1].extend(vec[0:50])
+                    features[len(features) - 1].extend(vec[0:25])
             f.close()
         return features
 
     @staticmethod
     def extract_btm_vec_cos_sim_dis(cf, argv):
         # 设置参数
-        feature_name = 'btm_train_wordtoken_100_50'
+        feature_name = 'btm_all_wordtoken_100_50_dis_50'
 
         # 加载数据文件
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
@@ -2100,9 +2100,9 @@ class BTMVecCosSimDis(object):
         LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
         test_features = features[len(train_data) : len(train_data) + len(test_data)]
         # 增加一个自身向量的修正
-        for i in range(len(test_features)):
-            test_features[i][49] += 1.0
-            test_features[i][99] += 1.0
+        # for i in range(len(test_features)):
+        #     test_features[i][49] += 1.0
+        #     test_features[i][99] += 1.0
         LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
         # 抽取特征: test.csv
         Feature.save_dataframe(train_features, train_feature_fp)
