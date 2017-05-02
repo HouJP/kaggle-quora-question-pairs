@@ -218,19 +218,21 @@ class Feature(object):
         f = open(ft_pt, 'w')
         f.write("%d %d\n" % (row_num, col_num))
         ind_indptr = 1
-        blank_line = True
+        begin_line = True
         for ind_data in range(len(data)):
             while ind_data == indptr[ind_indptr]:
-                if blank_line:
-                    f.write('0:0')
                 f.write('\n')
-                blank_line = True
+                begin_line = True
                 ind_indptr += 1
-            if ind_data != indptr[ind_indptr - 1]:
+            if (data[ind_data] < 1e-12) and (data[ind_data] > -1e-12):
+                continue
+            if (not begin_line) and (ind_data != indptr[ind_indptr - 1]):
                 f.write(' ')
             f.write("%d:%f" % (indice[ind_data], data[ind_data]))
-            blank_line = False
-        f.write("\n")
+            begin_line = False
+        while ind_indptr < len(indptr):
+            f.write("\n")
+            ind_indptr += 1
         LogUtil.log("INFO", "save smat feature file done (%s)" % ft_pt)
         f.close()
 
@@ -419,8 +421,8 @@ class Feature(object):
         cf.read("../conf/python.conf")
 
         # split all features
-        features = Feature.load('/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature1.demo.smat')
-        Feature.save(features, '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature2.demo.smat')
+        features = Feature.load_smat('/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature2.demo.smat')
+        Feature.save_smat(features, '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/feature/question/feature3.demo.smat')
         # Feature.split_all_features(cf)
 
 if __name__ == "__main__":

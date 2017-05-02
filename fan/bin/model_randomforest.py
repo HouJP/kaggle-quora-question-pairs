@@ -151,17 +151,24 @@ class Model(object):
 
         # 设置参数
         params = {}
-        params['penalty'] = cf.get('LIBLINEAR_PARAMS', 'penalty')
-        params['dual'] = cf.get('LIBLINEAR_PARAMS', 'dual').lower() == 'true'
-        params['tol'] = float(cf.get('LIBLINEAR_PARAMS', 'tol'))
-        params['C'] = float(cf.get('LIBLINEAR_PARAMS', 'C'))
-        params['verbose'] = cf.getint('LIBLINEAR_PARAMS', 'verbose')
-        params['max_iter'] = cf.getint('LIBLINEAR_PARAMS', 'max_iter')
-        params['solver'] = cf.get('LIBLINEAR_PARAMS', 'solver')
-        params['n_jobs'] = cf.getint('LIBLINEAR_PARAMS', 'n_jobs')
-        params['multi_class'] = cf.get('LIBLINEAR_PARAMS', 'multi_class')
+        params['n_estimators'] = cf.getint('RANDOMFOREST_PARAMS', 'n_estimators') # number of trees, default=10
+        params['criterion'] = cf.get('RANDOMFOREST_PARAMS', 'criterion').lower() # default='gini'
+        params['max_features'] = cf.get('RANDOMFOREST_PARAMS', 'max_features').lower()
+        params['max_depth'] = None #cf.get('RANDOMFOREST_PARAMS', 'max_depth').lower() == 'None'
+        params['min_samples_split'] = cf.getint('RANDOMFOREST_PARAMS', 'min_samples_split')
+        params['min_samples_leaf'] = cf.getint('RANDOMFOREST_PARAMS', 'min_samples_leaf')
+        params['min_weight_fraction_leaf'] = cf.getint('RANDOMFOREST_PARAMS', 'min_weight_fraction_leaf')
+        params['max_leaf_nodes'] = None #cf.getint('RANDOMFOREST_PARAMS', 'max_leaf_nodes')
+        params['min_impurity_split'] = float(cf.get('RANDOMFOREST_PARAMS', 'min_impurity_split'))
+        params['bootstrap'] = cf.get('RANDOMFOREST_PARAMS', 'bootstrap').lower() == 'true'
+        params['oob_score'] = cf.get('RANDOMFOREST_PARAMS', 'oob_score').lower() == 'true'
+        params['n_jobs'] = cf.getint('RANDOMFOREST_PARAMS', 'n_jobs')
+        params['random_state'] = cf.getint('RANDOMFOREST_PARAMS', 'random_state')
+        params['verbose'] = cf.getint('RANDOMFOREST_PARAMS', 'verbose')
+        params['warm_start'] = cf.get('RANDOMFOREST_PARAMS', 'warm_start').lower() == 'true'
+        params['class_weight'] = None #{ 1: 0.5, 0: 0.5} #cf.getint('RANDOMFOREST_PARAMS', 'class_weight')
 
-        model = LogisticRegression(penalty=params['penalty'], dual=params['dual'], tol=params['tol'], C=params['C'], verbose=params['verbose'], max_iter=params['max_iter'], solver=params['solver'], n_jobs=params['n_jobs'], multi_class=params['multi_class'])
+        model = RandomForestClassifier(n_estimators=params['n_estimators'], criterion=params['criterion'], max_features=params['max_features'], max_depth=params['max_depth'], min_samples_split=params['min_samples_split'], min_samples_leaf=params['min_samples_leaf'], min_weight_fraction_leaf=params['min_weight_fraction_leaf'], max_leaf_nodes=params['max_leaf_nodes'], min_impurity_split=params['min_impurity_split'], bootstrap=params['bootstrap'], oob_score=params['oob_score'], n_jobs=params['n_jobs'], random_state=params['random_state'], verbose=params['verbose'], warm_start=params['warm_start'], class_weight=params['class_weight'] )
 
         # 训练模型
         model.fit(train_data, train_label)
@@ -171,7 +178,7 @@ class Model(object):
 
         # 存储模型
         model_param = model.get_params()
-        model_fp = cf.get('DEFAULT', 'model_pt') + '/liblinear.model'
+        model_fp = cf.get('DEFAULT', 'model_pt') + '/randomforest.model'
         cPickle.dump(model_param, open(model_fp, 'w'))
 
         # 保存本次运行配置
@@ -240,20 +247,27 @@ class Model(object):
     @staticmethod
     def load_model(cf):
         # 加载模型
-        model_fp = cf.get('DEFAULT', 'model_pt') + '/liblinear.model'
+        model_fp = cf.get('DEFAULT', 'model_pt') + '/randomforest.model'
         params = {}
-        params['penalty'] = cf.get('LIBLINEAR_PARAMS', 'penalty')
-        params['dual'] = cf.get('LIBLINEAR_PARAMS', 'dual').lower() == 'true'
-        params['tol'] = float(cf.get('LIBLINEAR_PARAMS', 'tol'))
-        params['C'] = float(cf.get('LIBLINEAR_PARAMS', 'C'))
-        params['verbose'] = cf.getint('LIBLINEAR_PARAMS', 'verbose')
-        params['max_iter'] = cf.getint('LIBLINEAR_PARAMS', 'max_iter')
-        params['solver'] = cf.get('LIBLINEAR_PARAMS', 'solver')
-        params['n_jobs'] = cf.getint('LIBLINEAR_PARAMS', 'n_jobs')
-        params['multi_class'] = cf.get('LIBLINEAR_PARAMS', 'multi_class')
 
-        model = LogisticRegression(penalty=params['penalty'], dual=params['dual'], tol=params['tol'], C=params['C'], verbose=params['verbose'], max_iter=params['max_iter'], solver=params['solver'], n_jobs=params['n_jobs'], multi_class=params['multi_class'])
+        params['n_estimators'] = cf.getint('RANDOMFOREST_PARAMS', 'n_estimators') # number of trees, default=10
+        params['criterion'] = cf.get('RANDOMFOREST_PARAMS', 'criterion').lower() # default='gini'
+        params['max_features'] = cf.get('RANDOMFOREST_PARAMS', 'max_features').lower()
+        params['max_depth'] = None #cf.get('RANDOMFOREST_PARAMS', 'max_depth').lower() == 'None'
+        params['min_samples_split'] = cf.getint('RANDOMFOREST_PARAMS', 'min_samples_split')
+        params['min_samples_leaf'] = cf.getint('RANDOMFOREST_PARAMS', 'min_samples_leaf')
+        params['min_weight_fraction_leaf'] = cf.getint('RANDOMFOREST_PARAMS', 'min_weight_fraction_leaf')
+        params['max_leaf_nodes'] = None #cf.getint('RANDOMFOREST_PARAMS', 'max_leaf_nodes')
+        params['min_impurity_split'] = float(cf.get('RANDOMFOREST_PARAMS', 'min_impurity_split'))
+        params['bootstrap'] = cf.get('RANDOMFOREST_PARAMS', 'bootstrap').lower() == 'true'
+        params['oob_score'] = cf.get('RANDOMFOREST_PARAMS', 'oob_score').lower() == 'true'
+        params['n_jobs'] = cf.getint('RANDOMFOREST_PARAMS', 'n_jobs')
+        params['random_state'] = cf.getint('RANDOMFOREST_PARAMS', 'random_state')
+        params['verbose'] = cf.getint('RANDOMFOREST_PARAMS', 'verbose')
+        params['warm_start'] = cf.get('RANDOMFOREST_PARAMS', 'warm_start').lower() == 'true'
+        params['class_weight'] = None #{ 1: 0.5, 0: 0.5} #cf.getint('RANDOMFOREST_PARAMS', 'class_weight')
 
+        model = RandomForestClassifier(n_estimators=params['n_estimators'], criterion=params['criterion'], max_features=params['max_features'], max_depth=params['max_depth'], min_samples_split=params['min_samples_split'], min_samples_leaf=params['min_samples_leaf'], min_weight_fraction_leaf=params['min_weight_fraction_leaf'], max_leaf_nodes=params['max_leaf_nodes'], min_impurity_split=params['min_impurity_split'], bootstrap=params['bootstrap'], oob_score=params['oob_score'], n_jobs=params['n_jobs'], random_state=params['random_state'], verbose=params['verbose'], warm_start=params['warm_start'], class_weight=params['class_weight'] )
         model.set_params(cPickle.load(open(model_fp)))
 
         return model, params
