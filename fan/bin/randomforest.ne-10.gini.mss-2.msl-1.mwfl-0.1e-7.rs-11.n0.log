@@ -1,0 +1,54 @@
+[2017-05-02 16:54:24]	[INFO]	out path (/home/pangliang/kaggle-quora-question-pairs//data//out/2017-05-02_16-54-24/) created 
+[2017-05-02 16:54:25]	[INFO]	load index done, len(index)=242574
+[2017-05-02 16:54:25]	[INFO]	load vector done. length=404290
+[2017-05-02 16:54:25]	[INFO]	load train features from index(0)
+[2017-05-02 16:54:25]	[INFO]	load npz feature file done (/home/pangliang/kaggle-quora-question-pairs//data//feature//question_pair//my_word_match_share.train.smat)
+[2017-05-02 16:54:25]	[INFO]	load npz feature file done (/home/pangliang/kaggle-quora-question-pairs//data//feature//question_pair//len_diff_rate.train.smat)
+[2017-05-02 16:54:25]	[INFO]	merge col done, shape=(404290,2)
+[2017-05-02 16:56:30]	[INFO]	load smat feature file done (/home/pangliang/kaggle-quora-question-pairs//data//feature//question_pair//100pv.concat.devel_fyx.train.smat)
+[2017-05-02 16:56:35]	[INFO]	save npz feature file done (/home/pangliang/kaggle-quora-question-pairs//data//feature//question_pair//100pv.concat.devel_fyx.train.smat)
+[2017-05-02 16:56:38]	[INFO]	merge col done, shape=(404290,202)
+[2017-05-02 17:03:30]	[INFO]	load smat feature file done (/home/pangliang/kaggle-quora-question-pairs//data//feature//question_pair//300pv.concat.devel_fyx.train.smat)
+[2017-05-02 17:03:49]	[INFO]	save npz feature file done (/home/pangliang/kaggle-quora-question-pairs//data//feature//question_pair//300pv.concat.devel_fyx.train.smat)
+[2017-05-02 17:04:24]	[INFO]	merge col done, shape=(404290,802)
+[2017-05-02 17:06:50]	[INFO]	load npz feature file done (/home/pangliang/kaggle-quora-question-pairs//data//feature//question_pair//len_diff.train.smat)
+[2017-05-02 17:07:04]	[INFO]	merge col done, shape=(404290,803)
+[2017-05-02 17:09:34]	[INFO]	save npz feature file done (/home/pangliang/kaggle-quora-question-pairs//data//feature//question_pair//md5_8b78f1ae056f8e9446c3ee1a593290e2.smat)
+[2017-05-02 17:09:37]	[INFO]	row sample done, shape=(242574,803)
+[2017-05-02 17:09:37]	[INFO]	training set generation done
+[2017-05-02 17:09:37]	[INFO]	load index done, len(index)=80858
+[2017-05-02 17:09:38]	[INFO]	row sample done, shape=(80858,803)
+[2017-05-02 17:09:38]	[INFO]	validation set generation done
+[2017-05-02 17:09:38]	[INFO]	load index done, len(index)=80858
+[2017-05-02 17:09:39]	[INFO]	row sample done, shape=(80858,803)
+[2017-05-02 17:09:39]	[INFO]	test set generation done
+[Parallel(n_jobs=10)]: Done   2 out of  10 | elapsed:  1.4min remaining:  5.7min
+[Parallel(n_jobs=10)]: Done  10 out of  10 | elapsed:  1.5min finished
+[2017-05-02 17:11:19]	[INFO]	params={'warm_start': False, 'oob_score': False, 'n_jobs': 10, 'verbose': 1, 'max_leaf_nodes': None, 'bootstrap': True, 'min_samples_leaf': 1, 'n_estimators': 10, 'min_samples_split': 2, 'min_weight_fraction_leaf': 0, 'criterion': 'gini', 'random_state': 11, 'min_impurity_split': 7e-07, 'max_features': 'auto', 'max_depth': None, 'class_weight': None}
+[Parallel(n_jobs=10)]: Done   2 out of  10 | elapsed:    0.9s remaining:    3.6s
+[Parallel(n_jobs=10)]: Done  10 out of  10 | elapsed:    1.3s finished
+[Parallel(n_jobs=10)]: Done   2 out of  10 | elapsed:    0.7s remaining:    3.0s
+[Parallel(n_jobs=10)]: Done  10 out of  10 | elapsed:    0.9s finished
+[Parallel(n_jobs=10)]: Done   2 out of  10 | elapsed:    0.3s remaining:    1.1s
+[Parallel(n_jobs=10)]: Done  10 out of  10 | elapsed:    0.4s finished
+[Parallel(n_jobs=10)]: Done   2 out of  10 | elapsed:    0.2s remaining:    0.8s
+[Parallel(n_jobs=10)]: Done  10 out of  10 | elapsed:    0.4s finished
+[[ 1.   0. ]
+ [ 0.8  0.2]
+ [ 0.2  0.8]
+ [ 0.1  0.9]
+ [ 0.8  0.2]
+ [ 0.4  0.6]
+ [ 0.2  0.8]
+ [ 0.2  0.8]
+ [ 0.   1. ]
+ [ 0.9  0.1]]
+[2017-05-02 17:11:32]	[INFO]	save prediction file done (/home/pangliang/kaggle-quora-question-pairs//data//out/2017-05-02_16-54-24//pred//train_311.train.pred)
+[2017-05-02 17:11:32]	[INFO]	Evaluate train data ====>
+[2017-05-02 17:11:33]	[INFO]	Entropy loss : 0.177860 ...
+[2017-05-02 17:11:33]	[INFO]	save prediction file done (/home/pangliang/kaggle-quora-question-pairs//data//out/2017-05-02_16-54-24//pred//valid_311.train.pred)
+[2017-05-02 17:11:33]	[INFO]	Evaluate valid data ====>
+[2017-05-02 17:11:34]	[INFO]	Entropy loss : 0.586753 ...
+[2017-05-02 17:11:34]	[INFO]	save prediction file done (/home/pangliang/kaggle-quora-question-pairs//data//out/2017-05-02_16-54-24//pred//test_311.train.pred)
+[2017-05-02 17:11:34]	[INFO]	Evaluate test data ====>
+[2017-05-02 17:11:34]	[INFO]	Entropy loss : 0.587495 ...
