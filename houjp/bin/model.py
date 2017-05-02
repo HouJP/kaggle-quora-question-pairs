@@ -190,9 +190,9 @@ class Model(object):
         pred_test_data = model.predict(test_data, ntree_limit=model.best_ntree_limit)
 
         # 后处理
-        # pred_train_data = [Model.adj(x) for x in pred_train_data]
-        # pred_valid_data = [Model.adj(x) for x in pred_valid_data]
-        # pred_test_data = [Model.adj(x) for x in pred_test_data]
+        pred_train_data = [Model.adj(x) for x in pred_train_data]
+        pred_valid_data = [Model.adj(x) for x in pred_valid_data]
+        pred_test_data = [Model.adj(x) for x in pred_test_data]
 
         # 加载训练集ID文件
         train_ids = range(train_data.num_row())
@@ -293,7 +293,7 @@ class Model(object):
             all_pred_online_test_data.extend(pred_online_test_data)
             LogUtil.log('INFO', 'online test set (%02d) predict done' % id_part)
         # 后处理
-        # all_pred_online_test_data = [Model.adj(x) for x in all_pred_online_test_data]
+        all_pred_online_test_data = [Model.adj(x) for x in all_pred_online_test_data]
 
         # 加载线上测试集ID文件
         online_test_ids = DataUtil.load_vector(cf.get('MODEL', 'online_test_ids_fp'), False)
@@ -403,7 +403,6 @@ class Model(object):
 
         # XGBoost模型训练及预测
         Model.train_xgb(cf)
-
 
 def print_help():
     print 'model <conf_file_path> -->'
