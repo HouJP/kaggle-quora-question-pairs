@@ -2542,6 +2542,64 @@ class Graph(object):
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
     @staticmethod
+    def extract_row_graph_edge_min_clique_size(row, *args):
+        n2clique = args[0]
+        cliques = args[1]
+
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        qid1 = Graph.q2id[q1]
+        qid2 = Graph.q2id[q2]
+
+        edge_min_clique_size = 5000000
+
+        for clique_id in n2clique[qid1]:
+            if qid2 in cliques[clique_id]:
+                edge_min_clique_size = min(edge_min_clique_size, len(cliques[clique_id]))
+
+        return [edge_min_clique_size]
+
+    @staticmethod
+    def extract_graph_edge_min_clique_size(cf, argv):
+        # 设置参数
+        feature_name = 'graph_edge_min_clique_size'
+
+        Graph.init_graph(cf, argv)
+
+        n2clique = {}
+        cliques = []
+        for clique in nx.find_cliques(Graph.G):
+            for n in clique:
+                if n not in n2clique:
+                    n2clique[n] = []
+                n2clique[n].append(len(cliques))
+            cliques.append(clique)
+        LogUtil.log('INFO', 'len(cliques)=%d' % len(cliques))
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(Graph.extract_row_graph_edge_min_clique_size, axis=1, raw=True,
+                                          args=[n2clique, cliques])
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+
+        test_features = test_data.apply(Graph.extract_row_graph_edge_min_clique_size, axis=1, raw=True,
+                                        args=[n2clique, cliques])
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+    @staticmethod
     def extract_row_graph_num_clique(row, *args):
         n2clique = args[0]
         cliques = args[1]
@@ -2614,6 +2672,8 @@ class Graph(object):
             Graph.extract_graph_edge_max_clique_size(cf, argv[1:])
         elif 'extract_graph_num_clique' == cmd:
             Graph.extract_graph_num_clique(cf, argv[1:])
+        elif 'extract_graph_edge_min_clique_size' == cmd:
+            Graph.extract_graph_edge_min_clique_size(cf, argv[1:])
 
 def print_help():
     print 'extractor <conf_file_fp> -->'
