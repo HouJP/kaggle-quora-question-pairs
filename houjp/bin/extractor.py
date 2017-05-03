@@ -2689,7 +2689,9 @@ class Graph(object):
         ccs = []
         for cc in nx.connected_components(Graph.G):
             for n in cc:
-                n2cc[n].append(len(ccs))
+                if n in n2cc:
+                    LogUtil.log('WARNING', '%d already in n2cc(=%d)' % (n, n2cc[n]))
+                n2cc[n] = len(ccs)
             ccs.append(cc)
         LogUtil.log('INFO', 'len(cliques)=%d' % len(ccs))
 
@@ -2714,6 +2716,8 @@ class Graph(object):
         LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+
 
     @staticmethod
     def run(cf, argv):
