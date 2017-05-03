@@ -2569,7 +2569,7 @@ class Graph(object):
         :return:
         """
         # 设置参数
-        feature_name = 'num_clique'
+        feature_name = 'graph_num_clique'
 
         Graph.init_graph(cf, argv)
 
