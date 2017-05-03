@@ -19,6 +19,8 @@ from numpy import linalg
 from preprocessor import Preprocessor
 from nltk.stem import PorterStemmer
 from nltk.stem import SnowballStemmer
+import networkx as nx
+import csv
 
 class WordMatchShare(object):
     """
@@ -2420,6 +2422,86 @@ class PowerfulWordV2(object):
             PowerfulWordV2.extract_oside_word_power_v2(cf, argv[1:])
 
 
+class Graph(object):
+    G = None
+    p2cc = {}
+    connected_components = []
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def init_graph(cf, argv):
+        questions = {}
+
+        fin = csv.reader(open('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')))
+        fin.next()
+        fout = open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt'))
+        for p in fin:
+            q1 = p[3]
+            q2 = p[4]
+            label = p[5]
+            if q1 not in questions:
+                questions[q1] = len(questions)
+            if q2 not in questions:
+                questions[q2] = len(questions)
+            print >> fout, questions[q1], questions[q2], label
+        LogUtil.log('INFO', 'len(questions)=%d' % len(questions))
+        fout.close()
+        fin.close()
+
+        fin = csv.reader(open('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')))
+        fin.next()
+        fout = open('%s/graph_question2id.test.txt' % cf.get('DEFAULT', 'devel_pt'))
+        for p in fin:
+            q1 = p[3]
+            q2 = p[4]
+            label = p[5]
+            if q1 not in questions:
+                questions[q1] = len(questions)
+            if q2 not in questions:
+                questions[q2] = len(questions)
+            print >> fout, questions[q1], questions[q2], label
+        LogUtil.log('INFO', 'len(questions)=%d' % len(questions))
+        fout.close()
+        fin.close()
+
+        Graph.G = nx.Graph()
+        for line in open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt')):
+            head, tail, label = [int(x) for x in line.split()]
+            Graph.G.add_edge(head, tail, weight=label + 1)
+        for line in open('%s/graph_question2id.test.txt' % cf.get('DEFAULT', 'devel_pt')):
+            head, tail = [int(x) for x in line.split()]
+            Graph.G.add_edge(head, tail, weight=0)
+        LogUtil.log('INFO', 'Graph constructed.')
+
+        # ccs = nx.connected_components(G)
+        # Graph.connected_components = []
+        # Graph.p2cc = {}
+        # for cc in ccs:
+        #     for p in cc:
+        #         if p in Graph.p2cc:
+        #             LogUtil.log('WARNING', '%d already in p2cc(=%d)' % (p, Graph.p2cc[p]))
+        #         else:
+        #             Graph.p2cc[p] = len(Graph.connected_components)
+        #     Graph.connected_components.append(cc)
+        #
+        # LogUtil.log('INFO', 'len(Graph.connected_components)=%d' % len(Graph.connected_components))
+        # LogUtil.log('INFO', 'len(Graph.p2cc)=%d' % len(Graph.p2cc))
+
+    @staticmethod
+    def extract_graph_node_clique_num(cf, argv):
+        Graph.init_graph(cf, argv)
+
+        cliques = []
+        for clique in nx.find_cliques(Graph.G):
+            cliques.append(clique)
+        LogUtil.log('INFO', 'len(cliques)=%d' % len(cliques))
+
+    @staticmethod
+    def run(cf, argv):
+        Graph.extract_graph_node_clique_num(cf, argv)
+
 def print_help():
     print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
@@ -2429,6 +2511,7 @@ def print_help():
     print '\tmath_tag'
     print '\tbtm_vec_cos_sim_dis'
     print '\tPowerfulWordV2'
+    print '\tGraph'
 
 if __name__ == "__main__":
 
@@ -2455,5 +2538,7 @@ if __name__ == "__main__":
         BTMVecCosSimDis.run(sys.argv[3:])
     elif 'PowerfulWordV2' == cmd:
         PowerfulWordV2.run(cf, sys.argv[3:])
+    elif 'Graph' == cmd:
+        Graph.run(cf, sys.argv[3:])
     else:
         print_help()
