@@ -2425,6 +2425,7 @@ class PowerfulWordV2(object):
 class Graph(object):
     G = None
     q2id = None
+    pr = None
 
     def __init__(self):
         pass
@@ -2484,6 +2485,20 @@ class Graph(object):
         #
         # LogUtil.log('INFO', 'len(Graph.connected_components)=%d' % len(Graph.connected_components))
         # LogUtil.log('INFO', 'len(Graph.p2cc)=%d' % len(Graph.p2cc))
+
+    @staticmethod
+    def init_pagerank(cf, alpha, max_iter):
+        Graph.G = nx.Graph()
+        for line in open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt')):
+            head, tail, label = [int(x) for x in line.split()]
+            Graph.G.add_edge(head, tail)
+        for line in open('%s/graph_question2id.test.txt' % cf.get('DEFAULT', 'devel_pt')):
+            head, tail = [int(x) for x in line.split()]
+            Graph.G.add_edge(head, tail)
+        LogUtil.log('INFO', 'Graph for pagerank constructed.')
+
+        Graph.pr = nx.pagerank(Graph.G, alpha=alpha, max_iter=max_iter)
+        LogUtil.log('INFO', 'Graph cal pagerank done')
 
     @staticmethod
     def extract_row_graph_edge_max_clique_size(row, *args):
@@ -2780,6 +2795,51 @@ class Graph(object):
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
     @staticmethod
+    def extract_row_graph_pagerank_symm(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        qid1 = Graph.q2id[q1]
+        qid2 = Graph.q2id[q2]
+
+        pr1 = Graph.pr[qid1]
+        pr2 = Graph.pr[qid2]
+
+        return [pr1, pr2, max(pr1, pr2), min(pr1, pr2), (pr1 + pr2) / 2.]
+
+    @staticmethod
+    def extract_graph_pagerank_symm(cf, argv):
+        # 设置参数
+        alpha = float(argv[0])
+        max_iter = int(argv[1])
+        feature_name = 'graph_pagerank_symm_%.2f_%d' % (alpha, max_iter)
+
+        Graph.init_graph(cf, argv)
+
+        Graph.init_pagerank(cf, alpha, max_iter)
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(Graph.extract_row_graph_pagerank_symm, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+
+        test_features = test_data.apply(Graph.extract_row_graph_pagerank_symm, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+
+    @staticmethod
     def run(cf, argv):
         cmd = argv[0]
 
@@ -2793,6 +2853,8 @@ class Graph(object):
             Graph.extract_graph_edge_cc_size(cf, argv[1:])
         elif 'extract_graph_node_max_clique_size' == cmd:
             Graph.extract_graph_node_max_clique_size(cf, argv[1:])
+        elif 'extract_graph_pagerank_symm' == cmd:
+            Graph.extract_graph_pagerank_symm(cf, argv[1:])
 
 def print_help():
     print 'extractor <conf_file_fp> -->'
