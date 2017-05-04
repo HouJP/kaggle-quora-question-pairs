@@ -2498,7 +2498,6 @@ class Graph(object):
         LogUtil.log('INFO', 'Graph for pagerank constructed.')
 
         Graph.pr = nx.pagerank(Graph.G, alpha=alpha, max_iter=max_iter)
-        print Graph.pr
         LogUtil.log('INFO', 'Graph cal pagerank done')
 
     @staticmethod
