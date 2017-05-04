@@ -2498,6 +2498,7 @@ class Graph(object):
         LogUtil.log('INFO', 'Graph for pagerank constructed.')
 
         Graph.pr = nx.pagerank(Graph.G, alpha=alpha, max_iter=max_iter)
+        print Graph.pr
         LogUtil.log('INFO', 'Graph cal pagerank done')
 
     @staticmethod
@@ -2802,8 +2803,8 @@ class Graph(object):
         qid1 = Graph.q2id[q1]
         qid2 = Graph.q2id[q2]
 
-        pr1 = Graph.pr[qid1]
-        pr2 = Graph.pr[qid2]
+        pr1 = Graph.pr[qid1] * 1e6
+        pr2 = Graph.pr[qid2] * 1e6
 
         return [pr1, pr2, max(pr1, pr2), min(pr1, pr2), (pr1 + pr2) / 2.]
 

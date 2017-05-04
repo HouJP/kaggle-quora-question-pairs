@@ -251,7 +251,7 @@ class Feature(object):
         f.write('%d %d\n' % (len(features), len(features[0])))
         for row in features:
             for ind in range(len(row)):
-                f.write('%d:%f' % (ind, float(row[ind])))
+                f.write('%d:%s' % (ind, float(row[ind])))
                 if ind < len(row) - 1:
                     f.write(' ')
                 else:

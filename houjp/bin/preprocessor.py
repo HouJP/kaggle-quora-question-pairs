@@ -355,7 +355,6 @@ class PreprocessorRunner(object):
 
 
 
-
 if __name__ == "__main__":
     # PreprocessorRunner.get_qid2question(cf)
     # PreprocessorRunner.static_dul_question(cf)
