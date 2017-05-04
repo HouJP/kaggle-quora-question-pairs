@@ -228,7 +228,7 @@ class Feature(object):
                 continue
             if (not begin_line) and (ind_data != indptr[ind_indptr - 1]):
                 f.write(' ')
-            f.write("%d:%f" % (indice[ind_data], data[ind_data]))
+            f.write("%d:%s" % (indice[ind_data], data[ind_data]))
             begin_line = False
         while ind_indptr < len(indptr):
             f.write("\n")
