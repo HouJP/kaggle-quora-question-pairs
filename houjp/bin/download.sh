@@ -27,7 +27,7 @@ function run() {
     open $local_project_pt/data/out/$tag/pred/
 }
 
-if [ $# -ne 4 ]; then
+if [ $# -ne 3 ]; then
     echo "Usage: download <user> <address> <tag>"
     exit 255
 fi
