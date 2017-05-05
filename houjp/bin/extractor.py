@@ -2592,8 +2592,8 @@ class Graph(object):
 
         plt.figure(figsize=(15, 5))
         # plt.xlim([3, 40])
-        plt.hist([train_features[index] for index in range(len(train_features)) if (train_data['is_duplicate'][index] == 0 and train_features[index] > 2)], bins=50, normed=False, label='Not Duplicate')
-        plt.hist([train_features[index] for index in range(len(train_features)) if (train_data['is_duplicate'][index] == 1 and train_features[index] > 2)], bins=50, normed=False, alpha=0.7, label='Duplicate')
+        plt.hist([train_features[index] for index in range(len(train_features)) if (train_data['is_duplicate'][index] == 0 and train_features[index] > 2)],bins=range(50), normed=False, label='Not Duplicate')
+        plt.hist([train_features[index] for index in range(len(train_features)) if (train_data['is_duplicate'][index] == 1 and train_features[index] > 2)],bins=range(50), normed=False, alpha=0.7, label='Duplicate', histtype='bar')
         plt.legend()
         plt.title('Label distribution over %s' % feature_name, fontsize=15)
         plt.xlabel(feature_name, fontsize=15)

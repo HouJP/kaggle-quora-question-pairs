@@ -10,7 +10,6 @@ function run() {
 	user=$1
 	address=$2
     tag=$3
-    score=$4
 	
 	server_project_pt="/home/${user}/kaggle-quora-question-pairs/"
 	local_project_pt="//Users/houjianpeng/Github/kaggle-quora-question-pairs/"
@@ -29,13 +28,12 @@ function run() {
 }
 
 if [ $# -ne 4 ]; then
-    echo "Usage: download <user> <address> <tag> <score>"
+    echo "Usage: download <user> <address> <tag>"
     exit 255
 fi
 
 user=$1
 address=$2
 tag=$3
-score=$4
 
-run $user $address $tag $score
+run $user $address $tag
