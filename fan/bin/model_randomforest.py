@@ -153,8 +153,8 @@ class Model(object):
         params = {}
         params['n_estimators'] = cf.getint('RANDOMFOREST_PARAMS', 'n_estimators') # number of trees, default=10
         params['criterion'] = cf.get('RANDOMFOREST_PARAMS', 'criterion').lower() # default='gini'
-        params['max_features'] = cf.get('RANDOMFOREST_PARAMS', 'max_features').lower()
-        params['max_depth'] = None #cf.get('RANDOMFOREST_PARAMS', 'max_depth').lower() == 'None'
+        params['max_features'] = float(cf.get('RANDOMFOREST_PARAMS', 'max_features'))
+        params['max_depth'] = cf.getint('RANDOMFOREST_PARAMS', 'max_depth')
         params['min_samples_split'] = cf.getint('RANDOMFOREST_PARAMS', 'min_samples_split')
         params['min_samples_leaf'] = cf.getint('RANDOMFOREST_PARAMS', 'min_samples_leaf')
         params['min_weight_fraction_leaf'] = cf.getint('RANDOMFOREST_PARAMS', 'min_weight_fraction_leaf')
@@ -252,8 +252,8 @@ class Model(object):
 
         params['n_estimators'] = cf.getint('RANDOMFOREST_PARAMS', 'n_estimators') # number of trees, default=10
         params['criterion'] = cf.get('RANDOMFOREST_PARAMS', 'criterion').lower() # default='gini'
-        params['max_features'] = cf.get('RANDOMFOREST_PARAMS', 'max_features').lower()
-        params['max_depth'] = None #cf.get('RANDOMFOREST_PARAMS', 'max_depth').lower() == 'None'
+        params['max_features'] = float(cf.get('RANDOMFOREST_PARAMS', 'max_features'))
+        params['max_depth'] = cf.getint('RANDOMFOREST_PARAMS', 'max_depth')
         params['min_samples_split'] = cf.getint('RANDOMFOREST_PARAMS', 'min_samples_split')
         params['min_samples_leaf'] = cf.getint('RANDOMFOREST_PARAMS', 'min_samples_leaf')
         params['min_weight_fraction_leaf'] = cf.getint('RANDOMFOREST_PARAMS', 'min_weight_fraction_leaf')
