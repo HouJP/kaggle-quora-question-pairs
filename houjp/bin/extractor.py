@@ -2574,6 +2574,32 @@ class Graph(object):
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
     @staticmethod
+    def show_graph_edge_max_clique_size(cf, argv):
+        # 设置参数
+        feature_name = 'graph_edge_max_clique_size'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+        # 加载特征文件
+        train_features = Feature.load_smat(train_feature_fp).data
+        test_features = Feature.load_smat(test_feature_fp).data
+
+
+        plt.figure(figsize=(15, 5))
+        # plt.xlim([3, 40])
+        plt.hist([train_features[index] for index in range(len(train_features)) if (train_data['is_duplicate'][index] == 0 and train_features[index] > 2)], bins=50, normed=False, label='Not Duplicate')
+        plt.hist([train_features[index] for index in range(len(train_features)) if (train_data['is_duplicate'][index] == 1 and train_features[index] > 2)], bins=50, normed=False, alpha=0.7, label='Duplicate')
+        plt.legend()
+        plt.title('Label distribution over %s' % feature_name, fontsize=15)
+        plt.xlabel(feature_name, fontsize=15)
+        plt.show()
+
+    @staticmethod
     def extract_row_graph_edge_min_clique_size(row, *args):
         n2clique = args[0]
         cliques = args[1]
@@ -2904,6 +2930,8 @@ class Graph(object):
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
+
+
     @staticmethod
     def run(cf, argv):
         cmd = argv[0]
@@ -2922,6 +2950,8 @@ class Graph(object):
             Graph.extract_graph_pagerank_symm(cf, argv[1:])
         elif 'extract_graph_hits_symm' == cmd:
             Graph.extract_graph_hits_symm(cf, argv[1:])
+        elif 'show_graph_edge_max_clique_size' == cmd:
+            Graph.show_graph_edge_max_clique_size(cf, argv[1:])
 
 
 def print_help():

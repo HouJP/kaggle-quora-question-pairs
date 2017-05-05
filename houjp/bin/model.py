@@ -22,6 +22,12 @@ class Model(object):
         return
 
     @staticmethod
+    def inverse_adj(y, te=0.173, tr=0.369):
+        a = te / tr
+        b = (1 - te) / (1 - tr)
+        return b * y / (a + (b - a) * y)
+
+    @staticmethod
     def adj(x, te=0.173, tr=0.369):
         a = te / tr
         b = (1 - te) / (1 - tr)

@@ -7,6 +7,12 @@
 
 import ConfigParser
 import sys
+from feature import Feature
+import pandas as pd
+import math
+from utils import LogUtil
+from utils import DataUtil
+from model import Model
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -118,9 +124,137 @@ def to_feature_index_run(cf):
     to_feature_index(data_fp, test_811_fp, test_811_index_fp)
 
 
+def generate_answer(cf):
+    # 设置参数
+    feature_name = 'graph_edge_max_clique_size'
+
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+    test_features = Feature.load_smat(test_feature_fp).toarray()
+
+    lr = 0.4
+    rr = 0.7
+    thresh = 3
+    fout = open('/Users/houjianpeng/tmp/tmp_%.2f_%.2f.csv' % (lr, rr), 'w')
+    fout.write("\"test_id\",\"is_duplicate\"\n")
+
+    for index in range(len(test_features)):
+        if test_features[index][0] > thresh:
+            fout.write('%d,%f\n' % (index, rr))
+        else:
+            fout.write('%d,%f\n' % (index, lr))
+    fout.close()
+
+
+def cal_pos_rate(cf):
+    # 加载数据文件
+    train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+    labels = train_data['is_duplicate']
+
+    # 设置参数
+    feature_name = 'graph_edge_max_clique_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+    train_features = Feature.load(train_feature_fp).toarray()
+
+    thresh = 2
+
+    len_l = 0
+    len_r = 0
+    len_l_pos = 0
+    len_r_pos = 0
+    for index in range(len(labels)):
+        if train_features[index][0] > thresh:
+            len_r += 1.
+            if labels[index] == 1:
+                len_r_pos += 1.
+        else:
+            len_l += 1.
+            if labels[index] == 1:
+                len_l_pos += 1.
+    print 'len_l=%d, len_r=%d, len_l_pos=%d, len_r_pos=%d' % (len_l, len_r, len_l_pos, len_r_pos)
+    print 'pos_rate_l=%f, pos_rate_r=%f' % (len_l_pos / len_l, len_r_pos / len_r)
+
+
+def entropy_loss(labels, preds):
+    epsilon = 1e-15
+    s = 0.
+    for idx, l in enumerate(labels):
+        assert l == 1 or l == 0
+        score = preds[idx]
+        score = max(epsilon, score)
+        score = min(1 - epsilon, score)
+        s += - l * math.log(score) - (1. - l) * math.log(1 - score)
+    s /= len(labels)
+    LogUtil.log('INFO', 'Entropy loss : %f' % (s))
+    return s
+
+
+def load_preds(preds_fp):
+    epsilon = 1e-15
+    preds = []
+    for line in open(preds_fp, 'r'):
+        if "test_id" in line:
+            continue
+        idx, s = line.strip().split(',')
+        s = float(s)
+        s = max(epsilon, s)
+        s = min(1 - epsilon, s)
+        preds.append(s)
+    return preds
+
+
+def cal_scores():
+    test_preds_fp = '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/out/2017-05-03_11-27-48/pred/test_311.train_with_swap.pred'
+
+    # 加载预测结果
+    test_preds = load_preds(test_preds_fp)
+    test_preds = [Model.inverse_adj(y) for y in test_preds]
+
+    # 加载标签文件
+    labels = DataUtil.load_vector(cf.get('MODEL', 'train_labels_fp'), True)
+
+    # 加载测试集索引文件
+    test_indexs = Feature.load_index(cf.get('MODEL', 'test_indexs_fp'))
+
+    # 获取测试集标签
+    test_labels = [labels[index] for index in test_indexs]
+
+    # 评分
+    entropy_loss(test_labels, test_preds)
+
+    thresh = 3
+    # 设置参数
+    feature_name = 'graph_edge_max_clique_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+    train_features = Feature.load(train_feature_fp).toarray()
+    # 测试集特征
+    test_fs = [train_features[index] for index in test_indexs]
+
+    test_labels_l = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
+    test_preds_l = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
+    entropy_loss(test_labels_l,test_preds_l)
+
+    test_labels_r = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] > thresh]
+    test_preds_r = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] > thresh]
+    entropy_loss(test_labels_r, test_preds_r)
+
+    test_labels_r = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
+    test_preds_r = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
+    entropy_loss(test_labels_r, test_preds_r)
+
 if __name__ == "__main__":
     # 读取配置文件
     cf = ConfigParser.ConfigParser()
     cf.read("../conf/python.conf")
 
-    to_feature_index_run(cf)
+    # to_feature_index_run(cf)
+    # generate_answer(cf)
+    # cal_pos_rate(cf)
+    cal_scores()
