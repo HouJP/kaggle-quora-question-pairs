@@ -7,6 +7,8 @@ import pandas as pd
 import math
 import time
 import os
+import matplotlib as mpl
+mpl.use('Agg')
 from matplotlib import pyplot
 from utils import LogUtil, DataUtil
 from feature import Feature
