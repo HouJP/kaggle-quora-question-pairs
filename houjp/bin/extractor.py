@@ -2489,6 +2489,48 @@ class Graph(object):
         # LogUtil.log('INFO', 'len(Graph.p2cc)=%d' % len(Graph.p2cc))
 
     @staticmethod
+    def init_graph_nostrip(cf, argv):
+        Graph.q2id = {}
+
+        fin = csv.reader(open('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')))
+        fin.next()
+        fout = open('%s/graph_question2id_nostrip.train.txt' % cf.get('DEFAULT', 'devel_pt'), 'w')
+        for p in fin:
+            q1 = str(p[3])
+            q2 = str(p[4])
+            label = p[5]
+            if q1 not in Graph.q2id:
+                Graph.q2id[q1] = len(Graph.q2id)
+            if q2 not in Graph.q2id:
+                Graph.q2id[q2] = len(Graph.q2id)
+            print >> fout, Graph.q2id[q1], Graph.q2id[q2], label
+        LogUtil.log('INFO', 'len(questions)=%d' % len(Graph.q2id))
+        fout.close()
+
+        fin = csv.reader(open('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')))
+        fin.next()
+        fout = open('%s/graph_question2id_nostrip.test.txt' % cf.get('DEFAULT', 'devel_pt'), 'w')
+        for p in fin:
+            q1 = str(p[1])
+            q2 = str(p[2])
+            if q1 not in Graph.q2id:
+                Graph.q2id[q1] = len(Graph.q2id)
+            if q2 not in Graph.q2id:
+                Graph.q2id[q2] = len(Graph.q2id)
+            print >> fout, Graph.q2id[q1], Graph.q2id[q2]
+        LogUtil.log('INFO', 'len(questions)=%d' % len(Graph.q2id))
+        fout.close()
+
+        Graph.G = nx.Graph()
+        for line in open('%s/graph_question2id_nostrip.train.txt' % cf.get('DEFAULT', 'devel_pt')):
+            head, tail, label = [int(x) for x in line.split()]
+            Graph.G.add_edge(head, tail, weight=label + 1)
+        for line in open('%s/graph_question2id_nostrip.test.txt' % cf.get('DEFAULT', 'devel_pt')):
+            head, tail = [int(x) for x in line.split()]
+            Graph.G.add_edge(head, tail, weight=0)
+        LogUtil.log('INFO', 'Graph constructed.')
+
+    @staticmethod
     def init_pagerank(cf, alpha, max_iter):
         Graph.G = nx.Graph()
         for line in open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt')):
@@ -2569,6 +2611,64 @@ class Graph(object):
         LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
 
         test_features = test_data.apply(Graph.extract_row_graph_edge_max_clique_size, axis=1, raw=True, args=[n2clique, cliques])
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+    @staticmethod
+    def extract_row_graph_edge_max_clique_size_nostrip(row, *args):
+        n2clique = args[0]
+        cliques = args[1]
+
+        q1 = str(row['question1'])
+        q2 = str(row['question2'])
+
+        qid1 = Graph.q2id[q1]
+        qid2 = Graph.q2id[q2]
+
+        edge_max_clique_size = 0
+
+        for clique_id in n2clique[qid1]:
+            if qid2 in cliques[clique_id]:
+                edge_max_clique_size = max(edge_max_clique_size, len(cliques[clique_id]))
+
+        return [edge_max_clique_size]
+
+    @staticmethod
+    def extract_graph_edge_max_clique_size_nostrip(cf, argv):
+        # 设置参数
+        feature_name = 'graph_edge_max_clique_size_nostrip'
+
+        Graph.init_graph_nostrip(cf, argv)
+
+        n2clique = {}
+        cliques = []
+        for clique in nx.find_cliques(Graph.G):
+            for n in clique:
+                if n not in n2clique:
+                    n2clique[n] = []
+                n2clique[n].append(len(cliques))
+            cliques.append(clique)
+        LogUtil.log('INFO', 'len(cliques)=%d' % len(cliques))
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(Graph.extract_row_graph_edge_max_clique_size_nostrip, axis=1, raw=True,
+                                          args=[n2clique, cliques])
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+
+        test_features = test_data.apply(Graph.extract_row_graph_edge_max_clique_size_nostrip, axis=1, raw=True,
+                                        args=[n2clique, cliques])
         LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
@@ -2938,6 +3038,8 @@ class Graph(object):
 
         if 'extract_graph_edge_max_clique_size' == cmd:
             Graph.extract_graph_edge_max_clique_size(cf, argv[1:])
+        elif 'extract_graph_edge_max_clique_size_nostrip' == cmd:
+                Graph.extract_graph_edge_max_clique_size_nostrip(cf, argv[1:])
         elif 'extract_graph_num_clique' == cmd:
             Graph.extract_graph_num_clique(cf, argv[1:])
         elif 'extract_graph_edge_min_clique_size' == cmd:
