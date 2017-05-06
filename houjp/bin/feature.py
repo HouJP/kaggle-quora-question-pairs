@@ -138,7 +138,7 @@ class Feature(object):
                                                           n_line, will_save)
         # 加载<Question>特征
         # TODO
-        return features.tocsc()
+        return features
 
     @staticmethod
     def load_mul_features_with_part_id(feature_pt, feature_names, rawset_name, id_part, n_line, will_save):
@@ -161,6 +161,8 @@ class Feature(object):
                                                                                   feature_names[index],
                                                                                   rawset_name), id_part, n_line))
 
+        features = features.tocsr()
+
         if will_save and (index_begin < len(feature_names) - 1):
             f_names_s = '|'.join(feature_names) + '|' + rawset_name + '|' + str(id_part) + '|' + str(
                 n_line)
@@ -179,7 +181,7 @@ class Feature(object):
         features = Feature.load_mul_features(feature_qp_pt, feature_qp_names, rawset_name, will_save)
         # 加载<Question>特征
         # TODO
-        return features.tocsc()
+        return features
 
     @staticmethod
     def load_mul_features(feature_pt, feature_names, rawset_name, will_save):
@@ -199,6 +201,8 @@ class Feature(object):
         for index in range(index_begin + 1, len(feature_names)):
             features = Feature.merge_col(features,
                                      Feature.load('%s/%s.%s.smat' % (feature_pt, feature_names[index], rawset_name)))
+
+        features = features.tocsr()
 
         if will_save and (index_begin < len(feature_names) - 1):
             f_names_s = '|'.join(feature_names) + '|' + rawset_name
