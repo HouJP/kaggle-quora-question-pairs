@@ -8,7 +8,8 @@ from utils import LogUtil
 import nltk
 from nltk.stem import SnowballStemmer
 import re
-
+from feature import Feature
+import sys
 
 class Preprocessor(object):
     '''
@@ -352,8 +353,37 @@ class PreprocessorRunner(object):
 
         DataUtil.save_vector(train_with_swap_index_fp, train_with_swap_index, 'w')
 
+    @staticmethod
+    def gen_index_with_max_clique_size(cf, argv):
+        # 加载训练集特征
+        feature_name = 'graph_edge_max_clique_size'
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train_with_swap.smat' % (feature_pt, feature_name)
+        train_features = Feature.load(train_feature_fp).toarray()
 
+        # 加载训练集索引
+        train_311_indexs = Feature.load_index(cf.get('MODEL', 'train_indexs_fp'))
+        # 训练集索引存储路径
+        train_311_clique_size_l3_indexs_fp = '%s/train_311_clique_size_l3.%s.index' % (cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'train_rawset_name'))
 
+        # 过滤索引
+        train_311_clique_size_l3_indexs = []
+        for index in range(len(train_311_indexs)):
+            if train_features[train_311_indexs[index]] < 3:
+                train_311_clique_size_l3_indexs.append(train_311_indexs[index])
+
+        DataUtil.save_vector(train_311_clique_size_l3_indexs_fp, train_311_clique_size_l3_indexs, 'w')
+
+    @staticmethod
+    def run(cf, argv):
+        cmd = argv[0]
+
+        if 'gen_index_with_max_clique_size' == cmd:
+            PreprocessorRunner.gen_index_with_max_clique_size(cf, argv[1:])
+
+def print_help():
+    print 'preprocessor <conf_file_fp> -->'
+    print '\tPreprocessorRunner'
 
 if __name__ == "__main__":
     # PreprocessorRunner.get_qid2question(cf)
@@ -366,5 +396,16 @@ if __name__ == "__main__":
     # PreprocessorRunner.run_get_stem()
     # PreprocessorRunner.run_question_swap()
     # PreprocessorRunner.run_gen_index_with_swap()
-    text = 'hello| ph.d what\'s i\'m you\'re i\'d c ++ c# e mail i\'s PhD U.S.  rs123 1-2 fefefe. 1.2 world'
-    print Preprocessor.clean_text(text)
+    # text = 'hello| ph.d what\'s i\'m you\'re i\'d c ++ c# e mail i\'s PhD U.S.  rs123 1-2 fefefe. 1.2 world'
+    # print Preprocessor.clean_text(text)
+    if 3 > len(sys.argv):
+        print_help()
+        exit(1)
+
+    # 读取配置文件
+    cf = ConfigParser.ConfigParser()
+    cf.read(sys.argv[1])
+
+    cmd = sys.argv[2]
+    if 'PreprocessorRunner' == cmd:
+        PreprocessorRunner.run(cf, sys.argv[3:])

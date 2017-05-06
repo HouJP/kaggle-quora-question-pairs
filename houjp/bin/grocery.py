@@ -135,15 +135,18 @@ def generate_answer(cf):
 
     test_features = Feature.load_smat(test_feature_fp).toarray()
 
-    lr = 0.4
-    rr = 0.7
+    lr = 0.46
+    mr = 0.67
+    rr = 0.8
     thresh = 3
-    fout = open('/Users/houjianpeng/tmp/tmp_%.2f_%.2f.csv' % (lr, rr), 'w')
+    fout = open('/Users/houjianpeng/tmp/tmp_%.2f_%.2f_%.2f.csv' % (lr, mr, rr), 'w')
     fout.write("\"test_id\",\"is_duplicate\"\n")
 
     for index in range(len(test_features)):
         if test_features[index][0] > thresh:
             fout.write('%d,%f\n' % (index, rr))
+        elif test_features[index][0] == thresh:
+            fout.write('%d,%f\n' % (index, mr))
         else:
             fout.write('%d,%f\n' % (index, lr))
     fout.close()
@@ -161,23 +164,30 @@ def cal_pos_rate(cf):
     train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
     train_features = Feature.load(train_feature_fp).toarray()
 
-    thresh = 2
+    thresh = 3
 
     len_l = 0
+    len_m = 0
     len_r = 0
     len_l_pos = 0
+    len_m_pos = 0
     len_r_pos = 0
     for index in range(len(labels)):
         if train_features[index][0] > thresh:
             len_r += 1.
             if labels[index] == 1:
                 len_r_pos += 1.
+        elif train_features[index][0] == thresh:
+            len_m += 1.
+            if labels[index] == 1:
+                len_m_pos += 1.
         else:
             len_l += 1.
             if labels[index] == 1:
                 len_l_pos += 1.
-    print 'len_l=%d, len_r=%d, len_l_pos=%d, len_r_pos=%d' % (len_l, len_r, len_l_pos, len_r_pos)
-    print 'pos_rate_l=%f, pos_rate_r=%f' % (len_l_pos / len_l, len_r_pos / len_r)
+    print 'len_l=%d, len_m=%d, len_r=%d, len_l_pos=%d, len_m_pos=%d, len_r_pos=%d' % (len_l, len_m, len_r, len_l_pos, len_m_pos, len_r_pos)
+    print 'rate_l=%f, rate_m=%f, rate_r=%f' % (len_l / len(labels), len_m / len(labels), len_r / len(labels))
+    print 'pos_rate_l=%f, pos_rate_m=%f, pos_rate_r=%f' % (len_l_pos / len_l, len_m_pos / len_m, len_r_pos / len_r)
 
 
 def entropy_loss(labels, preds):
@@ -209,7 +219,7 @@ def load_preds(preds_fp):
 
 
 def cal_scores():
-    test_preds_fp = '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/out/2017-04-23_11-51-35/pred/test_311.train_with_swap.pred'
+    test_preds_fp = '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/out/2017-05-03_11-27-48/pred/test_311.train_with_swap.pred'
 
     # 加载预测结果
     test_preds = load_preds(test_preds_fp)
@@ -240,14 +250,59 @@ def cal_scores():
     test_labels_l = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
     test_preds_l = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
     entropy_loss(test_labels_l,test_preds_l)
+    LogUtil.log('INFO', 'rate_labels_l=%f, rate_preds_l=%f' % (1. * sum(test_labels_l) / len(test_labels_l), 1. * sum(test_preds_l) / len(test_preds_l)))
+
+    test_labels_m = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
+    test_preds_m = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
+    entropy_loss(test_labels_m, test_preds_m)
+    LogUtil.log('INFO', 'rate_labels_m=%f, rate_preds_m=%f' % (
+        1. * sum(test_labels_m) / len(test_labels_m), 1. * sum(test_preds_m) / len(test_preds_m)))
 
     test_labels_r = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] > thresh]
     test_preds_r = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] > thresh]
     entropy_loss(test_labels_r, test_preds_r)
+    LogUtil.log('INFO', 'rate_labels_r=%f, rate_preds_r=%f' % (
+        1. * sum(test_labels_r) / len(test_labels_r), 1. * sum(test_preds_r) / len(test_preds_r)))
 
-    test_labels_r = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
-    test_preds_r = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
-    entropy_loss(test_labels_r, test_preds_r)
+
+
+
+def rescale_answer(cf):
+    # 加载预测结果
+    test_preds_fp = '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/out/2017-05-03_11-27-48/pred/full.test.pred'
+    test_preds = load_preds(test_preds_fp)
+    test_preds = [Model.inverse_adj(y) for y in test_preds]
+    LogUtil.log('INFO', 'len(test_preds)=%d' % len(test_preds))
+
+    thresh = 3
+
+    # 加载特征
+    feature_name = 'graph_edge_max_clique_size'
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    test_features = Feature.load(test_feature_fp).toarray()
+    LogUtil.log('INFO', 'len(test_features)=%d' % len(test_features))
+
+    count = 0.
+    for index in range(len(test_preds)):
+        score = test_preds[index]
+        if test_features[index] == 3.:
+            count += 1.
+            score = Model.adj(score, te=0.40883512)#, tr=0.623191)
+        elif test_features[index] > 3.:
+            score = Model.adj(score, te=0.96503024)#, tr=0.972554)
+        else:
+            score = Model.adj(score, te=0.04957855)#, tr=0.183526)
+        test_preds[index] = score
+    LogUtil.log('INFO', 'count=%d' % count)
+
+    fout = open('/Users/houjianpeng/tmp/rescale_all.csv', 'w')
+    fout.write("\"test_id\",\"is_duplicate\"\n")
+
+    for index in range(len(test_preds)):
+        fout.write('%d,%s\n' % (index, test_preds[index]))
+    fout.close()
+
 
 if __name__ == "__main__":
     # 读取配置文件
@@ -258,3 +313,4 @@ if __name__ == "__main__":
     # generate_answer(cf)
     # cal_pos_rate(cf)
     cal_scores()
+    # rescale_answer(cf)
