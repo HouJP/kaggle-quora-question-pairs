@@ -361,7 +361,7 @@ class PreprocessorRunner(object):
         train_feature_fp = '%s/%s.train_with_swap.smat' % (feature_pt, feature_name)
         train_features = Feature.load(train_feature_fp).toarray()
 
-        # 加载训练集索引
+        # 加载训练集索引 < 3
         train_311_indexs = Feature.load_index(cf.get('MODEL', 'train_indexs_fp'))
         # 训练集索引存储路径
         train_311_clique_size_l3_indexs_fp = '%s/train_311_clique_size_l3.%s.index' % (cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'train_rawset_name'))
@@ -371,6 +371,26 @@ class PreprocessorRunner(object):
             if train_features[train_311_indexs[index]] < 3:
                 train_311_clique_size_l3_indexs.append(train_311_indexs[index])
         DataUtil.save_vector(train_311_clique_size_l3_indexs_fp, train_311_clique_size_l3_indexs, 'w')
+
+        # 训练集索引存储路径
+        train_311_clique_size_e3_indexs_fp = '%s/train_311_clique_size_e3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'train_rawset_name'))
+        # 过滤索引
+        train_311_clique_size_e3_indexs = []
+        for index in range(len(train_311_indexs)):
+            if train_features[train_311_indexs[index]] == 3:
+                train_311_clique_size_e3_indexs.append(train_311_indexs[index])
+        DataUtil.save_vector(train_311_clique_size_e3_indexs_fp, train_311_clique_size_e3_indexs, 'w')
+
+        # 训练集索引存储路径
+        train_311_clique_size_g3_indexs_fp = '%s/train_311_clique_size_g3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'train_rawset_name'))
+        # 过滤索引
+        train_311_clique_size_g3_indexs = []
+        for index in range(len(train_311_indexs)):
+            if train_features[train_311_indexs[index]] == 3:
+                train_311_clique_size_g3_indexs.append(train_311_indexs[index])
+        DataUtil.save_vector(train_311_clique_size_g3_indexs_fp, train_311_clique_size_g3_indexs, 'w')
 
         # 加载验证集索引
         valid_311_indexs = Feature.load_index(cf.get('MODEL', 'valid_indexs_fp'))
@@ -384,6 +404,26 @@ class PreprocessorRunner(object):
                 valid_311_clique_size_l3_indexs.append(valid_311_indexs[index])
         DataUtil.save_vector(valid_311_clique_size_l3_indexs_fp, valid_311_clique_size_l3_indexs, 'w')
 
+        # 验证集索引存储路径
+        valid_311_clique_size_e3_indexs_fp = '%s/valid_311_clique_size_e3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'valid_rawset_name'))
+        # 过滤索引
+        valid_311_clique_size_e3_indexs = []
+        for index in range(len(valid_311_indexs)):
+            if train_features[valid_311_indexs[index]] < 3:
+                valid_311_clique_size_e3_indexs.append(valid_311_indexs[index])
+        DataUtil.save_vector(valid_311_clique_size_e3_indexs_fp, valid_311_clique_size_e3_indexs, 'w')
+
+        # 验证集索引存储路径
+        valid_311_clique_size_g3_indexs_fp = '%s/valid_311_clique_size_g3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'valid_rawset_name'))
+        # 过滤索引
+        valid_311_clique_size_g3_indexs = []
+        for index in range(len(valid_311_indexs)):
+            if train_features[valid_311_indexs[index]] < 3:
+                valid_311_clique_size_g3_indexs.append(valid_311_indexs[index])
+        DataUtil.save_vector(valid_311_clique_size_g3_indexs_fp, valid_311_clique_size_g3_indexs, 'w')
+
         # 加载测试集索引
         test_311_indexs = Feature.load_index(cf.get('MODEL', 'test_indexs_fp'))
         # 测试集索引存储路径
@@ -395,6 +435,26 @@ class PreprocessorRunner(object):
             if train_features[test_311_indexs[index]] < 3:
                 test_311_clique_size_l3_indexs.append(test_311_indexs[index])
         DataUtil.save_vector(test_311_clique_size_l3_indexs_fp, test_311_clique_size_l3_indexs, 'w')
+
+        # 测试集索引存储路径
+        test_311_clique_size_e3_indexs_fp = '%s/test_311_clique_size_e3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'test_rawset_name'))
+        # 过滤索引
+        test_311_clique_size_e3_indexs = []
+        for index in range(len(test_311_indexs)):
+            if train_features[test_311_indexs[index]] < 3:
+                test_311_clique_size_e3_indexs.append(test_311_indexs[index])
+        DataUtil.save_vector(test_311_clique_size_e3_indexs_fp, test_311_clique_size_e3_indexs, 'w')
+
+        # 测试集索引存储路径
+        test_311_clique_size_g3_indexs_fp = '%s/test_311_clique_size_g3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'test_rawset_name'))
+        # 过滤索引
+        test_311_clique_size_g3_indexs = []
+        for index in range(len(test_311_indexs)):
+            if train_features[test_311_indexs[index]] < 3:
+                test_311_clique_size_g3_indexs.append(test_311_indexs[index])
+        DataUtil.save_vector(test_311_clique_size_g3_indexs_fp, test_311_clique_size_g3_indexs, 'w')
 
     @staticmethod
     def run(cf, argv):
