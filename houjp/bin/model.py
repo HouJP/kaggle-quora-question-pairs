@@ -22,6 +22,90 @@ class Model(object):
         return
 
     @staticmethod
+    def entropy_loss_from_list(labels, preds):
+        epsilon = 1e-15
+        s = 0.
+        for idx, l in enumerate(labels):
+            assert l == 1 or l == 0
+            score = preds[idx]
+            score = max(epsilon, score)
+            score = min(1 - epsilon, score)
+            s += - l * math.log(score) - (1. - l) * math.log(1 - score)
+        s /= len(labels)
+        LogUtil.log('INFO', 'Entropy loss : %f' % (s))
+        return s
+
+    @staticmethod
+    def load_preds(preds_fp):
+        epsilon = 1e-15
+        preds = []
+        for line in open(preds_fp, 'r'):
+            if "test_id" in line:
+                continue
+            idx, s = line.strip().split(',')
+            s = float(s)
+            s = max(epsilon, s)
+            s = min(1 - epsilon, s)
+            preds.append(s)
+        return preds
+
+    @staticmethod
+    def cal_scores_with_clique_size(cf, tag, test_preds_fp):
+
+        # 加载预测结果
+        test_preds = Model.load_preds(test_preds_fp)
+        if cf.get('MODEL', 'has_postprocess') == 'True':
+            test_preds = [Model.inverse_adj(y) for y in test_preds]
+
+        # 加载标签文件
+        labels = DataUtil.load_vector(cf.get('MODEL', 'train_labels_fp'), True)
+
+        # 加载测试集索引文件
+        test_indexs = Feature.load_index(cf.get('MODEL', 'test_indexs_fp'))
+
+        # 获取测试集标签
+        test_labels = [labels[index] for index in test_indexs]
+
+        # 评分
+        LogUtil.log('INFO', '-------------------')
+        LogUtil.log('INFO', 'Evaluate as a whole (%s)' % tag)
+        Model.entropy_loss_from_list(test_labels, test_preds)
+
+        thresh = 3
+        # 设置参数
+        feature_name = 'graph_edge_max_clique_size'
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, cf.get('MODEL', 'train_rawset_name'))
+        train_features = Feature.load(train_feature_fp).toarray()
+        # 测试集特征
+        test_fs = [train_features[index] for index in test_indexs]
+
+        LogUtil.log('INFO', '-------------------')
+        LogUtil.log('INFO', 'Evaluate clique_size < 3 (%s)' % tag)
+        test_labels_l = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
+        test_preds_l = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
+        Model.entropy_loss_from_list(test_labels_l, test_preds_l)
+        LogUtil.log('INFO', 'rate_labels_l=%f, rate_preds_l=%f' % (
+            1. * sum(test_labels_l) / len(test_labels_l), 1. * sum(test_preds_l) / len(test_preds_l)))
+
+        LogUtil.log('INFO', '-------------------')
+        LogUtil.log('INFO', 'Evaluate clique_size = 3 (%s)' % tag)
+        test_labels_m = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
+        test_preds_m = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
+        Model.entropy_loss_from_list(test_labels_m, test_preds_m)
+        LogUtil.log('INFO', 'rate_labels_m=%f, rate_preds_m=%f' % (
+            1. * sum(test_labels_m) / len(test_labels_m), 1. * sum(test_preds_m) / len(test_preds_m)))
+
+        LogUtil.log('INFO', '-------------------')
+        LogUtil.log('INFO', 'Evaluate clique_size > 3 (%s)' % tag)
+        test_labels_r = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] > thresh]
+        test_preds_r = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] > thresh]
+        Model.entropy_loss_from_list(test_labels_r, test_preds_r)
+        LogUtil.log('INFO', 'rate_labels_r=%f, rate_preds_r=%f' % (
+            1. * sum(test_labels_r) / len(test_labels_r), 1. * sum(test_preds_r) / len(test_preds_r)))
+
+    @staticmethod
     def inverse_adj(y, te=0.173, tr=0.369):
         a = te / tr
         b = (1 - te) / (1 - tr)
@@ -195,6 +279,9 @@ class Model(object):
         pred_valid_data = model.predict(valid_data, ntree_limit=model.best_ntree_limit)
         pred_test_data = model.predict(test_data, ntree_limit=model.best_ntree_limit)
 
+        LogUtil.log('INFO', '-------------------')
+        LogUtil.log('INFO', 'Evaluate as a whole')
+
         # 后处理
         if cf.get('MODEL', 'has_postprocess') == 'True':
             pred_train_data = [Model.adj(x) for x in pred_train_data]
@@ -244,6 +331,9 @@ class Model(object):
         neg_fault_fp = cf.get('MODEL', 'neg_fault_fp')
         train_df = pd.read_csv(cf.get('MODEL', 'origin_pt') + '/train.csv')
         Model.generate_fault_file(pred_test_data, test_balanced_indexs, train_df, pos_fault_fp, neg_fault_fp)
+
+        # 分块评分
+        Model.cal_scores_with_clique_size(cf, 'test', pred_test_fp)
 
         # 线上预测
         if 'True' == cf.get('MODEL', 'online'):

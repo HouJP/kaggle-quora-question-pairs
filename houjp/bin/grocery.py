@@ -219,8 +219,8 @@ def load_preds(preds_fp):
 
 
 def cal_scores():
-    # test_preds_fp = '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/out/2017-05-03_11-27-48/pred/test_311.train_with_swap.pred' # v2_20_9
-    test_preds_fp = '/Users/houjianpeng/tmp/test_311.train_with_swap.pred'
+    test_preds_fp = '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/out/2017-05-03_11-27-48/pred/test_311.train_with_swap.pred' # v2_20_9
+    # test_preds_fp = '/Users/houjianpeng/tmp/test_311.train_with_swap.pred'
 
     # 加载预测结果
     test_preds = load_preds(test_preds_fp)
