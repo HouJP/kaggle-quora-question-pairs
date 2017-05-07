@@ -372,10 +372,10 @@ def rescale_answer(cf):
 if __name__ == "__main__":
     # 读取配置文件
     cf = ConfigParser.ConfigParser()
-    cf.read("../conf/python.conf")
+    cf.read(sys.argv[1:])
 
     # to_feature_index_run(cf)
     # generate_answer(cf)
     # cal_pos_rate(cf)
-    cal_scores(sys.argv[1:])
+    cal_scores(sys.argv[2:])
     # rescale_answer(cf)
