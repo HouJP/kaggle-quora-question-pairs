@@ -50,26 +50,26 @@ class Model(object):
         return preds
 
     @staticmethod
-    def cal_scores_with_clique_size(cf, tag, test_preds_fp):
+    def cal_scores_with_clique_size(cf, tag, preds_fp):
 
         # 加载预测结果
-        test_preds = Model.load_preds(test_preds_fp)
+        preds = Model.load_preds(preds_fp)
         if cf.get('MODEL', 'has_postprocess') == 'True':
-            test_preds = [Model.inverse_adj(y) for y in test_preds]
+            preds = [Model.inverse_adj(y) for y in preds]
 
         # 加载标签文件
         labels = DataUtil.load_vector(cf.get('MODEL', 'train_labels_fp'), True)
 
-        # 加载测试集索引文件
-        test_indexs = Feature.load_index(cf.get('MODEL', 'test_indexs_fp'))
+        # 加载索引文件
+        indexs = Feature.load_index(cf.get('MODEL', '%s_indexs_fp' % tag))
 
-        # 获取测试集标签
-        test_labels = [labels[index] for index in test_indexs]
+        # 获取标签
+        labels = [labels[index] for index in indexs]
 
         # 评分
         LogUtil.log('INFO', '-------------------')
         LogUtil.log('INFO', 'Evaluate as a whole (%s)' % tag)
-        Model.entropy_loss_from_list(test_labels, test_preds)
+        Model.entropy_loss_from_list(labels, preds)
 
         thresh = 3
         # 设置参数
@@ -79,31 +79,31 @@ class Model(object):
         train_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, cf.get('MODEL', 'train_rawset_name'))
         train_features = Feature.load(train_feature_fp).toarray()
         # 测试集特征
-        test_fs = [train_features[index] for index in test_indexs]
+        fs = [train_features[index] for index in indexs]
 
         LogUtil.log('INFO', '-------------------')
         LogUtil.log('INFO', 'Evaluate clique_size < 3 (%s)' % tag)
-        test_labels_l = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
-        test_preds_l = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
-        Model.entropy_loss_from_list(test_labels_l, test_preds_l)
+        labels_l = [labels[index] for index in range(len(labels)) if fs[index] < thresh]
+        preds_l = [preds[index] for index in range(len(labels)) if fs[index] < thresh]
+        Model.entropy_loss_from_list(labels_l, preds_l)
         LogUtil.log('INFO', 'rate_labels_l=%f, rate_preds_l=%f' % (
-            1. * sum(test_labels_l) / len(test_labels_l), 1. * sum(test_preds_l) / len(test_preds_l)))
+            1. * sum(labels_l) / len(labels_l), 1. * sum(preds_l) / len(preds_l)))
 
         LogUtil.log('INFO', '-------------------')
         LogUtil.log('INFO', 'Evaluate clique_size = 3 (%s)' % tag)
-        test_labels_m = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
-        test_preds_m = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] == thresh]
-        Model.entropy_loss_from_list(test_labels_m, test_preds_m)
+        labels_m = [labels[index] for index in range(len(labels)) if fs[index] == thresh]
+        preds_m = [preds[index] for index in range(len(labels)) if fs[index] == thresh]
+        Model.entropy_loss_from_list(labels_m, preds_m)
         LogUtil.log('INFO', 'rate_labels_m=%f, rate_preds_m=%f' % (
-            1. * sum(test_labels_m) / len(test_labels_m), 1. * sum(test_preds_m) / len(test_preds_m)))
+            1. * sum(labels_m) / len(labels_m), 1. * sum(preds_m) / len(preds_m)))
 
         LogUtil.log('INFO', '-------------------')
         LogUtil.log('INFO', 'Evaluate clique_size > 3 (%s)' % tag)
-        test_labels_r = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] > thresh]
-        test_preds_r = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] > thresh]
-        Model.entropy_loss_from_list(test_labels_r, test_preds_r)
+        labels_r = [labels[index] for index in range(len(labels)) if fs[index] > thresh]
+        preds_r = [preds[index] for index in range(len(labels)) if fs[index] > thresh]
+        Model.entropy_loss_from_list(labels_r, preds_r)
         LogUtil.log('INFO', 'rate_labels_r=%f, rate_preds_r=%f' % (
-            1. * sum(test_labels_r) / len(test_labels_r), 1. * sum(test_preds_r) / len(test_preds_r)))
+            1. * sum(labels_r) / len(labels_r), 1. * sum(preds_r) / len(preds_r)))
 
     @staticmethod
     def inverse_adj(y, te=0.173, tr=0.369):
@@ -333,6 +333,8 @@ class Model(object):
         Model.generate_fault_file(pred_test_data, test_balanced_indexs, train_df, pos_fault_fp, neg_fault_fp)
 
         # 分块评分
+        Model.cal_scores_with_clique_size(cf, 'train', pred_train_fp)
+        Model.cal_scores_with_clique_size(cf, 'valid', pred_valid_fp)
         Model.cal_scores_with_clique_size(cf, 'test', pred_test_fp)
 
         # 线上预测
