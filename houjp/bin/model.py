@@ -31,7 +31,10 @@ class Model(object):
             score = max(epsilon, score)
             score = min(1 - epsilon, score)
             s += - l * math.log(score) - (1. - l) * math.log(1 - score)
-        s /= len(labels)
+        if len(labels) > 0:
+            s /= len(labels)
+        else:
+            s = -1
         LogUtil.log('INFO', 'Entropy loss : %f' % (s))
         return s
 
