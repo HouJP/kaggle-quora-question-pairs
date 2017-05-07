@@ -3103,18 +3103,22 @@ class Count(object):
 
     @staticmethod
     def extract_row_eng_char_count(row):
+        s = 'abcdefghijklmnopqrstuvwxyz'
+
         q1 = str(row['question1']).strip().lower()
         q2 = str(row['question2']).strip().lower()
 
         fs1 = [0] * 26
         fs2 = [0] * 26
 
-        for c in q1:
-            if (c >= 'a') and (c <= 'z'):
-                fs1[int(c - 'a')] += 1
-        for c in q2:
-            if (c >= 'a') and (c <= 'z'):
-                fs2[int(c - 'a')] += 1
+        for index in range(len(q1)):
+            c = q1[index]
+            if 0 <= s.find(c):
+                fs1[s.find(c)] += 1
+        for index in range(len(q2)):
+            c = q2[index]
+            if 0 <= s.find(c):
+                fs2[s.find(c)] += 1
 
         return fs1 + fs2 + list(abs(np.array(fs1) - np.array(fs2)))
 
