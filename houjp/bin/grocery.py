@@ -253,8 +253,9 @@ def load_preds(preds_fp):
     return preds
 
 
-def cal_scores():
-    test_preds_fp = '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/out/2017-05-03_11-27-48/pred/test_311.train_with_swap.pred' # v2_20_9
+def cal_scores(argv):
+    test_preds_fp = argv[0]
+    # test_preds_fp = '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/out/2017-05-03_11-27-48/pred/test_311.train_with_swap.pred' # v2_20_9
     # test_preds_fp = '/Users/houjianpeng/tmp/test_311.train_with_swap.pred'
 
     # 加载预测结果
@@ -376,5 +377,5 @@ if __name__ == "__main__":
     # to_feature_index_run(cf)
     # generate_answer(cf)
     # cal_pos_rate(cf)
-    cal_scores()
+    cal_scores(sys.argv[1:])
     # rescale_answer(cf)
