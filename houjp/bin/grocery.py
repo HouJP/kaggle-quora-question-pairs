@@ -164,6 +164,16 @@ def cal_pos_rate(cf):
     train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
     train_features = Feature.load(train_feature_fp).toarray()
 
+    # 设置参数
+    feature_name = 'graph_edge_cc_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+    train_features_cc = Feature.load(train_feature_fp).toarray()
+
+    print '-------------------------------------------------'
+    print '分析 clique_size <3 / =3 / >3 的各部分：'
+
     thresh = 3
 
     len_l = 0
@@ -188,6 +198,31 @@ def cal_pos_rate(cf):
     print 'len_l=%d, len_m=%d, len_r=%d, len_l_pos=%d, len_m_pos=%d, len_r_pos=%d' % (len_l, len_m, len_r, len_l_pos, len_m_pos, len_r_pos)
     print 'rate_l=%f, rate_m=%f, rate_r=%f' % (len_l / len(labels), len_m / len(labels), len_r / len(labels))
     print 'pos_rate_l=%f, pos_rate_m=%f, pos_rate_r=%f' % (len_l_pos / len_l, len_m_pos / len_m, len_r_pos / len_r)
+
+    print '-------------------------------------------------'
+    print '分析 clique_size == 2 部分：根据 cc_size 切分为两部分'
+
+    thresh_mc = 3
+    thresh_cc = 3
+
+    len_1 = 0
+    len_2 = 0
+    len_all = 0
+    len_pos_1 = 0
+    len_pos_2 = 0
+    for index in range(len(labels)):
+        if train_features[index][0] < thresh_mc:
+            len_all += 1.
+            if train_features_cc[index][0] < thresh_cc:
+                len_1 += 1.
+                if labels[index] == 1:
+                    len_pos_1 += 1.
+            else:
+                len_2 += 1.
+                if labels[index] == 1:
+                    len_pos_2 += 1.
+    print 'len_all=%f, len_1=%f(%f), len_2=%f(%f)' % (len_all, len_1, 1.0 * len_1 / len_all, len_2, 1.0 * len_2 / len_all)
+    print 'pos_1=%f, pos_2=%f' % (1.0 * len_pos_1 / len_1, 1.0 * len_pos_2 / len_2)
 
 
 def entropy_loss(labels, preds):
@@ -239,6 +274,7 @@ def cal_scores():
     entropy_loss(test_labels, test_preds)
 
     thresh = 3
+
     # 设置参数
     feature_name = 'graph_edge_max_clique_size'
     # 特征存储路径
@@ -248,6 +284,17 @@ def cal_scores():
     # 测试集特征
     test_fs = [train_features[index] for index in test_indexs]
 
+    thresh_cc = 3
+    # 设置参数
+    feature_name = 'graph_edge_cc_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+    train_features_cc = Feature.load(train_feature_fp).toarray()
+    test_fs_cc = [train_features_cc[index] for index in test_indexs]
+
+    print '-------------------------------------------------'
+    print '分析 clique_size <3 / =3 / >3 的各部分得分：'
     test_labels_l = [test_labels[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
     test_preds_l = [test_preds[index] for index in range(len(test_labels)) if test_fs[index] < thresh]
     entropy_loss(test_labels_l,test_preds_l)
@@ -265,6 +312,22 @@ def cal_scores():
     LogUtil.log('INFO', 'rate_labels_r=%f, rate_preds_r=%f' % (
         1. * sum(test_labels_r) / len(test_labels_r), 1. * sum(test_preds_r) / len(test_preds_r)))
 
+    print '-------------------------------------------------'
+    print '分析 clique_size <3 部分得分，根据 cc_size 切分为两部分：'
+
+    test_labels_1 = [test_labels[index] for index in range(len(test_labels)) if (test_fs[index] < thresh and test_fs_cc[index] < thresh)]
+    test_preds_1 = [test_preds[index] for index in range(len(test_labels)) if (test_fs[index] < thresh and test_fs_cc[index] < thresh)]
+    entropy_loss(test_labels_1, test_preds_1)
+    LogUtil.log('INFO', 'rate_labels_1=%f, rate_preds_1=%f' % (
+    1. * sum(test_labels_1) / len(test_labels_1), 1. * sum(test_preds_1) / len(test_preds_1)))
+
+    test_labels_2 = [test_labels[index] for index in range(len(test_labels)) if
+                     (test_fs[index] < thresh and test_fs_cc[index] >= thresh)]
+    test_preds_2 = [test_preds[index] for index in range(len(test_labels)) if
+                    (test_fs[index] < thresh and test_fs_cc[index] >= thresh)]
+    entropy_loss(test_labels_2, test_preds_2)
+    LogUtil.log('INFO', 'rate_labels_2=%f, rate_preds_2=%f' % (
+        1. * sum(test_labels_2) / len(test_labels_2), 1. * sum(test_preds_2) / len(test_preds_2)))
 
 
 

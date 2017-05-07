@@ -21,6 +21,7 @@ from nltk.stem import PorterStemmer
 from nltk.stem import SnowballStemmer
 import networkx as nx
 import csv
+from scipy import sparse
 
 class WordMatchShare(object):
     """
@@ -3030,6 +3031,41 @@ class Graph(object):
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
+    @staticmethod
+    def extract_graph_mc_cc_rate(cf, argv):
+        # 设置参数
+        feature_name = 'graph_mc_cc_rate'
+
+        # 加载数据文件
+        train_mc_fs = Feature.load(
+            '%s/%s.train.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), 'graph_edge_max_clique_size')).toarray()
+        train_cc_fs = Feature.load(
+            '%s/%s.train.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), 'graph_edge_cc_size')).toarray()
+
+        train_features = [[1. * train_mc_fs[index][0] / train_cc_fs[index][0]] for index in range(len(train_mc_fs))]
+        train_features = sparse.csr_matrix(train_features)
+
+        # 加载数据文件
+        test_mc_fs = Feature.load(
+            '%s/%s.test.smat' % (
+            cf.get('DEFAULT', 'feature_question_pair_pt'), 'graph_edge_max_clique_size')).toarray()
+        test_cc_fs = Feature.load(
+            '%s/%s.test.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), 'graph_edge_cc_size')).toarray()
+
+        test_features = [[1. * test_mc_fs[index][0] / test_cc_fs[index][0]] for index in range(len(test_mc_fs))]
+        test_features = sparse.csr_matrix(test_features)
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        Feature.save_smat(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+
+        Feature.save_smat(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
 
     @staticmethod
@@ -3054,6 +3090,10 @@ class Graph(object):
             Graph.extract_graph_hits_symm(cf, argv[1:])
         elif 'show_graph_edge_max_clique_size' == cmd:
             Graph.show_graph_edge_max_clique_size(cf, argv[1:])
+        elif 'extract_graph_mc_cc_rate' == cmd:
+            Graph.extract_graph_mc_cc_rate(cf, argv[1:])
+        else:
+            LogUtil.log('WARNING', 'NO CMD')
 
 
 def print_help():
