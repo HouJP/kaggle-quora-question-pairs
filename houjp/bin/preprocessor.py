@@ -388,7 +388,7 @@ class PreprocessorRunner(object):
         # 过滤索引
         train_311_clique_size_g3_indexs = []
         for index in range(len(train_311_indexs)):
-            if train_features[train_311_indexs[index]] == 3:
+            if train_features[train_311_indexs[index]] > 3:
                 train_311_clique_size_g3_indexs.append(train_311_indexs[index])
         DataUtil.save_vector(train_311_clique_size_g3_indexs_fp, train_311_clique_size_g3_indexs, 'w')
 
@@ -410,7 +410,7 @@ class PreprocessorRunner(object):
         # 过滤索引
         valid_311_clique_size_e3_indexs = []
         for index in range(len(valid_311_indexs)):
-            if train_features[valid_311_indexs[index]] < 3:
+            if train_features[valid_311_indexs[index]] == 3:
                 valid_311_clique_size_e3_indexs.append(valid_311_indexs[index])
         DataUtil.save_vector(valid_311_clique_size_e3_indexs_fp, valid_311_clique_size_e3_indexs, 'w')
 
@@ -420,7 +420,7 @@ class PreprocessorRunner(object):
         # 过滤索引
         valid_311_clique_size_g3_indexs = []
         for index in range(len(valid_311_indexs)):
-            if train_features[valid_311_indexs[index]] < 3:
+            if train_features[valid_311_indexs[index]] > 3:
                 valid_311_clique_size_g3_indexs.append(valid_311_indexs[index])
         DataUtil.save_vector(valid_311_clique_size_g3_indexs_fp, valid_311_clique_size_g3_indexs, 'w')
 
@@ -442,7 +442,7 @@ class PreprocessorRunner(object):
         # 过滤索引
         test_311_clique_size_e3_indexs = []
         for index in range(len(test_311_indexs)):
-            if train_features[test_311_indexs[index]] < 3:
+            if train_features[test_311_indexs[index]] == 3:
                 test_311_clique_size_e3_indexs.append(test_311_indexs[index])
         DataUtil.save_vector(test_311_clique_size_e3_indexs_fp, test_311_clique_size_e3_indexs, 'w')
 
@@ -452,7 +452,7 @@ class PreprocessorRunner(object):
         # 过滤索引
         test_311_clique_size_g3_indexs = []
         for index in range(len(test_311_indexs)):
-            if train_features[test_311_indexs[index]] < 3:
+            if train_features[test_311_indexs[index]] > 3:
                 test_311_clique_size_g3_indexs.append(test_311_indexs[index])
         DataUtil.save_vector(test_311_clique_size_g3_indexs_fp, test_311_clique_size_g3_indexs, 'w')
 
