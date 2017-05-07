@@ -372,7 +372,7 @@ def rescale_answer(cf):
 if __name__ == "__main__":
     # 读取配置文件
     cf = ConfigParser.ConfigParser()
-    cf.read(sys.argv[1:])
+    cf.read(sys.argv[1])
 
     # to_feature_index_run(cf)
     # generate_answer(cf)
