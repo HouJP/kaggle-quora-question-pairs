@@ -381,7 +381,7 @@ class Model(object):
         # 加载特征文件
         offline_features = Feature.load_all_features(cf, offline_rawset_name, will_save=will_save)
         # 加载标签文件
-        offline_labels = DataUtil.load_vector('%s/%s.label' % (label_fp, offline_rawset_name))
+        offline_labels = DataUtil.load_vector('%s/%s.label' % (label_fp, offline_rawset_name), True)
 
         offline_valid_pred_all = []
         offline_test_pred_all = []
