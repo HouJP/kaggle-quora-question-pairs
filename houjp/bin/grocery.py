@@ -124,32 +124,43 @@ def to_feature_index_run(cf):
     to_feature_index(data_fp, test_811_fp, test_811_index_fp)
 
 
-def generate_answer(cf):
+def generate_answer_one(cf, idd, lr, mr, rr):
     # 设置参数
     feature_name = 'graph_edge_max_clique_size'
-
     # 特征存储路径
     feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
-    train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
     test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
-
     test_features = Feature.load_smat(test_feature_fp).toarray()
 
-    lr = 0.46
-    mr = 0.67
-    rr = 0.8
+    # 设置参数
+    feature_name = 'graph_edge_cc_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    test_features_cc = Feature.load_smat(test_feature_fp).toarray()
+
     thresh = 3
-    fout = open('/Users/houjianpeng/tmp/tmp_%.2f_%.2f_%.2f.csv' % (lr, mr, rr), 'w')
+    thresh_cc = 3
+    fout = open('/Users/houjianpeng/tmp/%d.csv' % idd, 'w')
     fout.write("\"test_id\",\"is_duplicate\"\n")
 
     for index in range(len(test_features)):
-        if test_features[index][0] > thresh:
+        if test_features[index][0] >= thresh:
             fout.write('%d,%f\n' % (index, rr))
-        elif test_features[index][0] == thresh:
+        elif test_features[index][0] < thresh and test_features_cc[index][0] >= thresh_cc:
             fout.write('%d,%f\n' % (index, mr))
         else:
             fout.write('%d,%f\n' % (index, lr))
     fout.close()
+
+
+def generate_answer(cf):
+
+    generate_answer_one(cf, 1, 0.29, 0.39, 0.64)
+    generate_answer_one(cf, 2, 0.34, 0.55, 0.74)
+    generate_answer_one(cf, 3, 0.20, 0.29, 0.84)
+    generate_answer_one(cf, 4, 0.13, 0.24, 0.69)
+    generate_answer_one(cf, 5, 0.45, 0.66, 0.79)
 
 
 def cal_pos_rate(cf):
@@ -207,12 +218,14 @@ def cal_pos_rate(cf):
 
     len_1 = 0
     len_2 = 0
+    len_3 = 0
     len_all = 0
     len_pos_1 = 0
     len_pos_2 = 0
+    len_pos_3 = 0
     for index in range(len(labels)):
+        len_all += 1.
         if train_features[index][0] < thresh_mc:
-            len_all += 1.
             if train_features_cc[index][0] < thresh_cc:
                 len_1 += 1.
                 if labels[index] == 1:
@@ -221,8 +234,13 @@ def cal_pos_rate(cf):
                 len_2 += 1.
                 if labels[index] == 1:
                     len_pos_2 += 1.
-    print 'len_all=%f, len_1=%f(%f), len_2=%f(%f)' % (len_all, len_1, 1.0 * len_1 / len_all, len_2, 1.0 * len_2 / len_all)
-    print 'pos_1=%f, pos_2=%f' % (1.0 * len_pos_1 / len_1, 1.0 * len_pos_2 / len_2)
+        else:
+            len_3 += 1.
+            if labels[index] == 1:
+                len_pos_3 += 1.
+    print 'len_all=%f, len_1=%f(%f), len_2=%f(%f), len_3=%f(%f)' \
+          % (len_all, len_1, 1.0 * len_1 / len_all, len_2, 1.0 * len_2 / len_all, len_3, 1.0 * len_3 / len_all)
+    print 'pos_1=%f, pos_2=%f, pos_3=%f' % (1.0 * len_pos_1 / len_1, 1.0 * len_pos_2 / len_2, 1. * len_pos_3 / len_3)
 
 
 def entropy_loss(labels, preds):
@@ -368,14 +386,84 @@ def rescale_answer(cf):
         fout.write('%d,%s\n' % (index, test_preds[index]))
     fout.close()
 
+    # 设置参数
+    feature_name = 'graph_edge_max_clique_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    test_features_mc = Feature.load(test_feature_fp).toarray()
+
+    # 设置参数
+    feature_name = 'graph_edge_cc_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    test_features_cc = Feature.load(test_feature_fp).toarray()
+
+    print '-------------------------------------------------'
+    print '分析 clique_size <3 / =3 / >3 的各部分：'
+
+    thresh = 3
+
+    len_l = 0
+    len_m = 0
+    len_r = 0
+    len_l_pos = 0
+    len_m_pos = 0
+    len_r_pos = 0
+    for index in range(len(test_preds)):
+        if test_features[index][0] > thresh:
+            len_r += 1.
+            len_r_pos += test_preds[index]
+        elif test_features[index][0] == thresh:
+            len_m += 1.
+            len_m_pos += test_preds[index]
+        else:
+            len_l += 1.
+            len_l_pos += test_preds[index]
+    print 'len_l=%d, len_m=%d, len_r=%d, len_l_pos=%d, len_m_pos=%d, len_r_pos=%d' % (
+    len_l, len_m, len_r, len_l_pos, len_m_pos, len_r_pos)
+    print 'rate_l=%f, rate_m=%f, rate_r=%f' % (len_l / len(test_preds), len_m / len(test_preds), len_r / len(test_preds))
+    print 'pos_rate_l=%f, pos_rate_m=%f, pos_rate_r=%f' % (len_l_pos / len_l, len_m_pos / len_m, len_r_pos / len_r)
+
+    print '-------------------------------------------------'
+    print '分析 clique_size == 2 部分：根据 cc_size 切分为两部分'
+
+    thresh_mc = 3
+    thresh_cc = 3
+
+    len_1 = 0
+    len_2 = 0
+    len_3 = 0
+    len_all = 0
+    len_pos_1 = 0
+    len_pos_2 = 0
+    len_pos_3 = 0
+    for index in range(len(test_preds)):
+        len_all += 1.
+        if test_features[index][0] < thresh_mc:
+            if test_features_cc[index][0] < thresh_cc:
+                len_1 += 1.
+                len_pos_1 += test_preds[index]
+            else:
+                len_2 += 1.
+                len_pos_2 += test_preds[index]
+        else:
+            len_3 += 1.
+            len_pos_3 += test_preds[index]
+    print 'len_all=%f, len_1=%f(%f), len_2=%f(%f), len_3=%f(%f)' \
+          % (len_all, len_1, 1.0 * len_1 / len_all, len_2, 1.0 * len_2 / len_all, len_3, 1.0 * len_3 / len_all)
+    print 'pos_1=%f, pos_2=%f, pos_3=%f' % (1.0 * len_pos_1 / len_1, 1.0 * len_pos_2 / len_2, 1. * len_pos_3 / len_3)
+
 
 if __name__ == "__main__":
     # 读取配置文件
     cf = ConfigParser.ConfigParser()
-    cf.read(sys.argv[1])
+    # cf.read(sys.argv[1])
+    cf.read('../conf/python.conf')
 
     # to_feature_index_run(cf)
     # generate_answer(cf)
     # cal_pos_rate(cf)
-    cal_scores(sys.argv[2:])
-    # rescale_answer(cf)
+    # cal_scores(sys.argv[2:])
+    rescale_answer(cf)

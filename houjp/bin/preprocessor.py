@@ -10,6 +10,7 @@ from nltk.stem import SnowballStemmer
 import re
 from feature import Feature
 import sys
+import random
 
 class Preprocessor(object):
     '''
@@ -457,11 +458,50 @@ class PreprocessorRunner(object):
         DataUtil.save_vector(test_311_clique_size_g3_indexs_fp, test_311_clique_size_g3_indexs, 'w')
 
     @staticmethod
+    def gen_cv_subset_index(cf, argv):
+        cv_num = 5
+        cv_rawset_name = 'train_with_swap'
+        train_data_size = 404290
+
+        index_all = []
+        for i in range(cv_num):
+            index_all.append([])
+        for i in range(train_data_size):
+            index_all[int(random.random() * cv_num)].append(i)
+
+        for i in range(cv_num):
+            LogUtil.log('INFO', 'size(part%d)=%d' % (i, len(index_all[i])))
+
+        index_fp = cf.get('DEFAULT', 'feature_index_pt')
+        for i in range(cv_num):
+            fold_id = i
+            # train
+            fp = '%s/cv_n%d_f%d_train.%s.index' % (index_fp, cv_num, fold_id, cv_rawset_name)
+            for j in range(cv_num - 2):
+                part_id = (i + j) % cv_num
+                DataUtil.save_vector(fp, index_all[part_id], 'a')
+            for j in range(cv_num - 2):
+                part_id = (i + j) % cv_num
+                DataUtil.save_vector(fp, [index + train_data_size for index in index_all[part_id]], 'a')
+            # valid
+            fp = '%s/cv_n%d_f%d_valid.%s.index' % (index_fp, cv_num, fold_id, cv_rawset_name)
+            part_id = (fold_id + cv_num - 2) % cv_num
+            DataUtil.save_vector(fp, index_all[part_id], 'w')
+            # test
+            fp = '%s/cv_n%d_f%d_test.%s.index' % (index_fp, cv_num, fold_id, cv_rawset_name)
+            part_id = (fold_id + cv_num - 1) % cv_num
+            DataUtil.save_vector(fp, index_all[part_id], 'w')
+
+    @staticmethod
     def run(cf, argv):
         cmd = argv[0]
 
         if 'gen_index_with_max_clique_size' == cmd:
             PreprocessorRunner.gen_index_with_max_clique_size(cf, argv[1:])
+        elif 'gen_cv_subset_index' == cmd:
+            PreprocessorRunner.gen_cv_subset_index(cf, argv[1:])
+        else:
+            LogUtil.log('WARNING', 'NO CMD in PreprocessorRunner')
 
 def print_help():
     print 'preprocessor <conf_file_fp> -->'
@@ -491,3 +531,5 @@ if __name__ == "__main__":
     cmd = sys.argv[2]
     if 'PreprocessorRunner' == cmd:
         PreprocessorRunner.run(cf, sys.argv[3:])
+    else:
+        LogUtil.log('WARNING', 'NO CMD')

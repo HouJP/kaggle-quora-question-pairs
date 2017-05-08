@@ -509,7 +509,7 @@ class Model(object):
 
 def print_help():
     print 'model <conf_file_path> -->'
-    print '\ttrain'
+    print '\ttrain_xgb'
     print '\tsave_all_feature'
     print '\tshow_feature_xgb <max_num_features> <ylim_end>'
 
@@ -523,7 +523,7 @@ if __name__ == "__main__":
     cf.read(sys.argv[1])
 
     cmd = sys.argv[2]
-    if 'train' == cmd:
+    if 'train_xgb' == cmd:
         Model.train_xgb(cf)
     elif 'save_all_feature' == cmd:
         Model.save_all_feature(cf)
