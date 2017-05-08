@@ -12,6 +12,7 @@ from xgboost import plot_importance
 from matplotlib import pyplot
 from utils import LogUtil, DataUtil
 from feature import Feature
+from postprocessor import PostProcessor
 
 class Model(object):
     """
@@ -384,12 +385,14 @@ class Model(object):
         offline_labels = DataUtil.load_vector('%s/%s.label' % (label_fp, offline_rawset_name), True)
 
         offline_valid_pred_all = []
-        offline_test_pred_all = []
-
         offline_valid_label_all = []
-        offline_test_label_all = []
 
+        offline_test_pred_all = []
+        offline_test_label_all = []
         offline_test_index_all = []
+
+        params_all = []
+        model_all = []
 
         # 交叉验证
         for fold_id in range(cv_num):
@@ -460,9 +463,13 @@ class Model(object):
             params['best_ntree_limit'] = model.best_ntree_limit
             cf.set('XGBOOST_PARAMS', 'best_ntree_limit', model.best_ntree_limit)
 
+            params_all.append(params)
+
             # 存储模型
-            model_fp = cf.get('DEFAULT', 'model_pt') + '/cv_n%d_f%d_test.xgboost.model' % (cv_num, fold_id)
+            model_fp = cf.get('DEFAULT', 'model_pt') + '/cv_n%d_f%d.xgboost.model' % (cv_num, fold_id)
             model.save_model(model_fp)
+
+            model_all.append(model)
 
             # 进行预测
             offline_pred_train_data = model.predict(offline_train_data, ntree_limit=model.best_ntree_limit)
@@ -510,6 +517,62 @@ class Model(object):
         neg_fault_fp = cf.get('MODEL', 'neg_fault_fp')
         train_df = pd.read_csv(cf.get('MODEL', 'origin_pt') + '/train.csv')
         Model.generate_fault_file(offline_test_pred_all, offline_test_index_all, train_df, pos_fault_fp, neg_fault_fp)
+
+        # 线上预测
+        if 'True' == cf.get('MODEL', 'online'):
+            Model.cv_predict_xgb(cf, model_all, params_all)
+        return
+
+    @staticmethod
+    def cv_predict_xgb(cf, model_all, params_all):
+        # 加载配置
+        n_part = cf.getint('MODEL', 'n_part')
+        cv_num = cf.getint('MODEL', 'cv_num')
+
+        # 全部预测结果
+        online_pred_all = []
+        for fold_id in range(cv_num):
+            online_pred_all.append([])
+
+        for part_id in range(n_part):
+            # 加载线上测试集特征文件
+            will_save = ('True' == cf.get('FEATURE', 'will_save'))
+            online_features = Feature.load_all_features_with_part_id(cf,
+                                                                     cf.get('MODEL', 'online_test_rawset_name'),
+                                                                     part_id, will_save=will_save)
+            # 设置测试集正样本比例
+            online_test_pos_rate = -1.0
+            # 获取线上测试集
+            (online_data, online_balanced_indexs) = Model.get_DMatrix(range(0, online_features.shape[0]),
+                                                                      [0] * online_features.shape[0],
+                                                                      online_features,
+                                                                      online_test_pos_rate)
+            LogUtil.log("INFO", "online set (%02d) generation done" % part_id)
+
+            for fold_id in range(cv_num):
+                # 预测线上测试集
+                online_pred = model_all[fold_id].predict(online_data, ntree_limit=params_all[fold_id]['best_ntree_limit'])
+                online_pred_all[fold_id].extend(online_pred)
+                LogUtil.log('INFO', 'online set part_id(%d), fold_id(%d) predict done' % (part_id, fold_id))
+
+        # 后处理
+        if cf.get('MODEL', 'has_postprocess') == 'True':
+            for fold_id in range(cv_num):
+                online_pred_all[fold_id] = [Model.adj(x) for x in online_pred_all[fold_id]]
+        # 加载线上测试集ID文件
+        online_ids = DataUtil.load_vector(cf.get('MODEL', 'online_test_ids_fp'), False)
+        # 存储线上测试集预测结果
+        online_pred_fp_list = []
+        for fold_id in range(cv_num):
+            online_pred_fp = '%s/cv_n%d_f%d_online.%s.pred' % (cf.get('DEFAULT', 'pred_pt'), cv_num, fold_id, cf.get('MODEL', 'online_test_rawset_name'))
+            Model.save_pred(online_ids, online_pred_all[fold_id], online_pred_fp)
+            online_pred_fp_list.append(online_pred_fp)
+
+        # 模型融合
+        online_pred_merge_fp = '%s/cv_n%d_online.%s.pred' % (cf.get('DEFAULT', 'pred_pt'), cv_num, cf.get('MODEL', 'online_test_rawset_name'))
+        online_pred_merge = PostProcessor.merge_logit(online_pred_fp_list)
+        PostProcessor.write_result(online_pred_merge_fp, online_pred_merge)
+        LogUtil.log('INFO', 'cv merge done(%s)' % online_pred_merge_fp)
 
 
     @staticmethod
