@@ -493,6 +493,29 @@ class PreprocessorRunner(object):
             DataUtil.save_vector(fp, index_all[part_id], 'w')
 
     @staticmethod
+    def gen_cv_subset_label(cf, argv):
+        cv_num = 5
+        offline_rawset_name = 'train_with_swap'
+        train_data_size = 404290
+
+        # 加载参数
+        index_fp = cf.get('DEFAULT', 'feature_index_pt')
+
+        # 加载offline数据
+        offline_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        offline_labels = list(offline_data['is_duplicate'])
+        offline_labels = offline_labels + offline_labels
+
+        for fold_id in range(cv_num):
+            # 加载训练集索引
+            offline_train_indexs_fp = '%s/cv_n%d_f%d_train.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_train_indexs = Feature.load_index(offline_train_indexs_fp)
+
+            offline_train_labels = [offline_labels[index] for index in offline_train_indexs]
+
+
+
+    @staticmethod
     def run(cf, argv):
         cmd = argv[0]
 
@@ -502,6 +525,7 @@ class PreprocessorRunner(object):
             PreprocessorRunner.gen_cv_subset_index(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD in PreprocessorRunner')
+
 
 def print_help():
     print 'preprocessor <conf_file_fp> -->'

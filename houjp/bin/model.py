@@ -346,6 +346,173 @@ class Model(object):
         return
 
     @staticmethod
+    def cv_xgb(cf, tag=time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))):
+        """
+        xgb模型的交叉验证
+        :param cf:
+        :param tag:
+        :return:
+        """
+        # 新增配置
+        cf.set('DEFAULT', 'tag', str(tag))
+
+        # 创建输出目录
+        out_pt = cf.get('DEFAULT', 'out_pt')
+        out_pt_exists = os.path.exists(out_pt)
+        if out_pt_exists:
+            LogUtil.log("ERROR", 'out path (%s) already exists ' % out_pt)
+            return
+        else:
+            os.mkdir(out_pt)
+            os.mkdir(cf.get('DEFAULT', 'pred_pt'))
+            os.mkdir(cf.get('DEFAULT', 'model_pt'))
+            os.mkdir(cf.get('DEFAULT', 'fault_pt'))
+            os.mkdir(cf.get('DEFAULT', 'conf_pt'))
+            os.mkdir(cf.get('DEFAULT', 'score_pt'))
+            LogUtil.log('INFO', 'out path (%s) created ' % out_pt)
+
+        # 加载参数
+        will_save = ('True' == cf.get('FEATURE', 'will_save'))
+        offline_rawset_name = cf.get('MODEL', 'offline_rawset_name')
+        cv_num = cf.getint('MODEL', 'cv_num')
+        index_fp = cf.get('DEFAULT', 'feature_index_pt')
+        label_fp = cf.get('DEFAULT', 'feature_label_pt')
+
+        # 加载特征文件
+        offline_features = Feature.load_all_features(cf, offline_rawset_name, will_save=will_save)
+        # 加载标签文件
+        offline_labels = DataUtil.load_vector('%s/%s.label' % (label_fp, offline_rawset_name))
+
+        offline_valid_pred_all = []
+        offline_test_pred_all = []
+
+        offline_valid_label_all = []
+        offline_test_label_all = []
+
+        offline_test_index_all = []
+
+        # 交叉验证
+        for fold_id in range(cv_num):
+            LogUtil.log('INFO', 'cross validation, fold_id=%d begin' % fold_id)
+
+            # 加载训练集索引
+            offline_train_pos_rate = float(cf.get('MODEL', 'train_pos_rate'))
+            offline_train_indexs_fp = '%s/cv_n%d_f%d_train.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_train_indexs = Feature.load_index(offline_train_indexs_fp)
+            # 获取训练集
+            (offline_train_data, offline_train_balanced_indexs) = Model.get_DMatrix(
+                offline_train_indexs,
+                offline_labels,
+                offline_features,
+                offline_train_pos_rate)
+            LogUtil.log('INFO', 'offline train data generation done')
+
+            # 加载验证集索引
+            offline_valid_pos_rate = float(cf.get('MODEL', 'valid_pos_rate'))
+            offline_valid_indexs_fp = '%s/cv_n%d_f%d_valid.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_valid_indexs = Feature.load_index(offline_valid_indexs_fp)
+            # 获取训练集
+            (offline_valid_data, offline_valid_balanced_indexs) = Model.get_DMatrix(
+                offline_valid_indexs,
+                offline_labels,
+                offline_features,
+                offline_valid_pos_rate)
+            LogUtil.log('INFO', 'offline valid data generation done')
+
+            # 加载测试集索引
+            offline_test_pos_rate = float(cf.get('MODEL', 'test_pos_rate'))
+            offline_test_indexs_fp = '%s/cv_n%d_f%d_test.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_test_indexs = Feature.load_index(offline_test_indexs_fp)
+            # 获取训练集
+            (offline_test_data, offline_test_balanced_indexs) = Model.get_DMatrix(
+                offline_test_indexs,
+                offline_labels,
+                offline_features,
+                offline_test_pos_rate)
+            LogUtil.log('INFO', 'offline test data generation done')
+
+            # 设置参数
+            params = {}
+            params['objective'] = cf.get('XGBOOST_PARAMS', 'objective')
+            params['eval_metric'] = cf.get('XGBOOST_PARAMS', 'eval_metric')
+            params['eta'] = float(cf.get('XGBOOST_PARAMS', 'eta'))
+            params['max_depth'] = cf.getint('XGBOOST_PARAMS', 'max_depth')
+            params['subsample'] = float(cf.get('XGBOOST_PARAMS', 'subsample'))
+            params['colsample_bytree'] = float(cf.get('XGBOOST_PARAMS', 'colsample_bytree'))
+            params['min_child_weight'] = cf.getint('XGBOOST_PARAMS', 'min_child_weight')
+            params['silent'] = cf.getint('XGBOOST_PARAMS', 'silent')
+            params['num_round'] = cf.getint('XGBOOST_PARAMS', 'num_round')
+            params['early_stop'] = cf.getint('XGBOOST_PARAMS', 'early_stop')
+            params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
+            params['scale_pos_weight'] = float(cf.get('XGBOOST_PARAMS', 'scale_pos_weight'))
+            watchlist = [(offline_train_data, 'train'), (offline_valid_data, 'valid')]
+
+            # 训练模型
+            model = xgb.train(params,
+                              offline_train_data, params['num_round'],
+                              watchlist,
+                              early_stopping_rounds=params['early_stop'],
+                              verbose_eval=10)
+
+            # 打印参数
+            LogUtil.log("INFO", 'params=%s, best_ntree_limit=%d' % (str(params), model.best_ntree_limit))
+            # 新增配置
+            params['best_ntree_limit'] = model.best_ntree_limit
+            cf.set('XGBOOST_PARAMS', 'best_ntree_limit', model.best_ntree_limit)
+
+            # 存储模型
+            model_fp = cf.get('DEFAULT', 'model_pt') + '/cv_n%d_f%d_test.xgboost.model' % (cv_num, fold_id)
+            model.save_model(model_fp)
+
+            # 进行预测
+            offline_pred_train_data = model.predict(offline_train_data, ntree_limit=model.best_ntree_limit)
+            offline_pred_valid_data = model.predict(offline_valid_data, ntree_limit=model.best_ntree_limit)
+            offline_pred_test_data = model.predict(offline_test_data, ntree_limit=model.best_ntree_limit)
+
+            # 后处理
+            if cf.get('MODEL', 'has_postprocess') == 'True':
+                offline_pred_train_data = [Model.adj(x) for x in offline_pred_train_data]
+                offline_pred_valid_data = [Model.adj(x) for x in offline_pred_valid_data]
+                offline_pred_test_data = [Model.adj(x) for x in offline_pred_test_data]
+
+            offline_valid_score = Model.entropy_loss_from_list(offline_valid_data.get_label(), offline_pred_valid_data)
+            offline_test_score = Model.entropy_loss_from_list(offline_test_data.get_label(), offline_pred_test_data)
+            LogUtil.log('INFO', '-------------------')
+            LogUtil.log('INFO', 'Evaluate for fold_id(%d): valid_score(%s), test_score(%s)' % (fold_id, offline_valid_score, offline_test_score))
+
+            offline_valid_pred_all.extend(list(offline_pred_valid_data))
+            offline_valid_label_all.extend(list(offline_valid_data.get_label()))
+
+            offline_test_pred_all.extend(list(offline_pred_test_data))
+            offline_test_label_all.extend(list(offline_test_data.get_label()))
+            offline_test_index_all.extend(list(offline_test_balanced_indexs))
+
+            LogUtil.log('INFO', 'cross validation, fold_id=%d done' % fold_id)
+
+        # 保存本次运行配置
+        cf.write(open(cf.get('DEFAULT', 'conf_pt') + 'python.conf', 'w'))
+
+        # 存储预测结果
+        offline_valid_pred_all_fp = '%s/cv_n%d_valid.%s.pred' % (cf.get('DEFAULT', 'pred_pt'), cv_num, offline_rawset_name)
+        Model.save_pred(range(len(offline_valid_pred_all)), offline_valid_pred_all, offline_valid_pred_all_fp)
+        offline_test_pred_all_fp = '%s/cv_n%d_test.%s.pred' % (cf.get('DEFAULT', 'pred_pt'), cv_num, offline_rawset_name)
+        Model.save_pred(range(len(offline_test_pred_all)), offline_test_pred_all, offline_test_pred_all_fp)
+
+        # 评测得分
+        offline_valid_score_all = Model.entropy_loss(offline_valid_label_all, offline_valid_pred_all_fp)
+        offline_test_score_all = Model.entropy_loss(offline_test_label_all, offline_test_pred_all_fp)
+        LogUtil.log('INFO', '-------------------')
+        LogUtil.log('INFO', 'Evaluate for all: valid_score_all(%s), test_score_all(%s)' % (
+            offline_valid_score_all, offline_test_score_all))
+
+        # 存储预测不佳结果
+        pos_fault_fp = cf.get('MODEL', 'pos_fault_fp')
+        neg_fault_fp = cf.get('MODEL', 'neg_fault_fp')
+        train_df = pd.read_csv(cf.get('MODEL', 'origin_pt') + '/train.csv')
+        Model.generate_fault_file(offline_test_pred_all, offline_test_index_all, train_df, pos_fault_fp, neg_fault_fp)
+
+
+    @staticmethod
     def load_model(cf):
         # 加载模型
         model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
@@ -512,6 +679,7 @@ def print_help():
     print '\ttrain_xgb'
     print '\tsave_all_feature'
     print '\tshow_feature_xgb <max_num_features> <ylim_end>'
+    print '\tcv_xgb'
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -529,6 +697,8 @@ if __name__ == "__main__":
         Model.save_all_feature(cf)
     elif 'show_feature_xgb' == cmd:
         Model.run_show_feature_xgb(cf, sys.argv[3:])
+    elif 'cv_xgb' == cmd:
+        Model.cv_xgb(cf)
     else:
         print_help()
 
