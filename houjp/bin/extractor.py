@@ -3208,6 +3208,8 @@ class Distance(object):
 
     @staticmethod
     def run(cf, argv):
+        cmd = argv[0]
+
         if 'extract_jaccard_coef_ngram' == cmd:
             Distance.extract_jaccard_coef_ngram(cf, argv[1:])
         else:
