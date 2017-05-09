@@ -3246,7 +3246,40 @@ class Distance(object):
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
+    @staticmethod
+    def extract_row_edit_dis(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+        q1_stem = ' '.join([Distance.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(str(row['question1']).decode('utf-8')))])
+        q2_stem = ' '.join([Distance.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(str(row['question2']).decode('utf-8')))])
+        return [dist_utils._edit_dist(q1, q2), dist_utils._edit_dist(q1_stem, q2_stem)]
 
+    @staticmethod
+    def extract_edit_dis(cf, argv):
+        # 设置参数
+        feature_name = 'edit_dis'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(Distance.extract_row_edit_dis, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+
+        test_features = test_data.apply(Distance.extract_row_edit_dis, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
     @staticmethod
     def run(cf, argv):
@@ -3256,6 +3289,8 @@ class Distance(object):
             Distance.extract_jaccard_coef_ngram(cf, argv[1:])
         elif 'extract_dice_dis_ngram' == cmd:
             Distance.extract_dice_dis_ngram(cf, argv[1:])
+        elif 'extract_edit_dis' == cmd:
+            Distance.extract_edit_dis(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
