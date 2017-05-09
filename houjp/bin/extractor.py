@@ -22,6 +22,8 @@ from nltk.stem import SnowballStemmer
 import networkx as nx
 import csv
 from scipy import sparse
+import ngram_utils
+import dist_utils
 
 class WordMatchShare(object):
     """
@@ -3157,6 +3159,61 @@ class Count(object):
             LogUtil.log('WARNING', 'NO CMD')
 
 
+class Distance(object):
+    snowball_stemmer = SnowballStemmer('english')
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def extract_row_jaccard_coef_ngram(row):
+        q1_words = [Distance.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(str(row['question1']).decode('utf-8')))]
+        q2_words = [Distance.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(str(row['question2']).decode('utf-8')))]
+
+        fs = []
+        for n in range(1, 4):
+            q1_ngrams = ngram_utils._ngrams(q1_words, n)
+            q2_ngrams = ngram_utils._ngrams(q2_words, n)
+            fs.append(dist_utils._jaccard_coef(q1_ngrams, q2_ngrams))
+
+        return fs
+
+
+    @staticmethod
+    def extract_jaccard_coef_ngram(cf, argv):
+        # 设置参数
+        feature_name = 'jaccard_coef_ngram'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(Distance.extract_row_jaccard_coef_ngram, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+
+        test_features = test_data.apply(Distance.extract_row_jaccard_coef_ngram, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+    @staticmethod
+    def run(cf, argv):
+        if 'extract_jaccard_coef_ngram' == cmd:
+            Distance.extract_jaccard_coef_ngram(cf, argv[1:])
+        else:
+            LogUtil.log('WARNING', 'NO CMD')
+
+
 def print_help():
     print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
@@ -3168,6 +3225,7 @@ def print_help():
     print '\tPowerfulWordV2'
     print '\tGraph'
     print '\tCount'
+    print '\tDistance'
 
 if __name__ == "__main__":
 
@@ -3198,5 +3256,7 @@ if __name__ == "__main__":
         Graph.run(cf, sys.argv[3:])
     elif 'Count' == cmd:
         Count.run(cf, sys.argv[3:])
+    elif 'Distance' == cmd:
+        Distance.run(cf, sys.argv[3:])
     else:
         print_help()
