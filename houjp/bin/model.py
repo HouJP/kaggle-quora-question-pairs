@@ -570,7 +570,11 @@ class Model(object):
 
         # 模型融合
         online_pred_merge_fp = '%s/cv_n%d_online.%s.pred' % (cf.get('DEFAULT', 'pred_pt'), cv_num, cf.get('MODEL', 'online_test_rawset_name'))
-        online_pred_merge = PostProcessor.merge_logit(online_pred_fp_list)
+        online_pred_list = []
+        for online_pred_fp in online_pred_fp_list:
+            online_pred = PostProcessor.read_result(online_pred_fp)
+            online_pred_list.append(online_pred)
+        online_pred_merge = PostProcessor.merge_logit(online_pred_list)
         PostProcessor.write_result(online_pred_merge_fp, online_pred_merge)
         LogUtil.log('INFO', 'cv merge done(%s)' % online_pred_merge_fp)
 
