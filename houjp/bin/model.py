@@ -518,6 +518,17 @@ class Model(object):
         train_df = pd.read_csv(cf.get('MODEL', 'origin_pt') + '/train.csv')
         Model.generate_fault_file(offline_test_pred_all, offline_test_index_all, train_df, pos_fault_fp, neg_fault_fp)
 
+        # 还原后处理，评测得分
+        if cf.get('MODEL', 'has_postprocess') == 'True':
+            offline_valid_pred_all = [Model.inverse_adj(y) for y in offline_valid_pred_all]
+            offline_test_pred_all = [Model.inverse_adj(y) for y in offline_test_pred_all]
+        offline_valid_score_all = Model.entropy_loss_from_list(offline_valid_label_all, offline_valid_pred_all)
+        offline_test_score_all = Model.entropy_loss_from_list(offline_test_label_all, offline_test_pred_all)
+        LogUtil.log('INFO', '-------------------')
+        LogUtil.log('INFO', 'Evaluate for all (without postprocess): valid_score_all(%s), test_score_all(%s)' % (
+            offline_valid_score_all, offline_test_score_all))
+
+
         # 线上预测
         if 'True' == cf.get('MODEL', 'online'):
             Model.cv_predict_xgb(cf, model_all, params_all)
