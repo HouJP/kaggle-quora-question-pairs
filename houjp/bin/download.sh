@@ -17,9 +17,10 @@ function run() {
     # create directory
     mkdir $local_project_pt/data/out/$tag
 #    mkdir $local_project_pt/data/out/$tag/pred/
-    mkdir $local_project_pt/data/out/$tag/model/
+#    mkdir $local_project_pt/data/out/$tag/model/
     mkdir $local_project_pt/data/out/$tag/conf/
     # download
+    scp -r ${user}@${address}:$server_project_pt/data/out/$tag/model/ $local_project_pt/data/out/$tag/
     scp -r ${user}@${address}:$server_project_pt/data/out/$tag/pred/ $local_project_pt/data/out/$tag/
     # zip
 #    zip -r $local_project_pt/data/out/$tag/pred/$score.zip $local_project_pt/data/out/$tag/pred/full.test.pred
