@@ -674,7 +674,7 @@ class Model(object):
         model, params = Model.load_model(cf)
 
         # 输出重要性
-        plot_importance(model, max_num_features=max_num_features, ylim=(0, ylim_end))
+        plot_importance(model, ylim=(max_num_features, ylim_end))
         pyplot.show()
 
     @staticmethod
