@@ -2512,7 +2512,7 @@ class Graph(object):
             q1 = str(p[3]).strip()
             q2 = str(p[4]).strip()
             label = p[5]
-            weight = train_wfs_fs[index]
+            weight = train_wfs_fs[index][0]
             if q1 not in Graph.q2id:
                 Graph.q2id[q1] = len(Graph.q2id)
             if q2 not in Graph.q2id:
@@ -2530,7 +2530,7 @@ class Graph(object):
         for p in fin:
             q1 = str(p[1]).strip()
             q2 = str(p[2]).strip()
-            weight = test_wfs_fs[index]
+            weight = test_wfs_fs[index][0]
             if q1 not in Graph.q2id:
                 Graph.q2id[q1] = len(Graph.q2id)
             if q2 not in Graph.q2id:
