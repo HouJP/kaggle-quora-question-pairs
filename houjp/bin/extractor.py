@@ -3313,21 +3313,21 @@ class Distance(object):
                 val_list = [[config.MISSING_VALUE_NUMERIC]]
 
             res = np.zeros(len(aggregator_prev) * len(aggregator), dtype=float)
-            for m, aggregator_prev in enumerate(aggregator_prev):
-                for n, aggregator in enumerate(aggregator):
+            for m, aggregator_prev_i in enumerate(aggregator_prev):
+                for n, aggregator_i in enumerate(aggregator):
                     idx = m * len(aggregator) + n
                     try:
                         tmp = []
                         for l in val_list:
                             try:
-                                s = aggregator_prev(l)
+                                s = aggregator_prev_i(l)
                             except:
                                 s = config.MISSING_VALUE_NUMERIC
                             tmp.append(s)
                     except:
                         tmp = [config.MISSING_VALUE_NUMERIC]
                     try:
-                        s = aggregator(tmp)
+                        s = aggregator_i(tmp)
                     except:
                         s = config.MISSING_VALUE_NUMERIC
                     res[idx] = s
