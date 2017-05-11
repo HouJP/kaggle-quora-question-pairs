@@ -3278,6 +3278,14 @@ class Distance(object):
         Feature.save_dataframe(train_features, train_feature_fp)
         LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
 
+        train_label = train_data['is_duplicate'].values[:]
+        train_features = train_features.tolist()
+        train_features = np.array(train_features)
+
+        for i in range(len(train_features[0])):
+            corr = np_utils._corr(train_features[:, i], train_label)
+            LogUtil.log('INFO', 'corr(%s_%d)=%f' % (feature_name, i, corr))
+
         test_features = test_data.apply(Distance.extract_row_edit_dis, axis=1, raw=True)
         LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
         Feature.save_dataframe(test_features, test_feature_fp)
