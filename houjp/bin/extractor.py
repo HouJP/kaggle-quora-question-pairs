@@ -3655,38 +3655,38 @@ class Distance(object):
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
-    @staticmethod
-    def extract_doc2vec_dis(cf, argv):
-        # 设置参数
-        feature_name = 'doc2vec_dis'
-
-        # 加载数据文件
-        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
-        test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
-
-        # 特征存储路径
-        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
-        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
-        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
-
-        # 抽取特征：train.csv
-        train_features = train_data.apply(Distance., axis=1, raw=True)
-        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
-        Feature.save_dataframe(train_features, train_feature_fp)
-        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
-
-        train_label = train_data['is_duplicate'].values[:]
-        train_features = train_features.tolist()
-        train_features = np.array(train_features)
-
-        for i in range(len(train_features[0])):
-            corr = np_utils._corr(train_features[:, i], train_label)
-            LogUtil.log('INFO', 'corr(%s_%d)=%f' % (feature_name, i, corr))
-
-        test_features = test_data.apply(Distance., axis=1, raw=True)
-        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
-        Feature.save_dataframe(test_features, test_feature_fp)
-        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+    # @staticmethod
+    # def extract_doc2vec_dis(cf, argv):
+    #     # 设置参数
+    #     feature_name = 'doc2vec_dis'
+    #
+    #     # 加载数据文件
+    #     train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+    #     test_data = pd.read_csv('%s/test_with_qid.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")  # [:100]
+    #
+    #     # 特征存储路径
+    #     feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    #     train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+    #     test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    #
+    #     # 抽取特征：train.csv
+    #     train_features = train_data.apply(Distance., axis=1, raw=True)
+    #     LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+    #     Feature.save_dataframe(train_features, train_feature_fp)
+    #     LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+    #
+    #     train_label = train_data['is_duplicate'].values[:]
+    #     train_features = train_features.tolist()
+    #     train_features = np.array(train_features)
+    #
+    #     for i in range(len(train_features[0])):
+    #         corr = np_utils._corr(train_features[:, i], train_label)
+    #         LogUtil.log('INFO', 'corr(%s_%d)=%f' % (feature_name, i, corr))
+    #
+    #     test_features = test_data.apply(Distance., axis=1, raw=True)
+    #     LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+    #     Feature.save_dataframe(test_features, test_feature_fp)
+    #     LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
 
     @staticmethod
