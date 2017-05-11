@@ -3402,7 +3402,7 @@ class Distance(object):
         test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
 
         # 抽取特征：train.csv
-        train_features = train_data.apply(Distance., axis=1, raw=True)
+        train_features = train_data.apply(Distance.extract_row_compression_dis, axis=1, raw=True)
         LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
         Feature.save_dataframe(train_features, train_feature_fp)
         LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
@@ -3415,7 +3415,7 @@ class Distance(object):
             corr = np_utils._corr(train_features[:, i], train_label)
             LogUtil.log('INFO', 'corr(%s_%d)=%f' % (feature_name, i, corr))
 
-        test_features = test_data.apply(Distance., axis=1, raw=True)
+        test_features = test_data.apply(Distance.extract_row_compression_dis, axis=1, raw=True)
         LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
