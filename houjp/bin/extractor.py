@@ -3176,12 +3176,38 @@ class Graph(object):
 
         # 存储路径
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
-        data_feature_fp = '%s/%s.%s.smat.%2d' % (feature_pt, feature_name, dataset_name, part_id)
+        data_feature_fp = '%s/%s.%s.smat.%02d' % (feature_pt, feature_name, dataset_name, part_id)
 
         # 抽取特征
         features = data[begin_id:end_id].apply(Graph.extract_row_graph_shortest_path, axis=1, raw=True)
         Feature.save_dataframe(features, data_feature_fp)
         LogUtil.log('INFO', 'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+    @staticmethod
+    def merge_graph_shortest_path(cf, argv):
+        # 路径权重特征名
+        weight_feature_name = argv[0]  # e.g. my_tfidf_word_match_share
+        # 抽取特征的数据集名称
+        dataset_name = argv[1]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[2])
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        # 设置参数
+        feature_name = 'graph_shortest_path_%s' % weight_feature_name
+
+        features = None
+        for part_id in range(part_num):
+            features_part_fp = '%s/%s.%s.smat.%02d' % (feature_pt, feature_name, dataset_name, part_id)
+            features_part = Feature.load(features_part_fp)
+            if features is None:
+                features = features_part
+            else:
+                features = Feature.merge_row(features, features_part)
+
+        features_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        Feature.save_dataframe(features, features_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d) done' % (feature_name, dataset_name, part_num))
 
     @staticmethod
     def run(cf, argv):
@@ -3209,6 +3235,8 @@ class Graph(object):
             Graph.extract_graph_mc_cc_rate(cf, argv[1:])
         elif 'extract_graph_shortest_path' == cmd:
             Graph.extract_graph_shortest_path(cf, argv[1:])
+        elif 'merge_graph_shortest_path' == cmd:
+            Graph.merge_graph_shortest_path(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
