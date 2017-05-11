@@ -2498,6 +2498,7 @@ class Graph(object):
     def init_graph_with_weight(cf, weight_featue_name):
         Graph.q2id = {}
         Graph.p2weight = {}
+        Graph.G = nx.Graph()
 
         train_wfs_fs = Feature.load(
             '%s/%s.train.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), weight_featue_name)).toarray()
@@ -2506,7 +2507,7 @@ class Graph(object):
 
         fin = csv.reader(open('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')))
         fin.next()
-        fout = open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt'), 'w')
+        # fout = open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt'), 'w')
         index = 0
         for p in fin:
             q1 = str(p[3]).strip()
@@ -2517,15 +2518,16 @@ class Graph(object):
                 Graph.q2id[q1] = len(Graph.q2id)
             if q2 not in Graph.q2id:
                 Graph.q2id[q2] = len(Graph.q2id)
-            print >> fout, Graph.q2id[q1], Graph.q2id[q2], label, weight
+            # print >> fout, Graph.q2id[q1], Graph.q2id[q2], label, weight
+            Graph.G.add_edge(Graph.q2id[q1], Graph.q2id[q2], weight=weight)
             Graph.p2weight[(Graph.q2id[q1], Graph.q2id[q2])] = weight
             index += 1
         LogUtil.log('INFO', 'len(questions)=%d' % len(Graph.q2id))
-        fout.close()
+        # fout.close()
 
         fin = csv.reader(open('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')))
         fin.next()
-        fout = open('%s/graph_question2id.test.txt' % cf.get('DEFAULT', 'devel_pt'), 'w')
+        # fout = open('%s/graph_question2id.test.txt' % cf.get('DEFAULT', 'devel_pt'), 'w')
         index  = 0
         for p in fin:
             q1 = str(p[1]).strip()
@@ -2535,26 +2537,27 @@ class Graph(object):
                 Graph.q2id[q1] = len(Graph.q2id)
             if q2 not in Graph.q2id:
                 Graph.q2id[q2] = len(Graph.q2id)
-            print >> fout, Graph.q2id[q1], Graph.q2id[q2], weight
+            # print >> fout, Graph.q2id[q1], Graph.q2id[q2], weight
+            Graph.G.add_edge(Graph.q2id[q1], Graph.q2id[q2], weight=weight)
             Graph.p2weight[(Graph.q2id[q1], Graph.q2id[q2])] = weight
             index += 1
         LogUtil.log('INFO', 'len(questions)=%d' % len(Graph.q2id))
-        fout.close()
+        # fout.close()
 
-        Graph.G = nx.Graph()
-        for line in open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt')):
-            head, tail, label, weight = line.strip().split()
-            head = int(head)
-            tail = int(tail)
-            label = int(label)
-            weight = Graph.p2weight[(head, tail)]
-            Graph.G.add_edge(head, tail, weight=weight)
-        for line in open('%s/graph_question2id.test.txt' % cf.get('DEFAULT', 'devel_pt')):
-            head, tail, weight = line.strip().split()
-            head = int(head)
-            tail = int(tail)
-            weight = Graph.p2weight[(head, tail)]
-            Graph.G.add_edge(head, tail, weight=weight)
+        # Graph.G = nx.Graph()
+        # for line in open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt')):
+        #     head, tail, label, weight = line.strip().split()
+        #     head = int(head)
+        #     tail = int(tail)
+        #     label = int(label)
+        #     weight = Graph.p2weight[(head, tail)]
+        #     Graph.G.add_edge(head, tail, weight=weight)
+        # for line in open('%s/graph_question2id.test.txt' % cf.get('DEFAULT', 'devel_pt')):
+        #     head, tail, weight = line.strip().split()
+        #     head = int(head)
+        #     tail = int(tail)
+        #     weight = Graph.p2weight[(head, tail)]
+        #     Graph.G.add_edge(head, tail, weight=weight)
         LogUtil.log('INFO', 'Graph constructed.')
 
     @staticmethod
