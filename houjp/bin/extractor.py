@@ -2430,6 +2430,7 @@ class PowerfulWordV2(object):
 class Graph(object):
     G = None
     q2id = None
+    p2weight = None
     pr = None
     hits_h = None
     hits_a = None
@@ -2492,6 +2493,69 @@ class Graph(object):
         #
         # LogUtil.log('INFO', 'len(Graph.connected_components)=%d' % len(Graph.connected_components))
         # LogUtil.log('INFO', 'len(Graph.p2cc)=%d' % len(Graph.p2cc))
+
+    @staticmethod
+    def init_graph_with_weight(cf, weight_featue_name):
+        Graph.q2id = {}
+        Graph.p2weight = {}
+
+        train_wfs_fs = Feature.load(
+            '%s/%s.train.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), weight_featue_name)).toarray()
+        test_wfs_fs = Feature.load(
+            '%s/%s.test.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), weight_featue_name)).toarray()
+
+        fin = csv.reader(open('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')))
+        fin.next()
+        fout = open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt'), 'w')
+        index = 0
+        for p in fin:
+            q1 = str(p[3]).strip()
+            q2 = str(p[4]).strip()
+            label = p[5]
+            weight = train_wfs_fs[index]
+            if q1 not in Graph.q2id:
+                Graph.q2id[q1] = len(Graph.q2id)
+            if q2 not in Graph.q2id:
+                Graph.q2id[q2] = len(Graph.q2id)
+            print >> fout, Graph.q2id[q1], Graph.q2id[q2], label, weight
+            Graph.p2weight[(Graph.q2id[q1], Graph.q2id[q2])] = weight
+            index += 1
+        LogUtil.log('INFO', 'len(questions)=%d' % len(Graph.q2id))
+        fout.close()
+
+        fin = csv.reader(open('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')))
+        fin.next()
+        fout = open('%s/graph_question2id.test.txt' % cf.get('DEFAULT', 'devel_pt'), 'w')
+        index  = 0
+        for p in fin:
+            q1 = str(p[1]).strip()
+            q2 = str(p[2]).strip()
+            weight = test_wfs_fs[index]
+            if q1 not in Graph.q2id:
+                Graph.q2id[q1] = len(Graph.q2id)
+            if q2 not in Graph.q2id:
+                Graph.q2id[q2] = len(Graph.q2id)
+            print >> fout, Graph.q2id[q1], Graph.q2id[q2], weight
+            Graph.p2weight[(Graph.q2id[q1], Graph.q2id[q2])] = weight
+            index += 1
+        LogUtil.log('INFO', 'len(questions)=%d' % len(Graph.q2id))
+        fout.close()
+
+        Graph.G = nx.Graph()
+        for line in open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt')):
+            head, tail, label, weight = line.strip().split()
+            head = int(head)
+            tail = int(tail)
+            label = int(label)
+            weight = Graph.p2weight[(head, tail)]
+            Graph.G.add_edge(head, tail, weight=weight)
+        for line in open('%s/graph_question2id.test.txt' % cf.get('DEFAULT', 'devel_pt')):
+            head, tail, weight = line.strip().split()
+            head = int(head)
+            tail = int(tail)
+            weight = Graph.p2weight[(head, tail)]
+            Graph.G.add_edge(head, tail, weight=weight)
+        LogUtil.log('INFO', 'Graph constructed.')
 
     @staticmethod
     def init_graph_nostrip(cf, argv):
@@ -3071,6 +3135,50 @@ class Graph(object):
         Feature.save_smat(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
+    @staticmethod
+    def extract_row_graph_shortest_path(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        qid1 = Graph.q2id[q1]
+        qid2 = Graph.q2id[q2]
+
+        shortest_path = -1
+        Graph.G.remove_edge(qid1, qid2)
+        if nx.has_path(Graph.G, qid1, qid2):
+            shortest_path = nx.dijkstra_path_length(Graph.G, qid1, qid2)
+        Graph.G.add_edge(qid1, qid2, weight=Graph.p2weight[(qid1, qid2)])
+
+        return [shortest_path]
+
+    @staticmethod
+    def extract_graph_shortest_path(cf, argv):
+        # 路径权重特征名
+        weight_feature_name = argv[0]  # e.g. my_tfidf_word_match_share
+        # 抽取特征的数据集名称
+        dataset_name = argv[1]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[2])
+        # part 的 ID
+        part_id = int(argv[3])
+        # 设置参数
+        feature_name = 'graph_shortest_path_%s' % weight_feature_name
+
+        Graph.init_graph_with_weight(cf, weight_feature_name)
+
+        # 加载数据文件
+        data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        data_feature_fp = '%s/%s.%s.smat.%2d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id:end_id].apply(Graph.extract_row_graph_shortest_path, axis=1, raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
 
     @staticmethod
     def run(cf, argv):
@@ -3096,6 +3204,8 @@ class Graph(object):
             Graph.show_graph_edge_max_clique_size(cf, argv[1:])
         elif 'extract_graph_mc_cc_rate' == cmd:
             Graph.extract_graph_mc_cc_rate(cf, argv[1:])
+        elif 'extract_graph_shortest_path' == cmd:
+            Graph.extract_graph_shortest_path(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
