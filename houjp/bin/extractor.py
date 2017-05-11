@@ -24,6 +24,7 @@ import csv
 from scipy import sparse
 import ngram_utils
 import dist_utils
+import config
 
 class WordMatchShare(object):
     """
@@ -3282,6 +3283,99 @@ class Distance(object):
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
     @staticmethod
+    def extract_row_edit_dis_ngram(row):
+        q1_words = [Distance.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(str(row['question1']).decode('utf-8')))]
+        q2_words = [Distance.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(str(row['question2']).decode('utf-8')))]
+
+        fs = []
+        aggregation_mode_prev = ["mean", "max", "min", "median"]
+        aggregation_mode = ["mean", "std", "max", "min", "median"]
+
+        aggregation_mode, aggregator = Distance._check_aggregation_mode(aggregation_mode)
+        aggregation_mode_prev, aggregator_prev = Distance._check_aggregation_mode(aggregation_mode_prev)
+
+        for n_ngram in range(1, 4):
+            q1_ngrams = ngram_utils._ngrams(q1_words, n_ngram)
+            q2_ngrams = ngram_utils._ngrams(q2_words, n_ngram)
+
+            val_list = []
+            for w1 in q1_ngrams:
+                _val_list = []
+                for w2 in q2_ngrams:
+                    s = dist_utils._edit_dist(w1, w2)
+                    _val_list.append(s)
+                if len(_val_list) == 0:
+                    _val_list = [config.MISSING_VALUE_NUMERIC]
+                val_list.append(_val_list)
+            if len(val_list) == 0:
+                val_list = [[config.MISSING_VALUE_NUMERIC]]
+
+            res = np.zeros(len(aggregator_prev) * len(aggregator), dtype=float)
+            for m, aggregator_prev in enumerate(aggregator_prev):
+                for n, aggregator in enumerate(aggregator):
+                    idx = m * len(aggregator) + n
+                    try:
+                        tmp = []
+                        for l in val_list:
+                            try:
+                                s = aggregator_prev(l)
+                            except:
+                                s = config.MISSING_VALUE_NUMERIC
+                            tmp.append(s)
+                    except:
+                        tmp = [config.MISSING_VALUE_NUMERIC]
+                    try:
+                        s = aggregator(tmp)
+                    except:
+                        s = config.MISSING_VALUE_NUMERIC
+                    res[idx] = s
+
+            fs.extend(res)
+        return fs
+
+    @staticmethod
+    def _check_aggregation_mode(aggregation_mode):
+        valid_aggregation_modes = ["", "size", "mean", "std", "max", "min", "median"]
+        if isinstance(aggregation_mode, str):
+            assert aggregation_mode.lower() in valid_aggregation_modes, "Wrong aggregation_mode: %s"%aggregation_mode
+            aggregation_mode = [aggregation_mode.lower()]
+        elif isinstance(aggregation_mode, list):
+            for m in aggregation_mode:
+                assert m.lower() in valid_aggregation_modes, "Wrong aggregation_mode: %s"%m
+            aggregation_mode = [m.lower() for m in aggregation_mode]
+
+        aggregator = [None if m == "" else getattr(np, m) for m in aggregation_mode]
+
+        return aggregation_mode, aggregator
+
+    @staticmethod
+    def extract_edit_dis_ngram(cf, argv):
+        # 设置参数
+        feature_name = 'edit_dis_ngram'
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = train_data.apply(Distance.extract_row_edit_dis_ngram, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        Feature.save_dataframe(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+
+        test_features = test_data.apply(Distance.extract_row_edit_dis_ngram, axis=1, raw=True)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        Feature.save_dataframe(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+    @staticmethod
     def run(cf, argv):
         cmd = argv[0]
 
@@ -3291,6 +3385,8 @@ class Distance(object):
             Distance.extract_dice_dis_ngram(cf, argv[1:])
         elif 'extract_edit_dis' == cmd:
             Distance.extract_edit_dis(cf, argv[1:])
+        elif 'extract_edit_dis_ngram' == cmd:
+            Distance.extract_edit_dis_ngram(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
