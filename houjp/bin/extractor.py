@@ -2507,6 +2507,7 @@ class Graph(object):
             '%s/%s.test.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), weight_featue_name)).toarray()
 
         if 'True' == reverse:
+            LogUtil.log('INFO', 'will reverse')
             for index in range(len(train_wfs_fs)):
                 train_wfs_fs[index][0] = 1. - train_wfs_fs[index][0]
             for index in range(len(test_wfs_fs)):
