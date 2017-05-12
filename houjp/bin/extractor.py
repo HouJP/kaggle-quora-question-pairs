@@ -3731,22 +3731,22 @@ class Predict(object):
 
         # 加载 offline valid 预测结果
         offline_valid_pred_all_fp = '%s/pred/cv_n%d_valid.%s.pred' % (cf.get('DEFAULT', 'out_pt'), cv_num, offline_rawset_name)
-        offline_valid_pred_all_map = PostProcessor.read_result(offline_valid_pred_all_fp)
-        offline_valid_pred_all = [0] * len(offline_valid_pred_all_map)
+        offline_valid_pred_all_origin = PostProcessor.read_result_list(offline_valid_pred_all_fp)
         # 加载 offline valid 索引
         offline_valid_index_all = []
         for fold_id in range(cv_num):
             offline_valid_indexs_fp = '%s/cv_n%d_f%d_valid.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
             offline_valid_indexs = Feature.load_index(offline_valid_indexs_fp)
             offline_valid_index_all.extend(offline_valid_indexs)
+        offline_valid_pred_all = [0] * len(offline_valid_pred_all_origin)
         for index in range(len(offline_valid_index_all)):
-            offline_valid_pred_all[offline_valid_index_all[index]] = offline_valid_pred_all_map[str(index)]
+            offline_valid_pred_all[offline_valid_index_all[index]] = offline_valid_pred_all_origin[index]
 
         # 加载 offline test 预测结果
         offline_test_pred_all_fp = '%s/pred/cv_n%d_test.%s.pred' % (
-        cf.get('DEFAULT', 'out_pt'), cv_num, offline_rawset_name)
-        offline_test_pred_all_map = PostProcessor.read_result(offline_test_pred_all_fp)
-        offline_test_pred_all = [0] * len(offline_test_pred_all_map)
+            cf.get('DEFAULT', 'out_pt'), cv_num, offline_rawset_name)
+        offline_test_pred_all_origin = PostProcessor.read_result_list(offline_test_pred_all_fp)
+        offline_test_pred_all = [0] * len(offline_test_pred_all_origin)
         # 加载 offline test 索引
         offline_test_index_all = []
         for fold_id in range(cv_num):
@@ -3754,26 +3754,16 @@ class Predict(object):
                 index_fp, cv_num, fold_id, offline_rawset_name)
             offline_test_indexs = Feature.load_index(offline_test_indexs_fp)
             offline_test_index_all.extend(offline_test_indexs)
-        for index in range(len(offline_test_index_all)):
-            offline_test_pred_all[offline_test_index_all[index]] = offline_test_pred_all_map[str(index)]
-
-        offline_valid_pred_all_map = {}
-        for index in range(len(offline_valid_pred_all)):
-            offline_valid_pred_all_map[str(index)] = offline_valid_pred_all[index]
-        offline_test_pred_all_map = {}
         for index in range(len(offline_test_pred_all)):
-            offline_test_pred_all_map[str(index)] = offline_test_pred_all[index]
+            offline_test_pred_all[offline_test_index_all[index]] = offline_test_pred_all_origin[index]
 
-        offline_pred_list = [offline_valid_pred_all_map, offline_test_pred_all_map]
-        offline_pred = PostProcessor.merge_logit(offline_pred_list)
+        offline_pred_list = [offline_valid_pred_all, offline_test_pred_all]
+        offline_pred = PostProcessor.merge_logit_list(offline_pred_list)
 
         online_pred_fp = '%s/pred/cv_n%d_online.%s.pred' % (cf.get('DEFAULT', 'out_pt'), cv_num, cf.get('MODEL', 'online_test_rawset_name'))
-        online_pred_map = PostProcessor.read_result(online_pred_fp)
-        online_pred = []
-        for index in range(len(online_pred_map)):
-            online_pred.append(online_pred_map[str(index)])
+        online_pred = PostProcessor.read_result_list(online_pred_fp)
 
-        offline_pred = [[offline_pred[fv]] for fv in offline_pred]
+        offline_pred = [[fv] for fv in offline_pred]
         online_pred = [[fv] for fv in online_pred]
 
         # 加载数据文件
@@ -3785,8 +3775,6 @@ class Predict(object):
         test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
 
         # 抽取特征：train.csv
-        # print offline_pred
-        # print type(offline_pred)
         train_features = sparse.csr_matrix(np.array(offline_pred))
         LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
         Feature.save_smat(train_features, train_feature_fp)

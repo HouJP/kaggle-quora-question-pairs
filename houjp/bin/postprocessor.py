@@ -19,6 +19,22 @@ class PostProcessor(object):
         return ret
 
     @staticmethod
+    def read_result_list(fn):
+        fin = open(fn)
+        fin.readline()
+        ret = []
+        index = []
+        for line in fin:
+            part = line.strip().split(',')
+            index.append(int(part[0]))
+            ret.append(float(part[1]))
+        ret_new = [0] * len(index)
+        for ind in range(len(index)):
+            ret_new[index[ind]] = ret[ind]
+        return ret_new
+
+
+    @staticmethod
     def write_result(filename, ret):
         fout = open(filename, 'w')
         print >> fout, 'test_id,is_duplicate'
@@ -42,6 +58,13 @@ class PostProcessor(object):
     def logit(p):
         p = np.array(p)
         return np.log(p / (1 - p))
+
+    @staticmethod
+    def merge_logit_list(res_list):
+        res = []
+        for index in range(len(res_list[0])):
+            res.append(PostProcessor.inv_logit(np.average(PostProcessor.logit([res_list[x][index] for x in range(len(res_list))]))))
+        return res
 
     @staticmethod
     def merge_logit(res_list):
