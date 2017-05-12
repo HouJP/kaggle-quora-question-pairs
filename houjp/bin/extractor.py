@@ -25,6 +25,7 @@ from scipy import sparse
 import ngram_utils
 import dist_utils
 import np_utils
+from postprocessor import PostProcessor
 import config
 
 class WordMatchShare(object):
@@ -3714,6 +3715,96 @@ class Distance(object):
             LogUtil.log('WARNING', 'NO CMD')
 
 
+class Predict(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def extract_cv_predict(cf, argv):
+        # 传递参数
+        version = argv[0]
+        tag = argv[1]
+        cv_num = int(argv[2])
+        offline_rawset_name = cf.get('MODEL', 'offline_rawset_name')
+        index_fp = cf.get('DEFAULT', 'feature_index_pt')
+        # 设置参数
+        feature_name = 'cv_predict_%s' % version
+
+        # 加载 offline valid 预测结果
+        offline_valid_pred_all_fp = '%s/%s/cv_n%d_valid.%s.pred' % (cf.get('DEFAULT', 'out_pt'), tag, cv_num, offline_rawset_name)
+        offline_valid_pred_all_map = PostProcessor.read_result(offline_valid_pred_all_fp)
+        offline_valid_pred_all = [0] * len(offline_valid_pred_all_map)
+        # 加载 offline valid 索引
+        offline_valid_index_all = []
+        for fold_id in range(cv_num):
+            offline_valid_indexs_fp = '%s/cv_n%d_f%d_valid.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_valid_indexs = Feature.load_index(offline_valid_indexs_fp)
+            offline_valid_index_all.extend(offline_valid_indexs)
+        for index in range(len(offline_valid_index_all)):
+            offline_valid_pred_all[offline_valid_index_all[index]] = offline_valid_pred_all_map[str(index)]
+
+        # 加载 offline test 预测结果
+        offline_test_pred_all_fp = '%s/%s/cv_n%d_test.%s.pred' % (
+        cf.get('DEFAULT', 'out_pt'), tag, cv_num, offline_rawset_name)
+        offline_test_pred_all_map = PostProcessor.read_result(offline_test_pred_all_fp)
+        offline_test_pred_all = [0] * len(offline_test_pred_all_map)
+        # 加载 offline test 索引
+        offline_test_index_all = []
+        for fold_id in range(cv_num):
+            offline_test_indexs_fp = '%s/cv_n%d_f%d_test.%s.index' % (
+                index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_test_indexs = Feature.load_index(offline_test_indexs_fp)
+            offline_test_index_all.extend(offline_test_indexs)
+        for index in range(len(offline_test_index_all)):
+            offline_test_pred_all[offline_test_index_all[index]] = offline_test_pred_all_map[str(index)]
+
+        offline_pred_list = [offline_valid_pred_all, offline_test_pred_all]
+        offline_pred = PostProcessor.merge_logit(offline_pred_list)
+
+        online_pred_fp = '%s/%s/cv_n%d_online.%s.pred' % (cf.get('DEFAULT', 'out_pt'), tag, cv_num, cf.get('MODEL', 'online_test_rawset_name'))
+        online_pred_map = PostProcessor.read_result(online_pred_fp)
+        online_pred = []
+        for index in range(len(online_pred_map)):
+            online_pred.append(online_pred_map[str(index)])
+
+        offline_pred = [[fv] for fv in offline_pred]
+        online_pred = [[fv] for fv in online_pred]
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+
+        # 抽取特征：train.csv
+        train_features = sparse.csr_matrix(offline_pred)
+        LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
+        Feature.save_smat(train_features, train_feature_fp)
+        LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
+
+        train_label = train_data['is_duplicate'].values[:]
+        train_features = train_features.tolist()
+        train_features = np.array(train_features)
+
+        for i in range(len(train_features[0])):
+            corr = np_utils._corr(train_features[:, i], train_label)
+            LogUtil.log('INFO', 'corr(%s_%d)=%f' % (feature_name, i, corr))
+
+        test_features = sparse.csr_matrix(online_pred)
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        Feature.save_smat(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
+    @staticmethod
+    def run(cf, argv):
+        cmd = argv[0]
+
+        if 'extract_cv_predict' == cmd:
+            Predict.extract_cv_predict(cf, argv[1:])
+
+
 def print_help():
     print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
@@ -3758,5 +3849,7 @@ if __name__ == "__main__":
         Count.run(cf, sys.argv[3:])
     elif 'Distance' == cmd:
         Distance.run(cf, sys.argv[3:])
+    elif 'Predict' == cmd:
+        Predict.run(cf, sys.argv[3:])
     else:
         print_help()
