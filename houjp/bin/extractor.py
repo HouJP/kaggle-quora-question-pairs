@@ -3773,7 +3773,7 @@ class Predict(object):
         for index in range(len(online_pred_map)):
             online_pred.append(online_pred_map[str(index)])
 
-        offline_pred = [[fv] for fv in offline_pred]
+        offline_pred = [[offline_pred[fv]] for fv in offline_pred]
         online_pred = [[fv] for fv in online_pred]
 
         # 加载数据文件
@@ -3785,8 +3785,8 @@ class Predict(object):
         test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
 
         # 抽取特征：train.csv
-        print offline_pred
-        print type(offline_pred)
+        # print offline_pred
+        # print type(offline_pred)
         train_features = sparse.csr_matrix(np.array(offline_pred))
         LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
         Feature.save_smat(train_features, train_feature_fp)
