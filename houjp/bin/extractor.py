@@ -3202,7 +3202,7 @@ class Graph(object):
         # 划分 part 数目
         part_num = int(argv[2])
         # reverse
-        reverse = argv[4]
+        reverse = argv[3]
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
         # 设置参数
         feature_name = 'graph_shortest_path_%s_%s' % (weight_feature_name, reverse)
