@@ -3800,6 +3800,35 @@ class Predict(object):
             Predict.extract_cv_predict(cf, argv[1:])
 
 
+class Corr(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def cal_corr(cf, argv):
+        # 设置参数
+        feature_name = argv[0]
+
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train.smat' % (feature_pt, feature_name)
+        train_features = Feature.load(train_feature_fp).toarray()
+
+        # 加载数据文件
+        train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
+        train_label = train_data['is_duplicate'].values[:]
+
+        for i in range(len(train_features[0])):
+            corr = np_utils._corr(train_features[:, i], train_label)
+            LogUtil.log('INFO', 'corr(%s_%d)=%f' % (feature_name, i, corr))
+
+    @staticmethod
+    def run(cf, argv):
+        cmd = argv[0]
+
+        if 'cal_corr' == cmd:
+            Corr.cal_corr(cf, argv[1:])
+
 def print_help():
     print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
@@ -3812,6 +3841,7 @@ def print_help():
     print '\tGraph'
     print '\tCount'
     print '\tDistance'
+    print '\tCorr'
 
 if __name__ == "__main__":
 
@@ -3846,5 +3876,7 @@ if __name__ == "__main__":
         Distance.run(cf, sys.argv[3:])
     elif 'Predict' == cmd:
         Predict.run(cf, sys.argv[3:])
+    elif 'Corr' == cmd:
+        Corr.run(cf, sys.argv[3:])
     else:
         print_help()
