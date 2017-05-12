@@ -3793,7 +3793,7 @@ class Predict(object):
         LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
 
         train_label = train_data['is_duplicate'].values[:]
-        train_features = np.array(train_features)
+        train_features = train_features.toarray()
 
         for i in range(len(train_features[0])):
             corr = np_utils._corr(train_features[:, i], train_label)
