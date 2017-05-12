@@ -3730,7 +3730,7 @@ class Predict(object):
         feature_name = 'cv_predict_%s' % version
 
         # 加载 offline valid 预测结果
-        offline_valid_pred_all_fp = '%s/cv_n%d_valid.%s.pred' % (cf.get('DEFAULT', 'out_pt'), cv_num, offline_rawset_name)
+        offline_valid_pred_all_fp = '%s/pred/cv_n%d_valid.%s.pred' % (cf.get('DEFAULT', 'out_pt'), cv_num, offline_rawset_name)
         offline_valid_pred_all_map = PostProcessor.read_result(offline_valid_pred_all_fp)
         offline_valid_pred_all = [0] * len(offline_valid_pred_all_map)
         # 加载 offline valid 索引
