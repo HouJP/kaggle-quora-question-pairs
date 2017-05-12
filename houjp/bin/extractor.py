@@ -2496,7 +2496,7 @@ class Graph(object):
         # LogUtil.log('INFO', 'len(Graph.p2cc)=%d' % len(Graph.p2cc))
 
     @staticmethod
-    def init_graph_with_weight(cf, weight_featue_name):
+    def init_graph_with_weight(cf, weight_featue_name, reverse):
         Graph.q2id = {}
         Graph.p2weight = {}
         Graph.G = nx.Graph()
@@ -2506,10 +2506,11 @@ class Graph(object):
         test_wfs_fs = Feature.load(
             '%s/%s.test.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), weight_featue_name)).toarray()
 
-        for index in range(len(train_wfs_fs)):
-            train_wfs_fs[index][0] = 1. - train_wfs_fs[index][0]
-        for index in range(len(test_wfs_fs)):
-            test_wfs_fs[index][0] = 1. - test_wfs_fs[index][0]
+        if 'True' == reverse:
+            for index in range(len(train_wfs_fs)):
+                train_wfs_fs[index][0] = 1. - train_wfs_fs[index][0]
+            for index in range(len(test_wfs_fs)):
+                test_wfs_fs[index][0] = 1. - test_wfs_fs[index][0]
 
         fin = csv.reader(open('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')))
         fin.next()
@@ -3170,10 +3171,12 @@ class Graph(object):
         part_num = int(argv[2])
         # part 的 ID
         part_id = int(argv[3])
+        # reverse
+        reverse = argv[4]
         # 设置参数
-        feature_name = 'graph_shortest_path_%s' % weight_feature_name
+        feature_name = 'graph_shortest_path_%s_%s' % (weight_feature_name, reverse)
 
-        Graph.init_graph_with_weight(cf, weight_feature_name)
+        Graph.init_graph_with_weight(cf, weight_feature_name, reverse)
 
         # 加载数据文件
         data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
@@ -3197,9 +3200,11 @@ class Graph(object):
         dataset_name = argv[1]  # e.g. train
         # 划分 part 数目
         part_num = int(argv[2])
+        # reverse
+        reverse = argv[4]
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
         # 设置参数
-        feature_name = 'graph_shortest_path_%s' % weight_feature_name
+        feature_name = 'graph_shortest_path_%s_%s' % (weight_feature_name, reverse)
 
         features = None
         for part_id in range(part_num):
