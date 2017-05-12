@@ -3757,7 +3757,14 @@ class Predict(object):
         for index in range(len(offline_test_index_all)):
             offline_test_pred_all[offline_test_index_all[index]] = offline_test_pred_all_map[str(index)]
 
-        offline_pred_list = [offline_valid_pred_all, offline_test_pred_all]
+        offline_valid_pred_all_map = {}
+        for index in range(len(offline_valid_pred_all)):
+            offline_valid_pred_all_map[str(index)] = offline_valid_pred_all[index]
+        offline_test_pred_all_map = {}
+        for index in range(len(offline_test_pred_all)):
+            offline_test_pred_all_map[str(index)] = offline_test_pred_all[index]
+
+        offline_pred_list = [offline_valid_pred_all_map, offline_test_pred_all_map]
         offline_pred = PostProcessor.merge_logit(offline_pred_list)
 
         online_pred_fp = '%s/pred/cv_n%d_online.%s.pred' % (cf.get('DEFAULT', 'out_pt'), cv_num, cf.get('MODEL', 'online_test_rawset_name'))
