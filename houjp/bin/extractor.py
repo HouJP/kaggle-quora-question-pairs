@@ -2505,6 +2505,11 @@ class Graph(object):
         test_wfs_fs = Feature.load(
             '%s/%s.test.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), weight_featue_name)).toarray()
 
+        for index in range(len(train_wfs_fs)):
+            train_wfs_fs[index][0] = 1. - train_wfs_fs[index][0]
+        for index in range(len(test_wfs_fs)):
+            test_wfs_fs[index][0] = 1. - test_wfs_fs[index][0]
+
         fin = csv.reader(open('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')))
         fin.next()
         # fout = open('%s/graph_question2id.train.txt' % cf.get('DEFAULT', 'devel_pt'), 'w')
