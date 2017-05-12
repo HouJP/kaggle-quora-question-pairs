@@ -3785,7 +3785,7 @@ class Predict(object):
         test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
 
         # 抽取特征：train.csv
-        train_features = sparse.csr_matrix(offline_pred)
+        train_features = sparse.csr_matrix(np.array(offline_pred))
         LogUtil.log('INFO', 'extract train features (%s) done' % feature_name)
         Feature.save_smat(train_features, train_feature_fp)
         LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
@@ -3798,7 +3798,7 @@ class Predict(object):
             corr = np_utils._corr(train_features[:, i], train_label)
             LogUtil.log('INFO', 'corr(%s_%d)=%f' % (feature_name, i, corr))
 
-        test_features = sparse.csr_matrix(online_pred)
+        test_features = sparse.csr_matrix(np.array(online_pred))
         LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
         Feature.save_smat(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
