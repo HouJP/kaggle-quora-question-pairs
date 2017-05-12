@@ -3723,15 +3723,14 @@ class Predict(object):
     def extract_cv_predict(cf, argv):
         # 传递参数
         version = argv[0]
-        tag = argv[1]
-        cv_num = int(argv[2])
+        cv_num = int(argv[1])
         offline_rawset_name = cf.get('MODEL', 'offline_rawset_name')
         index_fp = cf.get('DEFAULT', 'feature_index_pt')
         # 设置参数
         feature_name = 'cv_predict_%s' % version
 
         # 加载 offline valid 预测结果
-        offline_valid_pred_all_fp = '%s/%s/cv_n%d_valid.%s.pred' % (cf.get('DEFAULT', 'out_pt'), tag, cv_num, offline_rawset_name)
+        offline_valid_pred_all_fp = '%s/cv_n%d_valid.%s.pred' % (cf.get('DEFAULT', 'out_pt'), cv_num, offline_rawset_name)
         offline_valid_pred_all_map = PostProcessor.read_result(offline_valid_pred_all_fp)
         offline_valid_pred_all = [0] * len(offline_valid_pred_all_map)
         # 加载 offline valid 索引
@@ -3744,8 +3743,8 @@ class Predict(object):
             offline_valid_pred_all[offline_valid_index_all[index]] = offline_valid_pred_all_map[str(index)]
 
         # 加载 offline test 预测结果
-        offline_test_pred_all_fp = '%s/%s/cv_n%d_test.%s.pred' % (
-        cf.get('DEFAULT', 'out_pt'), tag, cv_num, offline_rawset_name)
+        offline_test_pred_all_fp = '%s/pred/cv_n%d_test.%s.pred' % (
+        cf.get('DEFAULT', 'out_pt'), cv_num, offline_rawset_name)
         offline_test_pred_all_map = PostProcessor.read_result(offline_test_pred_all_fp)
         offline_test_pred_all = [0] * len(offline_test_pred_all_map)
         # 加载 offline test 索引
@@ -3761,7 +3760,7 @@ class Predict(object):
         offline_pred_list = [offline_valid_pred_all, offline_test_pred_all]
         offline_pred = PostProcessor.merge_logit(offline_pred_list)
 
-        online_pred_fp = '%s/%s/cv_n%d_online.%s.pred' % (cf.get('DEFAULT', 'out_pt'), tag, cv_num, cf.get('MODEL', 'online_test_rawset_name'))
+        online_pred_fp = '%s/pred/cv_n%d_online.%s.pred' % (cf.get('DEFAULT', 'out_pt'), cv_num, cf.get('MODEL', 'online_test_rawset_name'))
         online_pred_map = PostProcessor.read_result(online_pred_fp)
         online_pred = []
         for index in range(len(online_pred_map)):
