@@ -2496,7 +2496,7 @@ class Graph(object):
         # LogUtil.log('INFO', 'len(Graph.p2cc)=%d' % len(Graph.p2cc))
 
     @staticmethod
-    def init_graph_with_weight(cf, weight_featue_name, reverse):
+    def init_graph_with_weight(cf, weight_featue_name, reverse, weight_feature_id):
         Graph.q2id = {}
         Graph.p2weight = {}
         Graph.G = nx.Graph()
@@ -2509,9 +2509,9 @@ class Graph(object):
         if 'True' == reverse:
             LogUtil.log('INFO', 'will reverse')
             for index in range(len(train_wfs_fs)):
-                train_wfs_fs[index][0] = 1. - train_wfs_fs[index][0]
+                train_wfs_fs[index][weight_feature_id] = 1. - train_wfs_fs[index][weight_feature_id]
             for index in range(len(test_wfs_fs)):
-                test_wfs_fs[index][0] = 1. - test_wfs_fs[index][0]
+                test_wfs_fs[index][weight_feature_id] = 1. - test_wfs_fs[index][weight_feature_id]
 
         fin = csv.reader(open('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')))
         fin.next()
@@ -2521,7 +2521,7 @@ class Graph(object):
             q1 = str(p[3]).strip()
             q2 = str(p[4]).strip()
             label = p[5]
-            weight = train_wfs_fs[index][0]
+            weight = train_wfs_fs[index][weight_feature_id]
             if q1 not in Graph.q2id:
                 Graph.q2id[q1] = len(Graph.q2id)
             if q2 not in Graph.q2id:
@@ -2540,7 +2540,7 @@ class Graph(object):
         for p in fin:
             q1 = str(p[1]).strip()
             q2 = str(p[2]).strip()
-            weight = test_wfs_fs[index][0]
+            weight = test_wfs_fs[index][weight_feature_id]
             if q1 not in Graph.q2id:
                 Graph.q2id[q1] = len(Graph.q2id)
             if q2 not in Graph.q2id:
@@ -3174,10 +3174,12 @@ class Graph(object):
         part_id = int(argv[3])
         # reverse
         reverse = argv[4]
+        # 特征第几维
+        weight_feature_id = int(argv[5])
         # 设置参数
         feature_name = 'graph_shortest_path_%s_%s' % (weight_feature_name, reverse)
 
-        Graph.init_graph_with_weight(cf, weight_feature_name, reverse)
+        Graph.init_graph_with_weight(cf, weight_feature_name, reverse, weight_feature_id)
 
         # 加载数据文件
         data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
