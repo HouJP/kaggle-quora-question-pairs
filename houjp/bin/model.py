@@ -686,7 +686,17 @@ class Model(object):
 
         # 输出重要性
 
+    @staticmethod
+    def fname2findex(cf, argv):
+        feature_qp_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        feature_qp_names = Feature.get_feature_names_question_pair(cf)
 
+        index = 0
+        for fname in feature_qp_names:
+            features = Feature.load('%s/%s.%s.smat' % (feature_qp_pt, fname, 'train'))
+            col_num = features.shape[1]
+            LogUtil.log('INFO', '%s\t%d\t%d' % (fname, index, index + col_num))
+            index += col_num
 
     @staticmethod
     def save_all_feature(cf):
@@ -777,6 +787,8 @@ if __name__ == "__main__":
         Model.run_show_feature_xgb(cf, sys.argv[3:])
     elif 'cv_xgb' == cmd:
         Model.cv_xgb(cf)
+    elif 'fname2findex' == cmd:
+        Model.fname2findex(cf, sys.argv[3:])
     else:
         print_help()
 
