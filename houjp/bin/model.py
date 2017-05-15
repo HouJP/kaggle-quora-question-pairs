@@ -9,7 +9,9 @@ import math
 import time
 import os
 from xgboost import plot_importance
-from matplotlib import pyplot
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from utils import LogUtil, DataUtil
 from feature import Feature
 from postprocessor import PostProcessor
@@ -676,7 +678,7 @@ class Model(object):
 
         # 输出重要性
         plot_importance(model, ylim=(max_num_features, ylim_end))
-        pyplot.show()
+        plt.show()
 
     @staticmethod
     def run_select_feature_xgb(cf, argv):
