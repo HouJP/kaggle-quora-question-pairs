@@ -3190,7 +3190,7 @@ class Graph(object):
 
         # 存储路径
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
-        data_feature_fp = '%s/%s.%s.smat.%02d' % (feature_pt, feature_name, dataset_name, part_id)
+        data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
 
         # 抽取特征
         features = data[begin_id:end_id].apply(Graph.extract_row_graph_shortest_path, axis=1, raw=True)
@@ -3213,7 +3213,7 @@ class Graph(object):
 
         features = None
         for part_id in range(part_num):
-            features_part_fp = '%s/%s.%s.smat.%02d' % (feature_pt, feature_name, dataset_name, part_id)
+            features_part_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
             features_part = Feature.load(features_part_fp)
             if features is None:
                 features = features_part
