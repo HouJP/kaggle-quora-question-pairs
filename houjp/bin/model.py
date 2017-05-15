@@ -13,6 +13,7 @@ from matplotlib import pyplot
 from utils import LogUtil, DataUtil
 from feature import Feature
 from postprocessor import PostProcessor
+import random
 
 class Model(object):
     """

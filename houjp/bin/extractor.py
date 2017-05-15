@@ -28,6 +28,7 @@ import np_utils
 from postprocessor import PostProcessor
 import config
 from model import Model
+import random
 
 class WordMatchShare(object):
     """
@@ -3809,21 +3810,21 @@ class Predict(object):
         offline_rawset_name = cf.get('MODEL', 'offline_rawset_name')
         index_fp = cf.get('DEFAULT', 'feature_index_pt')
         # 设置参数
-        feature_name = 'cv_predict_new_%s' % version
+        feature_name = 'cv_predict_%s' % version
 
         # 加载 offline valid 预测结果
-        # offline_valid_pred_all_fp = '%s/pred/cv_n%d_valid.%s.pred' % (
-        #     cf.get('DEFAULT', 'out_pt'), cv_num, offline_rawset_name)
-        # offline_valid_pred_all_origin = PostProcessor.read_result_list(offline_valid_pred_all_fp)
-        # # 加载 offline valid 索引
-        # offline_valid_index_all = []
-        # for fold_id in range(cv_num):
-        #     offline_valid_indexs_fp = '%s/cv_n%d_f%d_valid.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
-        #     offline_valid_indexs = Feature.load_index(offline_valid_indexs_fp)
-        #     offline_valid_index_all.extend(offline_valid_indexs)
-        # offline_valid_pred_all = [0] * len(offline_valid_pred_all_origin)
-        # for index in range(len(offline_valid_index_all)):
-        #     offline_valid_pred_all[offline_valid_index_all[index]] = offline_valid_pred_all_origin[index]
+        offline_valid_pred_all_fp = '%s/pred/cv_n%d_valid.%s.pred' % (
+        cf.get('DEFAULT', 'out_pt'), cv_num, offline_rawset_name)
+        offline_valid_pred_all_origin = PostProcessor.read_result_list(offline_valid_pred_all_fp)
+        # 加载 offline valid 索引
+        offline_valid_index_all = []
+        for fold_id in range(cv_num):
+            offline_valid_indexs_fp = '%s/cv_n%d_f%d_valid.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_valid_indexs = Feature.load_index(offline_valid_indexs_fp)
+            offline_valid_index_all.extend(offline_valid_indexs)
+        offline_valid_pred_all = [0] * len(offline_valid_pred_all_origin)
+        for index in range(len(offline_valid_index_all)):
+            offline_valid_pred_all[offline_valid_index_all[index]] = offline_valid_pred_all_origin[index]
 
         # 加载 offline test 预测结果
         offline_test_pred_all_fp = '%s/pred/cv_n%d_test.%s.pred' % (
@@ -3840,19 +3841,36 @@ class Predict(object):
         for index in range(len(offline_test_pred_all)):
             offline_test_pred_all[offline_test_index_all[index]] = offline_test_pred_all_origin[index]
 
-        # offline_pred_list = [offline_valid_pred_all, offline_test_pred_all]
-        # offline_pred = PostProcessor.merge_logit_list(offline_pred_list)
-        offline_pred = offline_test_pred_all
+        # 还原scale
+        if cf.get('MODEL', 'has_postprocess') == 'True':
+            offline_valid_pred_all = [Model.inverse_adj(y) for y in offline_valid_pred_all]
+            offline_test_pred_all = [Model.inverse_adj(y) for y in offline_test_pred_all]
 
-        # 还原后处理
-        # offline_pred = [Model.inverse_adj(y) for y in offline_pred]
+        offline_pred_list = [offline_valid_pred_all, offline_test_pred_all]
+        offline_pred = PostProcessor.merge_logit_list(offline_pred_list)
 
         # online_pred_fp = '%s/pred/cv_n%d_online.%s.pred' % (
         # cf.get('DEFAULT', 'out_pt'), cv_num, cf.get('MODEL', 'online_test_rawset_name'))
         # online_pred = PostProcessor.read_result_list(online_pred_fp)
 
+        # 加载 online 预测结果
+        online_preds = []
+        for fold_id in range(cv_num):
+            online_pred_fp = '%s/cv_n%d_f%d_online.%s.pred' % (cf.get('DEFAULT', 'pred_pt'), cv_num, fold_id, cf.get('MODEL', 'online_test_rawset_name'))
+            online_pred_one = PostProcessor.read_result_list(online_pred_fp)
+            if cf.get('MODEL', 'has_postprocess') == 'True':
+                online_pred_one = [Model.inverse_adj(y) for y in online_pred_one]
+            online_preds.append(online_pred_one)
+        # 融合 online 预测结果
+        online_pred = []
+        for i in range(len(online_preds[0])):
+            idd1 = int(random.random() * 5)
+            idd2 = (idd1 + 1) % 5
+            online_pred.append(PostProcessor.inv_logit(
+                np.average(PostProcessor.logit([online_preds[idd1][i], online_preds[idd2][i]]))))
+
         offline_pred = [[fv] for fv in offline_pred]
-        # online_pred = [[fv] for fv in online_pred]
+        online_pred = [[fv] for fv in online_pred]
 
         # 加载数据文件
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
@@ -3875,10 +3893,11 @@ class Predict(object):
             corr = np_utils._corr(train_features[:, i], train_label)
             LogUtil.log('INFO', 'corr(%s_%d)=%f' % (feature_name, i, corr))
 
-        # test_features = sparse.csr_matrix(np.array(online_pred))
-        # LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
-        # Feature.save_smat(test_features, test_feature_fp)
-        # LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+        test_features = sparse.csr_matrix(np.array(online_pred))
+        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        Feature.save_smat(test_features, test_feature_fp)
+        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+
 
     @staticmethod
     def run(cf, argv):

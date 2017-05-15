@@ -13,6 +13,7 @@ import math
 from utils import LogUtil
 from utils import DataUtil
 from model import Model
+from postprocessor import PostProcessor
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -348,11 +349,116 @@ def cal_scores(argv):
     LogUtil.log('INFO', 'rate_labels_2=%f, rate_preds_2=%f' % (
         1. * sum(test_labels_2) / len(test_labels_2), 1. * sum(test_preds_2) / len(test_preds_2)))
 
+def part_answer(cf):
+    # 加载预测结果
+    test_preds_fp = '/Users/houjianpeng/tmp/v4_35_10.pred'
+    test_preds = PostProcessor.read_result_list(test_preds_fp)
+    # test_preds = [Model.inverse_adj(y) for y in test_preds]
+    LogUtil.log('INFO', 'len(test_preds)=%d' % len(test_preds))
+
+    thresh = 3
+
+    # 加载特征
+    feature_name = 'graph_edge_max_clique_size'
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    test_features = Feature.load(test_feature_fp).toarray()
+    LogUtil.log('INFO', 'len(test_features)=%d' % len(test_features))
+
+    count = 0.
+    for index in range(len(test_preds)):
+        score = test_preds[index]
+        if test_features[index] == 3.:
+            count += 1.
+            score = score  # Model.adj(score, te=0.40883512)#, tr=0.623191)
+        elif test_features[index] > 3.:
+            score = 0.5  # Model.adj(score, te=0.96503024)#, tr=0.972554)
+        else:
+            score = 0.5  # Model.adj(score, te=0.04957855)#, tr=0.183526)
+        test_preds[index] = score
+    LogUtil.log('INFO', 'count=%d' % count)
+
+    fout = open('/Users/houjianpeng/tmp/part_answer_v4_35_10.csv', 'w')
+    fout.write("\"test_id\",\"is_duplicate\"\n")
+
+    for index in range(len(test_preds)):
+        fout.write('%d,%s\n' % (index, test_preds[index]))
+    fout.close()
+
+    # 设置参数
+    feature_name = 'graph_edge_max_clique_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    test_features_mc = Feature.load(test_feature_fp).toarray()
+
+    # 设置参数
+    feature_name = 'graph_edge_cc_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    test_features_cc = Feature.load(test_feature_fp).toarray()
+
+    print '-------------------------------------------------'
+    print '分析 clique_size <3 / =3 / >3 的各部分：'
+
+    thresh = 3
+
+    len_l = 0
+    len_m = 0
+    len_r = 0
+    len_l_pos = 0
+    len_m_pos = 0
+    len_r_pos = 0
+    for index in range(len(test_preds)):
+        if test_features[index][0] > thresh:
+            len_r += 1.
+            len_r_pos += test_preds[index]
+        elif test_features[index][0] == thresh:
+            len_m += 1.
+            len_m_pos += test_preds[index]
+        else:
+            len_l += 1.
+            len_l_pos += test_preds[index]
+    print 'len_l=%d, len_m=%d, len_r=%d, len_l_pos=%d, len_m_pos=%d, len_r_pos=%d' % (
+    len_l, len_m, len_r, len_l_pos, len_m_pos, len_r_pos)
+    print 'rate_l=%f, rate_m=%f, rate_r=%f' % (len_l / len(test_preds), len_m / len(test_preds), len_r / len(test_preds))
+    print 'pos_rate_l=%f, pos_rate_m=%f, pos_rate_r=%f' % (len_l_pos / len_l, len_m_pos / len_m, len_r_pos / len_r)
+
+    print '-------------------------------------------------'
+    print '分析 clique_size == 2 部分：根据 cc_size 切分为两部分'
+
+    thresh_mc = 3
+    thresh_cc = 3
+
+    len_1 = 0
+    len_2 = 0
+    len_3 = 0
+    len_all = 0
+    len_pos_1 = 0
+    len_pos_2 = 0
+    len_pos_3 = 0
+    for index in range(len(test_preds)):
+        len_all += 1.
+        if test_features[index][0] < thresh_mc:
+            if test_features_cc[index][0] < thresh_cc:
+                len_1 += 1.
+                len_pos_1 += test_preds[index]
+            else:
+                len_2 += 1.
+                len_pos_2 += test_preds[index]
+        else:
+            len_3 += 1.
+            len_pos_3 += test_preds[index]
+    print 'len_all=%f, len_1=%f(%f), len_2=%f(%f), len_3=%f(%f)' \
+          % (len_all, len_1, 1.0 * len_1 / len_all, len_2, 1.0 * len_2 / len_all, len_3, 1.0 * len_3 / len_all)
+    print 'pos_1=%f, pos_2=%f, pos_3=%f' % (1.0 * len_pos_1 / len_1, 1.0 * len_pos_2 / len_2, 1. * len_pos_3 / len_3)
+
 
 
 def rescale_answer(cf):
     # 加载预测结果
-    test_preds_fp = '/Users/houjianpeng/Github/kaggle-quora-question-pairs/data/out/2017-05-03_11-27-48/pred/full.test.pred'
+    test_preds_fp = '/Users/houjianpeng/tmp/cv_n5_online.test.pred'
     test_preds = load_preds(test_preds_fp)
     test_preds = [Model.inverse_adj(y) for y in test_preds]
     LogUtil.log('INFO', 'len(test_preds)=%d' % len(test_preds))
@@ -466,4 +572,5 @@ if __name__ == "__main__":
     # generate_answer(cf)
     # cal_pos_rate(cf)
     # cal_scores(sys.argv[2:])
-    rescale_answer(cf)
+    # rescale_answer(cf)
+    part_answer(cf)
