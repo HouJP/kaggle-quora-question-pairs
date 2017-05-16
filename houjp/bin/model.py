@@ -9,9 +9,6 @@ import math
 import time
 import os
 from xgboost import plot_importance
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 from utils import LogUtil, DataUtil
 from feature import Feature
 from postprocessor import PostProcessor
@@ -670,6 +667,9 @@ class Model(object):
 
     @staticmethod
     def run_show_feature_xgb(cf, argv):
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
         # 加载参数
         max_num_features = int(argv[0])
         ylim_end = int(argv[1])
