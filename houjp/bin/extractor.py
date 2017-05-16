@@ -3842,9 +3842,9 @@ class Predict(object):
             offline_test_pred_all[offline_test_index_all[index]] = offline_test_pred_all_origin[index]
 
         # 还原scale
-        if cf.get('MODEL', 'has_postprocess') == 'True':
-            offline_valid_pred_all = [Model.inverse_adj(y) for y in offline_valid_pred_all]
-            offline_test_pred_all = [Model.inverse_adj(y) for y in offline_test_pred_all]
+        # if cf.get('MODEL', 'has_postprocess') == 'True':
+        #     offline_valid_pred_all = [Model.inverse_adj(y) for y in offline_valid_pred_all]
+        #     offline_test_pred_all = [Model.inverse_adj(y) for y in offline_test_pred_all]
 
         offline_pred_list = [offline_valid_pred_all, offline_test_pred_all]
         offline_pred = PostProcessor.merge_logit_list(offline_pred_list)
@@ -3858,8 +3858,8 @@ class Predict(object):
         for fold_id in range(cv_num):
             online_pred_fp = '%s/cv_n%d_f%d_online.%s.pred' % (cf.get('DEFAULT', 'pred_pt'), cv_num, fold_id, cf.get('MODEL', 'online_test_rawset_name'))
             online_pred_one = PostProcessor.read_result_list(online_pred_fp)
-            if cf.get('MODEL', 'has_postprocess') == 'True':
-                online_pred_one = [Model.inverse_adj(y) for y in online_pred_one]
+            # if cf.get('MODEL', 'has_postprocess') == 'True':
+            #     online_pred_one = [Model.inverse_adj(y) for y in online_pred_one]
             online_preds.append(online_pred_one)
         # 融合 online 预测结果
         online_pred = []
