@@ -650,20 +650,17 @@ class Model(object):
         Model.save_pred(online_test_ids, all_pred_online_test_data, pred_online_test_fp)
 
     @staticmethod
-    def run_predict_xgb(conf_file_path):
+    def run_predict_xgb(cf):
         """
         使用xgb进行模型预测
         :param tag:
         :return:
         """
-        cf_old = ConfigParser.ConfigParser()
-        cf_old.read(conf_file_path)
-
         # 加载模型
-        model, params = Model.load_model(cf_old)
+        model, params = Model.load_model(cf)
 
         # 进行预测
-        Model.predict_xgb(cf_old, model, params)
+        Model.predict_xgb(cf, model, params)
 
     @staticmethod
     def run_show_feature_xgb(cf, argv):
@@ -784,6 +781,8 @@ if __name__ == "__main__":
     cmd = sys.argv[2]
     if 'train_xgb' == cmd:
         Model.train_xgb(cf)
+    elif 'predict_xgb' == cmd:
+        Model.run_predict_xgb(cf)
     elif 'save_all_feature' == cmd:
         Model.save_all_feature(cf)
     elif 'show_feature_xgb' == cmd:
