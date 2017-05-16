@@ -3810,7 +3810,7 @@ class Predict(object):
         offline_rawset_name = cf.get('MODEL', 'offline_rawset_name')
         index_fp = cf.get('DEFAULT', 'feature_index_pt')
         # 设置参数
-        feature_name = 'cv_predict_new_%s' % version
+        feature_name = 'cv_predict_new_adj_%s' % version
 
         # 加载 offline valid 预测结果
         offline_valid_pred_all_fp = '%s/pred/cv_n%d_valid.%s.pred' % (
