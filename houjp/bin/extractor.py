@@ -2437,6 +2437,7 @@ class Graph(object):
     pr = None
     hits_h = None
     hits_a = None
+    counter = 0
 
     def __init__(self):
         pass
@@ -2498,7 +2499,7 @@ class Graph(object):
         # LogUtil.log('INFO', 'len(Graph.p2cc)=%d' % len(Graph.p2cc))
 
     @staticmethod
-    def init_graph_with_weight(cf, weight_featue_name, reverse, weight_feature_id):
+    def init_graph_with_weight(cf, weight_featue_name, weight_feature_id,  reverse=False):
         Graph.q2id = {}
         Graph.p2weight = {}
         Graph.G = nx.Graph()
@@ -3181,7 +3182,7 @@ class Graph(object):
         # 设置参数
         feature_name = 'graph_shortest_path_%s_%s' % (weight_feature_name, reverse)
 
-        Graph.init_graph_with_weight(cf, weight_feature_name, reverse, weight_feature_id)
+        Graph.init_graph_with_weight(cf, weight_feature_name, weight_feature_id, reverse)
 
         # 加载数据文件
         data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
@@ -3226,6 +3227,108 @@ class Graph(object):
                     'save train features (%s, %s, %d) done' % (feature_name, dataset_name, part_num))
 
     @staticmethod
+    def extract_row_clique_size_e3_other_edge(row, *args):
+        n2clique = args[0]
+        cliques = args[1]
+
+        q1 = str(row['question1'])
+        q2 = str(row['question2'])
+
+        qid1 = Graph.q2id[q1]
+        qid2 = Graph.q2id[q2]
+
+        edge_max_clique_size = 0
+
+        for clique_id in n2clique[qid1]:
+            if qid2 in cliques[clique_id]:
+                edge_max_clique_size = max(edge_max_clique_size, len(cliques[clique_id]))
+
+        aggregation_mode = ["mean", "std", "max", "min"]
+        aggregation_mode, aggregator = Distance._check_aggregation_mode(aggregation_mode)
+
+        sub = []
+        add = []
+        fs = [0]
+        if edge_max_clique_size == 3:
+            for clique_id in n2clique[qid1]:
+                if (3 == len(cliques[clique_id])) and (qid2 in cliques[clique_id]):
+                    qid3 = sum(cliques[clique_id]) - qid1 - qid2
+                    w1 = Graph.p2weight[(qid1, qid3)]
+                    w2 = Graph.p2weight[(qid2, qid3)]
+                    sub.append(abs(w1 - w2))
+                    add.append(sum(w1 + w2))
+                    fs[0] += 1.
+        else:
+            sub.append(-1)
+            add.append(-1)
+
+        for agg in aggregator:
+            try:
+                s = agg(sub)
+            except:
+                s = config.MISSING_VALUE_NUMERIC
+            fs.append(s)
+        for agg in aggregator:
+            try:
+                s = agg(add)
+            except:
+                s = config.MISSING_VALUE_NUMERIC
+            fs.append(s)
+
+        # 计数器
+        Graph.counter += 1
+        if Graph.counter % 1000 == 0:
+            LogUtil.log('INFO', 'Graph.counter=%d' % Graph.counter)
+
+        return fs
+
+    @staticmethod
+    def extractor_clique_size_e3_other_edge(cf, argv):
+        # 路径权重特征名
+        weight_feature_name = argv[0]  # e.g. my_tfidf_word_match_share
+        # 抽取特征的数据集名称
+        dataset_name = argv[1]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[2])
+        # part 的 ID
+        part_id = int(argv[3])
+        # 特征第几维
+        weight_feature_id = int(argv[4])
+        # 设置参数
+        feature_name = 'graph_clique_size_e3_other_edge_%s' % weight_feature_name
+
+        Graph.init_graph_with_weight(cf, weight_feature_name, weight_feature_id)
+
+        n2clique = {}
+        cliques = []
+        for clique in nx.find_cliques(Graph.G):
+            for n in clique:
+                if n not in n2clique:
+                    n2clique[n] = []
+                n2clique[n].append(len(cliques))
+            cliques.append(clique)
+        LogUtil.log('INFO', 'len(cliques)=%d' % len(cliques))
+
+        # 加载数据文件
+        data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id:end_id].apply(Graph.extract_row_clique_size_e3_other_edge, axis=1, raw=True, args=[n2clique, cliques])
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+
+    @staticmethod
     def run(cf, argv):
         cmd = argv[0]
 
@@ -3253,6 +3356,8 @@ class Graph(object):
             Graph.extract_graph_shortest_path(cf, argv[1:])
         elif 'merge_graph_shortest_path' == cmd:
             Graph.merge_graph_shortest_path(cf, argv[1:])
+        elif 'extractor_clique_size_e3_other_edge' == cmd:
+            Graph.extractor_clique_size_e3_other_edge(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
