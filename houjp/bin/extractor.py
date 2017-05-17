@@ -3339,6 +3339,85 @@ class Graph(object):
         LogUtil.log('INFO',
                     'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
 
+    @staticmethod
+    def extractor_row_node_neighbors(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        qid1 = Graph.q2id[q1]
+        qid2 = Graph.q2id[q2]
+
+        l = []
+        r = []
+
+        l_nb = Graph.G.neighbors(qid1)
+        r_nb = Graph.G.neighbors(qid2)
+
+        for n in l_nb:
+            if (n != qid2) and (n != qid1):
+                l.append(Graph.p2weight[(qid1, n)])
+        for n in r_nb:
+            if (n != qid2) and (n != qid1):
+                r.append(Graph.p2weight[(qid2, n)])
+
+        aggregation_mode = ["size", "mean", "std", "max", "min", "median"]
+        aggregation_mode, aggregator = Distance._check_aggregation_mode(aggregation_mode)
+
+        fs = []
+        for agg in aggregator:
+            try:
+                s = agg(l)
+            except:
+                s = config.MISSING_VALUE_NUMERIC
+            fs.append(s)
+        for agg in aggregator:
+            try:
+                s = agg(r)
+            except:
+                s = config.MISSING_VALUE_NUMERIC
+            fs.append(s)
+
+        # 计数器
+        Graph.counter += 1
+        if Graph.counter % 1000 == 0:
+            LogUtil.log('INFO', 'Graph.counter=%d' % Graph.counter)
+
+        return fs
+
+    @staticmethod
+    def extractor_node_neighbors(cf, argv):
+        # 路径权重特征名
+        weight_feature_name = argv[0]  # e.g. my_tfidf_word_match_share
+        # 抽取特征的数据集名称
+        dataset_name = argv[1]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[2])
+        # part 的 ID
+        part_id = int(argv[3])
+        # 特征第几维
+        weight_feature_id = int(argv[4])
+        # 设置参数
+        feature_name = 'graph_node_neighbors_%s' % weight_feature_name
+
+        Graph.init_graph_with_weight(cf, weight_feature_name, weight_feature_id)
+
+        # 加载数据文件
+        data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id:end_id].apply(Graph.extractor_row_node_neighbors, axis=1, raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
 
     @staticmethod
     def run(cf, argv):
@@ -3370,6 +3449,8 @@ class Graph(object):
             Graph.merge_graph_shortest_path(cf, argv[1:])
         elif 'extractor_clique_size_e3_other_edge' == cmd:
             Graph.extractor_clique_size_e3_other_edge(cf, argv[1:])
+        elif 'extractor_node_neighbors' == cmd:
+            Graph.extractor_node_neighbors(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
