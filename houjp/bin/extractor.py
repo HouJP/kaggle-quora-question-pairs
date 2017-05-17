@@ -3253,24 +3253,25 @@ class Graph(object):
         fs = [0]
         if edge_max_clique_size == 3:
             for clique_id in n2clique[qid1]:
-                if (3 == len(cliques[clique_id])) and (qid2 in cliques[clique_id]):
+                if (3 == len(cliques[clique_id])) and (qid2 in cliques[clique_id]) and (qid1 != qid2):
                     _sum = 0
                     for n in cliques[clique_id]:
                         _sum += n
                     qid3 = _sum - qid1 - qid2
-                    try:
-                        w1 = Graph.p2weight[(qid1, qid3)]
-                        w2 = Graph.p2weight[(qid2, qid3)]
-                    except:
-                        print 'qid1=%d,qid2=%d,qid3=%d' % (qid1, qid2, qid3)
-                        for n in cliques[clique_id]:
-                            print n
-                        raise
+                    # try:
+                    w1 = Graph.p2weight[(qid1, qid3)]
+                    w2 = Graph.p2weight[(qid2, qid3)]
+                    # except:
+                    #     print 'qid1=%d,qid2=%d,qid3=%d' % (qid1, qid2, qid3)
+                    #     for n in cliques[clique_id]:
+                    #         print n
+                    #     raise
                     sub.append(abs(w1 - w2))
                     add.append(w1 + w2)
                     fs[0] += 1.
-        else:
+        if len(sub) == 0:
             sub.append(-1)
+        if len(add) == 0:
             add.append(-1)
 
         for agg in aggregator:
