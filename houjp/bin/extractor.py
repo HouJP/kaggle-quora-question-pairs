@@ -3258,7 +3258,7 @@ class Graph(object):
                     w1 = Graph.p2weight[(qid1, qid3)]
                     w2 = Graph.p2weight[(qid2, qid3)]
                     sub.append(abs(w1 - w2))
-                    add.append(sum(w1 + w2))
+                    add.append(w1 + w2)
                     fs[0] += 1.
         else:
             sub.append(-1)
