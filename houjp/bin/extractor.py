@@ -3254,7 +3254,10 @@ class Graph(object):
         if edge_max_clique_size == 3:
             for clique_id in n2clique[qid1]:
                 if (3 == len(cliques[clique_id])) and (qid2 in cliques[clique_id]):
-                    qid3 = sum(cliques[clique_id]) - qid1 - qid2
+                    _sum = 0
+                    for n in cliques[clique_id]:
+                        _sum += n
+                    qid3 = _sum - qid1 - qid2
                     w1 = Graph.p2weight[(qid1, qid3)]
                     w2 = Graph.p2weight[(qid2, qid3)]
                     sub.append(abs(w1 - w2))
