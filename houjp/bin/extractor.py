@@ -3353,6 +3353,9 @@ class Graph(object):
         l_nb = Graph.G.neighbors(qid1)
         r_nb = Graph.G.neighbors(qid2)
 
+        l_bool = True
+        r_bool = True
+
         for n in l_nb:
             if (n != qid2) and (n != qid1):
                 l.append(Graph.p2weight[(qid1, n)])
@@ -3361,8 +3364,10 @@ class Graph(object):
                 r.append(Graph.p2weight[(qid2, n)])
         if 0 == len(l):
             l.append(-1.)
+            l_bool = False
         if 0 == len(r):
             r.append(-1.)
+            r_bool = False
 
         aggregation_mode = ["size", "mean", "std", "max", "min", "median"]
         aggregation_mode, aggregator = Distance._check_aggregation_mode(aggregation_mode)
@@ -3380,6 +3385,10 @@ class Graph(object):
             except:
                 s = config.MISSING_VALUE_NUMERIC
             fs.append(s)
+        if not l_bool:
+            fs[0] = 0.
+        if not r_bool:
+            fs[len(aggregation_mode)] = 0.
 
         # 计数器
         Graph.counter += 1
