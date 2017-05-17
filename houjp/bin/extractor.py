@@ -3359,6 +3359,10 @@ class Graph(object):
         for n in r_nb:
             if (n != qid2) and (n != qid1):
                 r.append(Graph.p2weight[(qid2, n)])
+        if 0 == len(l):
+            l.append(-1.)
+        if 0 == len(r):
+            r.append(-1.)
 
         aggregation_mode = ["size", "mean", "std", "max", "min", "median"]
         aggregation_mode, aggregator = Distance._check_aggregation_mode(aggregation_mode)
