@@ -3233,8 +3233,8 @@ class Graph(object):
         n2clique = args[0]
         cliques = args[1]
 
-        q1 = str(row['question1'])
-        q2 = str(row['question2'])
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
 
         qid1 = Graph.q2id[q1]
         qid2 = Graph.q2id[q2]
