@@ -3258,8 +3258,13 @@ class Graph(object):
                     for n in cliques[clique_id]:
                         _sum += n
                     qid3 = _sum - qid1 - qid2
-                    w1 = Graph.p2weight[(qid1, qid3)]
-                    w2 = Graph.p2weight[(qid2, qid3)]
+                    try:
+                        w1 = Graph.p2weight[(qid1, qid3)]
+                        w2 = Graph.p2weight[(qid2, qid3)]
+                    except:
+                        for n in cliques[clique_id]:
+                            print n
+                        raise
                     sub.append(abs(w1 - w2))
                     add.append(w1 + w2)
                     fs[0] += 1.
