@@ -2532,6 +2532,7 @@ class Graph(object):
             # print >> fout, Graph.q2id[q1], Graph.q2id[q2], label, weight
             Graph.G.add_edge(Graph.q2id[q1], Graph.q2id[q2], weight=weight)
             Graph.p2weight[(Graph.q2id[q1], Graph.q2id[q2])] = weight
+            Graph.p2weight[(Graph.q2id[q2], Graph.q2id[q1])] = weight
             index += 1
         LogUtil.log('INFO', 'len(questions)=%d' % len(Graph.q2id))
         # fout.close()
@@ -2551,6 +2552,7 @@ class Graph(object):
             # print >> fout, Graph.q2id[q1], Graph.q2id[q2], weight
             Graph.G.add_edge(Graph.q2id[q1], Graph.q2id[q2], weight=weight)
             Graph.p2weight[(Graph.q2id[q1], Graph.q2id[q2])] = weight
+            Graph.p2weight[(Graph.q2id[q2], Graph.q2id[q1])] = weight
             index += 1
         LogUtil.log('INFO', 'len(questions)=%d' % len(Graph.q2id))
         # fout.close()
