@@ -3262,6 +3262,7 @@ class Graph(object):
                         w1 = Graph.p2weight[(qid1, qid3)]
                         w2 = Graph.p2weight[(qid2, qid3)]
                     except:
+                        print 'qid1=%d,qid2=%d,qid3=%d' % (qid1, qid2, qid3)
                         for n in cliques[clique_id]:
                             print n
                         raise
