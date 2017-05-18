@@ -29,6 +29,7 @@ from postprocessor import PostProcessor
 import config
 from model import Model
 import random
+import jieba
 
 class WordMatchShare(object):
     """
@@ -3531,6 +3532,8 @@ class Count(object):
 
 class Distance(object):
     snowball_stemmer = SnowballStemmer('english')
+    cn_idf = {}
+    counter = 0
 
     def __init__(self):
         pass
@@ -3882,6 +3885,111 @@ class Distance(object):
         Feature.save_dataframe(test_features, test_feature_fp)
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
+    @staticmethod
+    def init_cn_idf(data):
+        questions = []
+        for index, row in data.iterrows():
+            # print index
+            questions.append(str(row['question1']).strip())
+            questions.append(str(row['question2']).strip())
+        questions = set(questions)
+
+        for q in questions:
+            words = list(jieba.cut_for_search(q))
+            # words = [ word for word in words if len(word) > 1]
+            # print ' '.join(words)
+            for word in words:
+                Distance.cn_idf[word] = Distance.cn_idf.get(word, 0) + 1
+        num_docs = len(questions)
+        for word in Distance.cn_idf:
+            Distance.cn_idf[word] = math.log(num_docs / (Distance.cn_idf[word] + 1.)) / math.log(2.)
+        LogUtil.log("INFO", "IDF calculation done, len(idf)=%d" % len(Distance.cn_idf))
+
+    @staticmethod
+    def extract_row_cn_baidu_my_tfidf_word_match_share(row):
+        fs = []
+
+        q1_cut_words = list(jieba.cut_for_search(str(row['question1']).strip()))
+        q2_cut_words = list(jieba.cut_for_search(str(row['question2']).strip()))
+        # print ' '.join(q1_cut_words)
+        # print ' '.join(q2_cut_words)
+
+        q1words = {}
+        q2words = {}
+        for word in q1_cut_words:
+            q1words[word] = q1words.get(word, 0) + 1
+        for word in q2_cut_words:
+            q2words[word] = q2words.get(word, 0) + 1
+        sum_shared_word_in_q1 = sum([q1words[w] * Distance.cn_idf.get(w, 0) for w in q1words if w in q2words])
+        sum_shared_word_in_q2 = sum([q2words[w] * Distance.cn_idf.get(w, 0) for w in q2words if w in q1words])
+        sum_q1 = sum(q1words[w] * Distance.cn_idf.get(w, 0) for w in q1words)
+        sum_q2 = sum(q2words[w] * Distance.cn_idf.get(w, 0) for w in q2words)
+
+        q1words_g1 = {}
+        q2words_g1 = {}
+        for word in q1_cut_words:
+            if 1 < len(word):
+                q1words_g1[word] = q1words_g1.get(word, 0) + 1
+        for word in q2_cut_words:
+            if 1 < len(word):
+                q2words_g1[word] = q2words_g1.get(word, 0) + 1
+        sum_shared_word_in_q1_g1 = sum([q1words_g1[w] * Distance.cn_idf.get(w, 0) for w in q1words_g1 if w in q2words_g1])
+        sum_shared_word_in_q2_g1 = sum([q2words_g1[w] * Distance.cn_idf.get(w, 0) for w in q2words_g1 if w in q1words_g1])
+        sum_q1_g1 = sum(q1words_g1[w] * Distance.cn_idf.get(w, 0) for w in q1words_g1)
+        sum_q2_g1 = sum(q2words_g1[w] * Distance.cn_idf.get(w, 0) for w in q2words_g1)
+
+        fs.append(1.0 * sum_shared_word_in_q1 / sum_q1 if sum_q1 > 1e-8 else 0.)
+        fs.append(1.0 * sum_shared_word_in_q1_g1 / sum_q1_g1 if sum_q1_g1 > 1e-8 else 0.)
+
+        fs.append(1.0 * sum_shared_word_in_q2 / sum_q2 if sum_q2 > 1e-8 else 0.)
+        fs.append(1.0 * sum_shared_word_in_q2_g1 / sum_q2_g1 if sum_q2_g1 > 1e-8 else 0.)
+
+        fs.append(1.0 * (sum_shared_word_in_q1 + sum_shared_word_in_q2) / (sum_q1 + sum_q2) if (sum_q1 + sum_q2) > 1e-8 else 0.)
+        fs.append(1.0 * (sum_shared_word_in_q1_g1 + sum_shared_word_in_q2_g1) / (sum_q1_g1 + sum_q2_g1) if (sum_q1_g1 + sum_q2_g1) > 1e-8 else 0.)
+
+        # print fs
+        # 计数器
+        Distance.counter += 1
+        if Distance.counter % 1000 == 0:
+            LogUtil.log('INFO', 'Graph.counter=%d' % Distance.counter)
+
+        return fs
+
+    @staticmethod
+    def extract_cn_baidu_my_tfidf_word_match_share(cf, argv):
+        # 抽取特征的数据集名称
+        dataset_name = argv[0]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[1])
+        # part 的 ID
+        part_id = int(argv[2])
+        # 设置参数
+        feature_name = 'cn_baidu_my_tfidf_word_match_share'
+
+        # 加载IDF训练文件
+        idf_data = pd.read_csv('%s/cn_baidu_nmt.train.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+        Distance.init_cn_idf(idf_data)
+
+        # 加载数据文件
+        data = pd.read_csv('%s/cn_baidu_nmt.%s.csv' % (cf.get('DEFAULT', 'devel_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+        LogUtil.log('INFO', 'begin_id(%d),end_id(%d)' % (begin_id, end_id))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id: end_id].apply(Distance.extract_row_cn_baidu_my_tfidf_word_match_share, axis=1, raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+
     # @staticmethod
     # def extract_doc2vec_dis(cf, argv):
     #     # 设置参数
@@ -3932,6 +4040,8 @@ class Distance(object):
             Distance.extract_compression_dis(cf, argv[1:])
         elif 'extract_compression_dis_ngram' == cmd:
             Distance.extract_compression_dis_ngram(cf, argv[1:])
+        elif 'extract_cn_baidu_my_tfidf_word_match_share' == cmd:
+            Distance.extract_cn_baidu_my_tfidf_word_match_share(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
