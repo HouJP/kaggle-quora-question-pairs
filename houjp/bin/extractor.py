@@ -3903,6 +3903,9 @@ class Distance(object):
         num_docs = len(questions)
         for word in Distance.cn_idf:
             Distance.cn_idf[word] = math.log(num_docs / (Distance.cn_idf[word] + 1.)) / math.log(2.)
+            if Distance.cn_idf[word] < 0:
+                print word, Distance.cn_idf[word], num_docs
+                raise Exception
         LogUtil.log("INFO", "IDF calculation done, len(idf)=%d" % len(Distance.cn_idf))
 
     @staticmethod
@@ -3938,14 +3941,14 @@ class Distance(object):
         sum_q1_g1 = sum(q1words_g1[w] * Distance.cn_idf.get(w, 0) for w in q1words_g1)
         sum_q2_g1 = sum(q2words_g1[w] * Distance.cn_idf.get(w, 0) for w in q2words_g1)
 
-        fs.append(1.0 * sum_shared_word_in_q1 / sum_q1 if sum_q1 > 1e-8 else 0.)
-        fs.append(1.0 * sum_shared_word_in_q1_g1 / sum_q1_g1 if sum_q1_g1 > 1e-8 else 0.)
+        fs.append(1.0 * sum_shared_word_in_q1 / sum_q1 if sum_q1 > 1e-6 else 0.)
+        fs.append(1.0 * sum_shared_word_in_q1_g1 / sum_q1_g1 if sum_q1_g1 > 1e-6 else 0.)
 
-        fs.append(1.0 * sum_shared_word_in_q2 / sum_q2 if sum_q2 > 1e-8 else 0.)
-        fs.append(1.0 * sum_shared_word_in_q2_g1 / sum_q2_g1 if sum_q2_g1 > 1e-8 else 0.)
+        fs.append(1.0 * sum_shared_word_in_q2 / sum_q2 if sum_q2 > 1e-6 else 0.)
+        fs.append(1.0 * sum_shared_word_in_q2_g1 / sum_q2_g1 if sum_q2_g1 > 1e-6 else 0.)
 
-        fs.append(1.0 * (sum_shared_word_in_q1 + sum_shared_word_in_q2) / (sum_q1 + sum_q2) if (sum_q1 + sum_q2) > 1e-8 else 0.)
-        fs.append(1.0 * (sum_shared_word_in_q1_g1 + sum_shared_word_in_q2_g1) / (sum_q1_g1 + sum_q2_g1) if (sum_q1_g1 + sum_q2_g1) > 1e-8 else 0.)
+        fs.append(1.0 * (sum_shared_word_in_q1 + sum_shared_word_in_q2) / (sum_q1 + sum_q2) if (sum_q1 + sum_q2) > 1e-6 else 0.)
+        fs.append(1.0 * (sum_shared_word_in_q1_g1 + sum_shared_word_in_q2_g1) / (sum_q1_g1 + sum_q2_g1) if (sum_q1_g1 + sum_q2_g1) > 1e-6 else 0.)
 
         # print fs
         # 计数器
