@@ -3903,9 +3903,9 @@ class Distance(object):
         num_docs = len(questions)
         for word in Distance.cn_idf:
             Distance.cn_idf[word] = math.log(num_docs / (Distance.cn_idf[word] + 1.)) / math.log(2.)
-            if Distance.cn_idf[word] < 0:
-                print word, Distance.cn_idf[word], num_docs
-                raise Exception
+            # if Distance.cn_idf[word] < 0:
+            #     print word, Distance.cn_idf[word], num_docs
+            #     raise Exception
         LogUtil.log("INFO", "IDF calculation done, len(idf)=%d" % len(Distance.cn_idf))
 
     @staticmethod
