@@ -3893,9 +3893,13 @@ class Distance(object):
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
     @staticmethod
-    def init_cn_idf(data):
+    def init_cn_idf(train_data, test_data):
         questions = []
-        for index, row in data.iterrows():
+        for index, row in train_data.iterrows():
+            # print index
+            questions.append(str(row['question1']).strip())
+            questions.append(str(row['question2']).strip())
+        for index, row in test_data.iterrows():
             # print index
             questions.append(str(row['question1']).strip())
             questions.append(str(row['question2']).strip())
@@ -3974,11 +3978,12 @@ class Distance(object):
         # part 的 ID
         part_id = int(argv[2])
         # 设置参数
-        feature_name = 'cn_baidu_my_tfidf_word_match_share'
+        feature_name = 'cn_baidu_my_all_tfidf_word_match_share'
 
         # 加载IDF训练文件
-        idf_data = pd.read_csv('%s/cn_baidu_nmt.train.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
-        Distance.init_cn_idf(idf_data)
+        train_data = pd.read_csv('%s/cn_baidu_nmt.train.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/cn_baidu_nmt.test.csv' % cf.get('DEFAULT', 'devel_pt')).fillna(value="")
+        Distance.init_cn_idf(train_data, test_data)
 
         # 加载数据文件
         data = pd.read_csv('%s/cn_baidu_nmt.%s.csv' % (cf.get('DEFAULT', 'devel_pt'), dataset_name)).fillna(value="")
