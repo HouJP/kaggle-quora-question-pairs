@@ -494,9 +494,12 @@ class Model(object):
             offline_test_label_all.extend(list(offline_test_data.get_label()))
             offline_test_index_all.extend(list(offline_test_balanced_indexs))
 
+            # 保存本次运行配置
+            # cf.write(open(cf.get('DEFAULT', 'conf_pt') + ('python.conf.%02d' % fold_id), 'w'))
+
             LogUtil.log('INFO', 'cross validation, fold_id=%d done' % fold_id)
 
-        # 保存本次运行配置
+        # # 保存本次运行配置
         cf.write(open(cf.get('DEFAULT', 'conf_pt') + 'python.conf', 'w'))
 
         # 存储预测结果
@@ -562,9 +565,10 @@ class Model(object):
 
             for fold_id in range(cv_num):
                 # 预测线上测试集
-                online_pred = model_all[fold_id].predict(online_data, ntree_limit=params_all[fold_id]['best_ntree_limit'])
+                ntree_limit = int(model_all[fold_id].attr('best_iteration')) + 1
+                online_pred = model_all[fold_id].predict(online_data, ntree_limit=ntree_limit)
                 online_pred_all[fold_id].extend(online_pred)
-                LogUtil.log('INFO', 'online set part_id(%d), fold_id(%d) predict done' % (part_id, fold_id))
+                LogUtil.log('INFO', 'online set part_id(%d), fold_id(%d), ntree_limit(%d) predict done' % (part_id, fold_id, ntree_limit))
 
         # 后处理
         if cf.get('MODEL', 'has_postprocess') == 'True':
@@ -636,9 +640,10 @@ class Model(object):
             LogUtil.log("INFO", "online test set (%02d) generation done" % id_part)
 
             # 预测线上测试集
-            pred_online_test_data = model.predict(online_test_data, ntree_limit=params['best_ntree_limit'])
+            ntree_limit = int(model.attr('best_iteration')) + 1
+            pred_online_test_data = model.predict(online_test_data, ntree_limit=ntree_limit)
             all_pred_online_test_data.extend(pred_online_test_data)
-            LogUtil.log('INFO', 'online test set (%02d) predict done' % id_part)
+            LogUtil.log('INFO', 'online test set (%02d), ntree_limit(%d) predict done' % (id_part, ntree_limit))
         # 后处理
         if cf.get('MODEL', 'has_postprocess') == 'True':
             all_pred_online_test_data = [Model.adj(x) for x in all_pred_online_test_data]
