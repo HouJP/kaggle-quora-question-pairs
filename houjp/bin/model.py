@@ -694,8 +694,11 @@ class Model(object):
         feature_qp_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
         feature_qp_names = Feature.get_feature_names_question_pair(cf)
         for fn in feature_qp_names:
-            features = Feature.load('%s/%s.%s.smat' % (feature_qp_pt, fn, 'train'))
-            col_num = features.shape[1]
+            f = open('%s/%s.%s.smat' % (feature_qp_pt, fn, 'train'))
+            line = f.readline()
+            subs = line.strip().split()
+            col_num = int(subs[1])
+            f.close()
             for ind_0 in range(col_num):
                 fn2find['%s_%d' % (fn, ind_0)] = 'f%d' % (ind + ind_0)
             ind += col_num
@@ -704,7 +707,7 @@ class Model(object):
         fn2score = {}
         for fn in fn2find:
             find = fn2find[fn]
-            score = find2score[find]
+            score = find2score.get(find, 0)
             fn2score[fn] = score
 
         fn2score_sorted = sorted(fn2score.iteritems(), key=lambda d: d[1], reverse=True)
