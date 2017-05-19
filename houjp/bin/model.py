@@ -702,7 +702,7 @@ class Model(object):
             for ind_0 in range(col_num):
                 fn2find['%s_%d' % (fn, ind_0)] = 'f%d' % (ind + ind_0)
             ind += col_num
-        LogUtil.log('INFO', 'fn2find(%s)' % str(fn2find))
+        # LogUtil.log('INFO', 'fn2find(%s)' % str(fn2find))
 
         fn2score = {}
         for fn in fn2find:
