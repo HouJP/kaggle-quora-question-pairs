@@ -683,6 +683,35 @@ class Model(object):
         plt.show()
 
     @staticmethod
+    def sort_feature_xgb(cf, argv):
+        # 加载模型
+        model, params = Model.load_model(cf)
+        find2score = model.get_fscore()
+
+        # 加载特征
+        fn2find = {}
+        ind = 0
+        feature_qp_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        feature_qp_names = Feature.get_feature_names_question_pair(cf)
+        for fn in feature_qp_names:
+            features = Feature.load('%s/%s.%s.smat' % (feature_qp_pt, fn, 'train'))
+            col_num = features.shape[1]
+            for ind_0 in range(col_num):
+                fn2find['%s_%d' % (fn, ind_0)] = 'f%d' % (ind + ind_0)
+            ind += col_num
+        LogUtil.log('INFO', 'fn2find(%s)' % str(fn2find))
+
+        fn2score = {}
+        for fn in fn2find:
+            find = fn2find[fn]
+            score = find2score[find]
+            fn2score[fn] = score
+
+        fn2score_sorted = sorted(fn2score.iteritems(), key=lambda d: d[1], reverse=True)
+        for kv in fn2score_sorted:
+            print '%s\t%d' % (kv[0], kv[1])
+
+    @staticmethod
     def run_select_feature_xgb(cf, argv):
         # 加载参数
         amx_num_features = int(argv[0])
@@ -773,6 +802,7 @@ def print_help():
     print '\tsave_all_feature'
     print '\tshow_feature_xgb <max_num_features> <ylim_end>'
     print '\tcv_xgb'
+    print '\tsort_feature_xgb'
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -796,6 +826,8 @@ if __name__ == "__main__":
         Model.cv_xgb(cf)
     elif 'fname2findex' == cmd:
         Model.fname2findex(cf, sys.argv[3:])
+    elif 'sort_feature_xgb' == cmd:
+        Model.sort_feature_xgb(cf, sys.argv[3:])
     else:
         print_help()
 
