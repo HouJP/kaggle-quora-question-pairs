@@ -4,7 +4,6 @@
 import ConfigParser
 from nltk.corpus import stopwords
 from feature import Feature
-import matplotlib.pyplot as plt
 import pandas as pd
 from collections import Counter
 import numpy as np
@@ -70,6 +69,10 @@ class WordMatchShare(object):
         :param feature_pt: 特征文件路径
         :return: None
         """
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         train_features = train_df.apply(WordMatchShare.word_match_share, axis=1, raw=True)
         Feature.save_dataframe(train_features, feature_pt + '/word_match_share.train.smat')
 
@@ -179,6 +182,10 @@ class TFIDFWordMatchShare(object):
         :param feature_pt: 特征文件目录
         :return: None
         """
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         # 获取weights信息
         TFIDFWordMatchShare.get_weights(train_df)
         # 抽取特征
@@ -257,6 +264,10 @@ class MyWordMatchShare(object):
         :param feature_pt: 特征文件路径
         :return: None
         """
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         train_features = train_df.apply(MyWordMatchShare.word_match_share, axis=1, raw=True)
         Feature.save_dataframe(train_features, feature_pt + '/my_word_match_share.train.smat')
 
@@ -349,6 +360,10 @@ class MyTFIDFWordMatchShare(object):
         :param feature_pt: 特征文件目录
         :return: None
         """
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         # 获取weights信息
         MyTFIDFWordMatchShare.init_idf(train_qid2question)
         # 抽取特征
@@ -720,6 +735,10 @@ class PowerfulWord(object):
 
     @staticmethod
     def run_rate_by_dside_word_power(train_data, test_data, words_power_fp, feature_pt):
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         # 初始化
         PowerfulWord.init_word_power_dict(words_power_fp)
 
@@ -788,6 +807,10 @@ class PowerfulWord(object):
 
     @staticmethod
     def run_rate_by_oside_word_power(train_data, test_data, words_power_fp, feature_pt):
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         # 初始化
         PowerfulWord.init_word_power_dict(words_power_fp)
 
@@ -896,6 +919,10 @@ class QuestionLenDiff(object):
         :param feature_pt: 特征文件目录
         :return: NONE
         """
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         # 抽取特征ABS(长度差)
         train_features = train_df.apply(QuestionLenDiff.cal_len_diff, axis=1, raw=True)
         Feature.save_dataframe(train_features, feature_pt + '/len_diff.train.smat')
@@ -945,6 +972,10 @@ class QuestionLenDiff(object):
         :param feature_pt: 特征文件目录
         :return: NONE
         """
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         # 抽取特征
         train_features = train_df.apply(QuestionLenDiff.cal_len_diff_rate, axis=1, raw=True)
         Feature.save_dataframe(train_features, feature_pt + '/len_diff_rate.train.smat')
@@ -2123,6 +2154,10 @@ class BTMVecCosSimDis(object):
 
     @staticmethod
     def plot_btm_vec_cos_sim_dis(cf, argv):
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         # 设置参数
         feature_name = 'btm_vec_cos_sim_dis'
 
@@ -2761,6 +2796,10 @@ class Graph(object):
 
     @staticmethod
     def show_graph_edge_max_clique_size(cf, argv):
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
         # 设置参数
         feature_name = 'graph_edge_max_clique_size'
 
