@@ -3341,7 +3341,9 @@ class Graph(object):
                     'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
 
     @staticmethod
-    def extractor_row_node_neighbors(row):
+    def extractor_row_node_neighbors(row, *args):
+        has_size = args[0]
+
         q1 = str(row['question1']).strip()
         q2 = str(row['question2']).strip()
 
@@ -3391,6 +3393,9 @@ class Graph(object):
         if not r_bool:
             fs[len(aggregation_mode)] = 0.
 
+        if 'True' != has_size:
+            fs = fs[1:6] + fs[7:12]
+
         # 计数器
         Graph.counter += 1
         if Graph.counter % 1000 == 0:
@@ -3410,6 +3415,8 @@ class Graph(object):
         part_id = int(argv[3])
         # 特征第几维
         weight_feature_id = int(argv[4])
+        # 是否计数
+        has_size = argv[5]
         # 设置参数
         feature_name = 'graph_node_neighbors_%s' % weight_feature_name
 
@@ -3428,7 +3435,7 @@ class Graph(object):
             data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
 
         # 抽取特征
-        features = data[begin_id:end_id].apply(Graph.extractor_row_node_neighbors, axis=1, raw=True)
+        features = data[begin_id:end_id].apply(Graph.extractor_row_node_neighbors, axis=1, raw=True, args=[has_size])
         Feature.save_dataframe(features, data_feature_fp)
         LogUtil.log('INFO',
                     'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
