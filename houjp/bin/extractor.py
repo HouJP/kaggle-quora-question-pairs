@@ -3418,7 +3418,7 @@ class Graph(object):
         # 是否计数
         has_size = argv[5]
         # 设置参数
-        feature_name = 'graph_node_neighbors_%s' % weight_feature_name
+        feature_name = 'graph_node_neighbors_%s_%03d' % (weight_feature_name, weight_feature_id)
 
         Graph.init_graph_with_weight(cf, weight_feature_name, weight_feature_id)
 
