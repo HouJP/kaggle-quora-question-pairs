@@ -3626,6 +3626,53 @@ class Distance(object):
         LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
     @staticmethod
+    def extract_row_cn_ch_jaccard_coef_ngram(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        q1_words = list(q1)
+        q2_words = list(q2)
+
+        fs = []
+        for n in range(1, 4):
+            q1_ngrams = ngram_utils._ngrams(q1_words, n)
+            q2_ngrams = ngram_utils._ngrams(q2_words, n)
+            fs.append(dist_utils._jaccard_coef(q1_ngrams, q2_ngrams))
+
+        return fs
+
+    @staticmethod
+    def extract_cn_ch_jaccard_coef_ngram(cf, argv):
+        # 抽取特征的数据集名称
+        dataset_name = argv[0]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[1])
+        # part 的 ID
+        part_id = int(argv[2])
+        # 设置参数
+        feature_name = 'cn_ch_jaccard_coef_ngram'
+
+        # 加载数据文件
+        data = pd.read_csv('%s/cn_baidu_nmt.%s.csv' % (cf.get('DEFAULT', 'devel_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+        LogUtil.log('INFO', 'begin_id(%d),end_id(%d)' % (begin_id, end_id))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id: end_id].apply(Distance.extract_row_cn_ch_jaccard_coef_ngram, axis=1,
+                                                raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+    @staticmethod
     def extract_row_dice_dis_ngram(row):
         q1_words = [Distance.snowball_stemmer.stem(word).encode('utf-8') for word in
                     nltk.word_tokenize(Preprocessor.clean_text(str(row['question1']).decode('utf-8')))]
@@ -4096,6 +4143,8 @@ class Distance(object):
             Distance.extract_compression_dis_ngram(cf, argv[1:])
         elif 'extract_cn_baidu_my_tfidf_word_match_share' == cmd:
             Distance.extract_cn_baidu_my_tfidf_word_match_share(cf, argv[1:])
+        elif 'extract_cn_ch_jaccard_coef_ngram' == cmd:
+            Distance.extract_cn_ch_jaccard_coef_ngram(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
