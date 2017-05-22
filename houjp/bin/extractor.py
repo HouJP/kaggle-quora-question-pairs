@@ -4451,10 +4451,19 @@ class Distance(object):
         q1_share_ch = [ch for ch in q1_chs if ch in q2_chs]
         q2_share_ch = [ch for ch in q2_chs if ch in q1_chs]
 
+        rate_l = 0.
+        if len(q1_chs) != 0:
+            rate_l = 1. * len(q1_share_ch) / len(q1_chs)
 
-        fs = [1. * len(q1_share_ch) / len(q1_chs),
-              1. * len(q2_share_ch) / len(q2_chs),
-              1. * (len(q1_share_ch) + len(q2_share_ch)) / (len(q1_chs) + len(q2_chs))]
+        rate_r = 0.
+        if len(q2_chs) != 0:
+            rate_r = 1. * len(q2_share_ch) / len(q2_chs)
+
+        rate_all = 0.
+        if (len(q1_chs) + len(q2_chs)) != 0:
+            rate_all = 1. * (len(q1_share_ch) + len(q2_share_ch)) / (len(q1_chs) + len(q2_chs))
+
+        fs = [len(q1_chs), len(q2_chs), len(q1_share_ch), len(q2_share_ch), rate_l, rate_r, rate_all]
 
         return fs
 
