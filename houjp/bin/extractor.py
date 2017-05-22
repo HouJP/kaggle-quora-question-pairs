@@ -3480,6 +3480,54 @@ class Graph(object):
                     'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
 
     @staticmethod
+    def extractor_row_node_neighbors_share_num(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        qid1 = Graph.q2id[q1]
+        qid2 = Graph.q2id[q2]
+
+        l_nb = Graph.G.neighbors(qid1)
+        r_nb = Graph.G.neighbors(qid2)
+
+        fs = list()
+
+        fs.append(len(list((set(l_nb).union(set(r_nb))) ^ (set(l_nb) ^ set(r_nb)))))
+
+        return fs
+
+    @staticmethod
+    def extractor_node_neighbors_share_num(cf, argv):
+        # 抽取特征的数据集名称
+        dataset_name = argv[0]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[1])
+        # part 的 ID
+        part_id = int(argv[2])
+        # 设置参数
+        feature_name = 'node_neighbors_share_num'
+
+        Graph.init_graph(cf, argv[3:])
+
+        # 加载数据文件
+        data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id:end_id].apply(Graph.extractor_row_node_neighbors_share_num, axis=1, raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+    @staticmethod
     def run(cf, argv):
         cmd = argv[0]
 
@@ -3511,6 +3559,8 @@ class Graph(object):
             Graph.extractor_clique_size_e3_other_edge(cf, argv[1:])
         elif 'extractor_node_neighbors' == cmd:
             Graph.extractor_node_neighbors(cf, argv[1:])
+        elif 'extractor_node_neighbors_share_num' == cmd:
+            Graph.extractor_node_neighbors_share_num(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
