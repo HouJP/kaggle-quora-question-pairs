@@ -3905,6 +3905,130 @@ class Distance(object):
                     'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
 
     @staticmethod
+    def extract_row_cn_edit_dis(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        return [dist_utils._edit_dist(q1, q2)]
+
+
+    @staticmethod
+    def extract_cn_edit_dis(cf, argv):
+        # 抽取特征的数据集名称
+        dataset_name = argv[0]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[1])
+        # part 的 ID
+        part_id = int(argv[2])
+        # 设置参数
+        feature_name = 'cn_edit_dis'
+
+        # 加载数据文件
+        data = pd.read_csv('%s/cn_baidu_nmt.%s.csv' % (cf.get('DEFAULT', 'devel_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+        LogUtil.log('INFO', 'begin_id(%d),end_id(%d)' % (begin_id, end_id))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id: end_id].apply(Distance.extract_row_cn_edit_dis, axis=1,
+                                                raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+    @staticmethod
+    def extract_row_cn_edit_dis_word_ngram(row):
+        q1_words = list(jieba.cut(str(row['question1']).strip()))
+        q2_words = list(jieba.cut(str(row['question2']).strip()))
+
+        q1_words = [word for word in q1_words if len(word) > 1]
+        q2_words = [word for word in q2_words if len(word) > 1]
+
+        fs = []
+        aggregation_mode_prev = ["mean", "max", "min", "median"]
+        aggregation_mode = ["mean", "std", "max", "min", "median"]
+
+        aggregation_mode, aggregator = Distance._check_aggregation_mode(aggregation_mode)
+        aggregation_mode_prev, aggregator_prev = Distance._check_aggregation_mode(aggregation_mode_prev)
+
+        for n_ngram in range(1, 4):
+            q1_ngrams = ngram_utils._ngrams(q1_words, n_ngram)
+            q2_ngrams = ngram_utils._ngrams(q2_words, n_ngram)
+
+            val_list = []
+            for w1 in q1_ngrams:
+                _val_list = []
+                for w2 in q2_ngrams:
+                    s = dist_utils._edit_dist(w1, w2)
+                    _val_list.append(s)
+                if len(_val_list) == 0:
+                    _val_list = [config.MISSING_VALUE_NUMERIC]
+                val_list.append(_val_list)
+            if len(val_list) == 0:
+                val_list = [[config.MISSING_VALUE_NUMERIC]]
+
+            res = np.zeros(len(aggregator_prev) * len(aggregator), dtype=float)
+            for m, aggregator_prev_i in enumerate(aggregator_prev):
+                for n, aggregator_i in enumerate(aggregator):
+                    idx = m * len(aggregator) + n
+                    try:
+                        tmp = []
+                        for l in val_list:
+                            try:
+                                s = aggregator_prev_i(l)
+                            except:
+                                s = config.MISSING_VALUE_NUMERIC
+                            tmp.append(s)
+                    except:
+                        tmp = [config.MISSING_VALUE_NUMERIC]
+                    try:
+                        s = aggregator_i(tmp)
+                    except:
+                        s = config.MISSING_VALUE_NUMERIC
+                    res[idx] = s
+
+            fs.extend(res)
+        return fs
+
+    @staticmethod
+    def extract_cn_edit_dis_word_ngram(cf, argv):
+        # 抽取特征的数据集名称
+        dataset_name = argv[0]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[1])
+        # part 的 ID
+        part_id = int(argv[2])
+        # 设置参数
+        feature_name = 'cn_edit_dis_word_ngram'
+
+        # 加载数据文件
+        data = pd.read_csv('%s/cn_baidu_nmt.%s.csv' % (cf.get('DEFAULT', 'devel_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+        LogUtil.log('INFO', 'begin_id(%d),end_id(%d)' % (begin_id, end_id))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id: end_id].apply(Distance.extract_row_cn_edit_dis_word_ngram, axis=1,
+                                                raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+    @staticmethod
     def extract_row_edit_dis(row):
         q1 = str(row['question1']).strip()
         q2 = str(row['question2']).strip()
@@ -4343,6 +4467,10 @@ class Distance(object):
             Distance.extract_cn_ch_dice_dis_ngram(cf, argv[1:])
         elif 'extract_cn_word_dice_dis_ngram' == cmd:
             Distance.extract_cn_word_dice_dis_ngram(cf, argv[1:])
+        elif 'extract_cn_edit_dis' == cmd:
+            Distance.extract_cn_edit_dis(cf, argv[1:])
+        elif 'extract_cn_edit_dis_word_ngram' == cmd:
+            Distance.extract_cn_edit_dis_word_ngram(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
