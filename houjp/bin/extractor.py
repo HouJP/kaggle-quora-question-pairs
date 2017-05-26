@@ -4754,6 +4754,9 @@ class WordBag(object):
 
 
 class NLP(object):
+    snowball_stemmer = SnowballStemmer('english')
+    counter = 0
+
     def __init__(self):
         pass
 
@@ -4828,11 +4831,108 @@ class NLP(object):
                     'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
 
     @staticmethod
+    def extract_row_first_word(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        # print '----------  RAW  -----------'
+        # print q1
+        # print q2
+
+        q1_words = [NLP.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(q1.decode('utf-8')))]
+        q2_words = [NLP.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(q2.decode('utf-8')))]
+        #
+        # print '----------  CLE  -----------'
+        # print ' '.join(q1_words)
+        # print ' '.join(q2_words)
+
+        fs = []
+
+        has_words = ['what', 'whi', 'which', 'how', 'where', 'when']
+        first_words = ['if', 'can', 'should']
+        do_words = ['doe', 'do', 'did']
+        be_words = ['is', 'are']
+        will_words = ['will', 'would']
+
+        # question 1
+        for word in has_words:
+            fs.append(q1_words.count(word))
+        for word in first_words:
+            fs.append(q1_words[0:1].count(word))
+        fs.append(0.)
+        for word in do_words:
+            fs[len(fs) - 1] += q1_words[0:1].count(word)
+        fs.append(0.)
+        for word in be_words:
+            fs[len(fs) - 1] += q1_words[0:1].count(word)
+        fs.append(0.)
+        for word in will_words:
+            fs[len(fs) - 1] += q1_words[0:1].count(word)
+
+        # question 2
+        for word in has_words:
+            fs.append(q2_words.count(word))
+        for word in first_words:
+            fs.append(q2_words[0:1].count(word))
+        fs.append(0.)
+        for word in do_words:
+            fs[len(fs) - 1] += q2_words[0:1].count(word)
+        fs.append(0.)
+        for word in be_words:
+            fs[len(fs) - 1] += q2_words[0:1].count(word)
+        fs.append(0.)
+        for word in will_words:
+            fs[len(fs) - 1] += q2_words[0:1].count(word)
+
+        # 计数器
+        NLP.counter += 1
+        if NLP.counter % 1000 == 0:
+            LogUtil.log('INFO', 'NLP.counter=%d' % NLP.counter)
+
+        return fs
+
+
+    @staticmethod
+    def extract_first_word(cf, argv):
+        # 抽取特征的数据集名称
+        dataset_name = argv[0]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[1])
+        # part 的 ID
+        part_id = int(argv[2])
+        # 设置参数
+        feature_name = 'first_word'
+
+        # 加载数据文件
+        data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+        LogUtil.log('INFO', 'begin_id(%d),end_id(%d)' % (begin_id, end_id))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id: end_id].apply(NLP.extract_row_first_word, axis=1,
+                                                raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+    @staticmethod
     def run(cf, argv):
         cmd = argv[0]
 
-        if 'not' == cmd:
+        if 'extract_not' == cmd:
             NLP.extract_not(cf, argv[1:])
+        elif 'extract_first_word' == cmd:
+            NLP.extract_first_word(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
