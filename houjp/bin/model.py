@@ -13,6 +13,8 @@ from utils import LogUtil, DataUtil
 from feature import Feature
 from postprocessor import PostProcessor
 import random
+from os.path import isfile, join
+import time
 
 class Model(object):
     """
@@ -258,11 +260,12 @@ class Model(object):
         watchlist = [(train_data, 'train'), (valid_data, 'valid')]
 
         # 训练模型
-        model = xgb.train(params,
-                          train_data, params['num_round'],
-                          watchlist,
-                          early_stopping_rounds=params['early_stop'],
-                          verbose_eval=10)
+        model = Model.train_xgb_with_lock(params, train_data, watchlist, 10)
+        # model = xgb.train(params,
+        #                   train_data, params['num_round'],
+        #                   watchlist,
+        #                   early_stopping_rounds=params['early_stop'],
+        #                   verbose_eval=10)
 
         # 打印参数
         LogUtil.log("INFO", 'params=%s, best_ntree_limit=%d' % (str(params), model.best_ntree_limit))
@@ -451,11 +454,12 @@ class Model(object):
             watchlist = [(offline_train_data, 'train'), (offline_valid_data, 'valid')]
 
             # 训练模型
-            model = xgb.train(params,
-                              offline_train_data, params['num_round'],
-                              watchlist,
-                              early_stopping_rounds=params['early_stop'],
-                              verbose_eval=10)
+            model = Model.train_xgb_with_lock(params, offline_train_data, watchlist, 10)
+            # model = xgb.train(params,
+            #                   offline_train_data, params['num_round'],
+            #                   watchlist,
+            #                   early_stopping_rounds=params['early_stop'],
+            #                   verbose_eval=10)
 
             # 打印参数
             LogUtil.log("INFO", 'params=%s, best_ntree_limit=%d' % (str(params), model.best_ntree_limit))
@@ -593,6 +597,28 @@ class Model(object):
         PostProcessor.write_result(online_pred_merge_fp, online_pred_merge)
         LogUtil.log('INFO', 'cv merge done(%s)' % online_pred_merge_fp)
 
+    @staticmethod
+    def train_xgb_with_lock(params, train_data, watchlist, verbose_eval):
+
+        # 加锁
+        xgb_lock_fp = '%s/xgboost.lock' % (cf.get('DEFAULT', 'data_pt'))
+        while isfile(xgb_lock_fp):
+            LogUtil.log('INFO', 'xgboost model is running, waiting 300s ...')
+            time.sleep(300)
+        f = open(xgb_lock_fp, 'w')
+        f.close()
+
+        model = xgb.train(params,
+                          train_data,
+                          params['num_round'],
+                          watchlist,
+                          early_stopping_rounds=params['early_stop'],
+                          verbose_eval=verbose_eval)
+
+        # 解锁
+        os.remove(xgb_lock_fp)
+
+        return model
 
     @staticmethod
     def load_model(cf):
