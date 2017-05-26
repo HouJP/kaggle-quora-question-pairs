@@ -563,7 +563,10 @@ def rescale_answer(cf):
 
 def rescale2_answer(cf):
     # 加载预测结果
-    test_preds_fp = '/Users/houjianpeng/tmp/merge_2/xgb_v4_55_10_lgb_unkown.online.pred'
+    # test_preds_fp = '/Users/houjianpeng/tmp/merge_3/right_version.pred'
+    # fout = open('/Users/houjianpeng/tmp/merge_3/rescale_right_version.pred', 'w')
+    test_preds_fp = '/Users/houjianpeng/tmp/merge_4/full.test.pred'
+    fout = open('/Users/houjianpeng/tmp/merge_4/rescale_full.test.pred', 'w')
     test_preds = PostProcessor.read_result_list(test_preds_fp)
     test_preds = [Model.inverse_adj(y) for y in test_preds]
     LogUtil.log('INFO', 'len(test_preds)=%d' % len(test_preds))
@@ -604,7 +607,7 @@ def rescale2_answer(cf):
                 score = Model.adj(score, te=0.04503431, tr=0.149471)
         test_preds[index] = score
 
-    fout = open('/Users/houjianpeng/tmp/merge_2/rescale2_xgb_v4_55_10_lgb_unkown.online.pred', 'w')
+
     fout.write("\"test_id\",\"is_duplicate\"\n")
 
     for index in range(len(test_preds)):

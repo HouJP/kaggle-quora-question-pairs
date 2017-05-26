@@ -4747,6 +4747,96 @@ class Corr(object):
         if 'cal_corr' == cmd:
             Corr.cal_corr(cf, argv[1:])
 
+
+class WordBag(object):
+    def __init__(selfself):
+        pass
+
+
+class NLP(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def extract_row_not(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        # print '----------  RAW  -----------'
+        # print q1
+        # print q2
+
+        q1 = Preprocessor.clean_text(q1)
+        q2 = Preprocessor.clean_text(q2)
+
+        # print '----------  CLE  -----------'
+        # print q1
+        # print q2
+
+        not_cnt1 = q1.count(' not')
+        not_cnt2 = q2.count(' not')
+
+        fs = []
+
+        fs.append(not_cnt1)
+        fs.append(not_cnt2)
+        if not_cnt1 > 0 and not_cnt2 > 0:
+            fs.append(1.)
+        else:
+            fs.append(0.)
+        if (not_cnt1 > 0) or (not_cnt2 > 0):
+            fs.append(1.)
+        else:
+            fs.append(0.)
+        if (not_cnt1 > 0 and not_cnt2 <= 0) or (not_cnt1 <= 0 and not_cnt2 > 0):
+            fs.append(1.)
+        else:
+            fs.append(0.)
+
+        return fs
+
+
+    @staticmethod
+    def extract_not(cf, argv):
+        # 抽取特征的数据集名称
+        dataset_name = argv[0]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[1])
+        # part 的 ID
+        part_id = int(argv[2])
+        # 设置参数
+        feature_name = 'not'
+
+        # 加载数据文件
+        data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+        LogUtil.log('INFO', 'begin_id(%d),end_id(%d)' % (begin_id, end_id))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id: end_id].apply(NLP.extract_row_not, axis=1,
+                                                raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+    @staticmethod
+    def run(cf, argv):
+        cmd = argv[0]
+
+        if 'not' == cmd:
+            NLP.extract_not(cf, argv[1:])
+        else:
+            LogUtil.log('WARNING', 'NO CMD')
+
+
 def print_help():
     print 'extractor <conf_file_fp> -->'
     print '\tword_embedding'
@@ -4796,5 +4886,7 @@ if __name__ == "__main__":
         Predict.run(cf, sys.argv[3:])
     elif 'Corr' == cmd:
         Corr.run(cf, sys.argv[3:])
+    elif 'NLP' == cmd:
+        NLP.run(cf, sys.argv[3:])
     else:
         print_help()
