@@ -4850,7 +4850,8 @@ class NLP(object):
         # print ' '.join(q1_words)
         # print ' '.join(q2_words)
 
-        fs = []
+        fs_1 = []
+        fs_2 = []
 
         has_words = ['what', 'whi', 'which', 'how', 'where', 'when']
         first_words = ['if', 'can', 'should']
@@ -4860,33 +4861,41 @@ class NLP(object):
 
         # question 1
         for word in has_words:
-            fs.append(q1_words.count(word))
+            fs_1.append(q1_words.count(word))
         for word in first_words:
-            fs.append(q1_words[0:1].count(word))
-        fs.append(0.)
+            fs_1.append(q1_words[0:1].count(word))
+        fs_1.append(0.)
         for word in do_words:
-            fs[len(fs) - 1] += q1_words[0:1].count(word)
-        fs.append(0.)
+            fs_1[len(fs_1) - 1] += q1_words[0:1].count(word)
+        fs_1.append(0.)
         for word in be_words:
-            fs[len(fs) - 1] += q1_words[0:1].count(word)
-        fs.append(0.)
+            fs_1[len(fs_1) - 1] += q1_words[0:1].count(word)
+        fs_1.append(0.)
         for word in will_words:
-            fs[len(fs) - 1] += q1_words[0:1].count(word)
+            fs_1[len(fs_1) - 1] += q1_words[0:1].count(word)
 
         # question 2
         for word in has_words:
-            fs.append(q2_words.count(word))
+            fs_2.append(q2_words.count(word))
         for word in first_words:
-            fs.append(q2_words[0:1].count(word))
-        fs.append(0.)
+            fs_2.append(q2_words[0:1].count(word))
+        fs_2.append(0.)
         for word in do_words:
-            fs[len(fs) - 1] += q2_words[0:1].count(word)
-        fs.append(0.)
+            fs_2[len(fs_2) - 1] += q2_words[0:1].count(word)
+        fs_2.append(0.)
         for word in be_words:
-            fs[len(fs) - 1] += q2_words[0:1].count(word)
-        fs.append(0.)
+            fs_2[len(fs_2) - 1] += q2_words[0:1].count(word)
+        fs_2.append(0.)
         for word in will_words:
-            fs[len(fs) - 1] += q2_words[0:1].count(word)
+            fs_2[len(fs_2) - 1] += q2_words[0:1].count(word)
+
+        fs = []
+        for ind1 in range(len(fs_1)):
+            for ind2 in range(ind1, len(fs_1)):
+                if (fs_1[ind1] > 0 and fs_2[ind2] <= 0) or (fs_1[ind1] <= 0 and fs_2[ind2] > 0):
+                    fs.append(1.)
+                else:
+                    fs.append(0.)
 
         # 计数器
         NLP.counter += 1
