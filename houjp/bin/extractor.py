@@ -4769,15 +4769,17 @@ class NLP(object):
         # print q1
         # print q2
 
-        q1 = Preprocessor.clean_text(q1)
-        q2 = Preprocessor.clean_text(q2)
+        q1_words = [NLP.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(q1.decode('utf-8')))]
+        q2_words = [NLP.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(q2.decode('utf-8')))]
 
         # print '----------  CLE  -----------'
         # print q1
         # print q2
 
-        not_cnt1 = q1.count(' not')
-        not_cnt2 = q2.count(' not')
+        not_cnt1 = q1_words.count('not')
+        not_cnt2 = q2_words.count('not')
 
         fs = []
 
