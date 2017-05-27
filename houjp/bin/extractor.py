@@ -4892,7 +4892,7 @@ class NLP(object):
         fs = []
         for ind1 in range(len(fs_1)):
             for ind2 in range(ind1, len(fs_1)):
-                if fs_1[ind1] > 0 and fs_2[ind2] > 0:
+                if (fs_1[ind1] > 0 and fs_2[ind2] > 0) or (fs_1[ind2] > 0 and fs_2[ind1] > 0):
                     fs.append(1.)
                 else:
                     fs.append(0.)
@@ -4914,7 +4914,7 @@ class NLP(object):
         # part 的 ID
         part_id = int(argv[2])
         # 设置参数
-        feature_name = 'first_word'
+        feature_name = 'first_word_sym'
 
         # 加载数据文件
         data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
