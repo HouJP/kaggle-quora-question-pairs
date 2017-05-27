@@ -4892,7 +4892,7 @@ class NLP(object):
         fs = []
         for ind1 in range(len(fs_1)):
             for ind2 in range(ind1, len(fs_1)):
-                if (fs_1[ind1] > 0 and fs_2[ind2] <= 0) or (fs_1[ind1] <= 0 and fs_2[ind2] > 0):
+                if fs_1[ind1] > 0 and fs_2[ind2] > 0:
                     fs.append(1.)
                 else:
                     fs.append(0.)
