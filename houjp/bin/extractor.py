@@ -2297,7 +2297,7 @@ class PowerfulWordV2(object):
         """
         PowerfulWordV2.oside_word_power = []
         # 在单边pair中最少出现次数
-        num_least = 500
+        num_least = 100
         words_power = filter(lambda x: x[1][0] * x[1][3] >= num_least, words_power)
         # 单边正确比例阈值
         oside_corate_rate = 0.9
@@ -2384,8 +2384,11 @@ class PowerfulWordV2(object):
                     nltk.word_tokenize(Preprocessor.clean_text(str(row['question1']).decode('utf-8')))]
         q2_words = [PowerfulWordV2.snowball_stemmer.stem(word).encode('utf-8') for word in
                     nltk.word_tokenize(Preprocessor.clean_text(str(row['question2']).decode('utf-8')))]
+
         for word in PowerfulWordV2.oside_word_power:
-            if (word in q1_words) and (word in q2_words):
+            if (word in q1_words) and (word not in q2_words):
+                tags.append(1.0)
+            elif (word not in q1_words) and (word in q2_words):
                 tags.append(1.0)
             else:
                 tags.append(0.0)
@@ -2426,7 +2429,7 @@ class PowerfulWordV2(object):
     @staticmethod
     def extract_oside_word_power_v2(cf, argv):
         # 设置参数
-        feature_name = 'oside_word_power_v2'
+        feature_name = 'oside_word_power_v2_100_0.9'
 
         # 加载数据文件
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
