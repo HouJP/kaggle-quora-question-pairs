@@ -379,6 +379,7 @@ class Model(object):
         will_save = ('True' == cf.get('FEATURE', 'will_save'))
         offline_rawset_name = cf.get('MODEL', 'offline_rawset_name')
         cv_num = cf.getint('MODEL', 'cv_num')
+        cv_tag = cf.get('MODEL', 'cv_tag')
         index_fp = cf.get('DEFAULT', 'feature_index_pt')
         label_fp = cf.get('DEFAULT', 'feature_label_pt')
 
@@ -403,7 +404,7 @@ class Model(object):
 
             # 加载训练集索引
             offline_train_pos_rate = float(cf.get('MODEL', 'train_pos_rate'))
-            offline_train_indexs_fp = '%s/cv_n%d_f%d_train.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_train_indexs_fp = '%s/cv_tag%s_n%d_f%d_train.%s.index' % (index_fp, cv_tag, cv_num, fold_id, offline_rawset_name)
             offline_train_indexs = Feature.load_index(offline_train_indexs_fp)
             # 获取训练集
             (offline_train_data, offline_train_balanced_indexs) = Model.get_DMatrix(
@@ -415,7 +416,7 @@ class Model(object):
 
             # 加载验证集索引
             offline_valid_pos_rate = float(cf.get('MODEL', 'valid_pos_rate'))
-            offline_valid_indexs_fp = '%s/cv_n%d_f%d_valid.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_valid_indexs_fp = '%s/cv_tag%s_n%d_f%d_valid.%s.index' % (index_fp, cv_tag, cv_num, fold_id, offline_rawset_name)
             offline_valid_indexs = Feature.load_index(offline_valid_indexs_fp)
             # 获取训练集
             (offline_valid_data, offline_valid_balanced_indexs) = Model.get_DMatrix(
@@ -427,7 +428,7 @@ class Model(object):
 
             # 加载测试集索引
             offline_test_pos_rate = float(cf.get('MODEL', 'test_pos_rate'))
-            offline_test_indexs_fp = '%s/cv_n%d_f%d_test.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_test_indexs_fp = '%s/cv_tag%s_n%d_f%d_test.%s.index' % (index_fp, cv_tag, cv_num, fold_id, offline_rawset_name)
             offline_test_indexs = Feature.load_index(offline_test_indexs_fp)
             # 获取训练集
             (offline_test_data, offline_test_balanced_indexs) = Model.get_DMatrix(
