@@ -461,6 +461,7 @@ class PreprocessorRunner(object):
 
     @staticmethod
     def gen_cv_subset_index(cf, argv):
+        tag = argv[0]
         cv_num = 5
         cv_rawset_name = 'train_with_swap'
         train_data_size = 404290
@@ -478,7 +479,7 @@ class PreprocessorRunner(object):
         for i in range(cv_num):
             fold_id = i
             # train
-            fp = '%s/cv_n%d_f%d_train.%s.index' % (index_fp, cv_num, fold_id, cv_rawset_name)
+            fp = '%s/cv_tag%s_n%d_f%d_train.%s.index' % (index_fp, tag, cv_num, fold_id, cv_rawset_name)
             for j in range(cv_num - 2):
                 part_id = (i + j) % cv_num
                 DataUtil.save_vector(fp, index_all[part_id], 'a')
@@ -486,11 +487,11 @@ class PreprocessorRunner(object):
                 part_id = (i + j) % cv_num
                 DataUtil.save_vector(fp, [index + train_data_size for index in index_all[part_id]], 'a')
             # valid
-            fp = '%s/cv_n%d_f%d_valid.%s.index' % (index_fp, cv_num, fold_id, cv_rawset_name)
+            fp = '%s/cv_tag%s_n%d_f%d_valid.%s.index' % (index_fp, tag, cv_num, fold_id, cv_rawset_name)
             part_id = (fold_id + cv_num - 2) % cv_num
             DataUtil.save_vector(fp, index_all[part_id], 'w')
             # test
-            fp = '%s/cv_n%d_f%d_test.%s.index' % (index_fp, cv_num, fold_id, cv_rawset_name)
+            fp = '%s/cv_tag%s_n%d_f%d_test.%s.index' % (index_fp, tag, cv_num, fold_id, cv_rawset_name)
             part_id = (fold_id + cv_num - 1) % cv_num
             DataUtil.save_vector(fp, index_all[part_id], 'w')
 
