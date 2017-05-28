@@ -2203,7 +2203,7 @@ class BTMVecCosSimDis(object):
         # save btm_train_features
         btm_train_features_vec_fp = '%s/%s.train.vec' % (cf.get('DEFAULT', 'devel_pt'), btm_feature_name)
         fout = open(btm_train_features_vec_fp, 'w')
-        vec_len = len(btm_train_features[0])
+        vec_len = btm_train_features.shape[1]
         for i in range(btm_train_features.shape[0]):
             vec = [str(v) for v in btm_train_features[i].toarray()[0].tolist()]
             fout.write('%s\n' % ' '.join(vec[0:vec_len / 2]))
