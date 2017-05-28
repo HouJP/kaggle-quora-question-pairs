@@ -2188,6 +2188,48 @@ class BTMVecCosSimDis(object):
         plt.xlabel(feature_name, fontsize=15)
         # plt.show()
 
+    @staticmethod
+    def gen_btm_vec(cf, argv):
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+
+        btm_feature_name = argv[0]
+        btm_train_features = Feature.load('%s/%s.train.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), btm_feature_name))
+        btm_test_features = Feature.load('%s/%s.test.smat' % (cf.get('DEFAULT', 'feature_question_pair_pt'), btm_feature_name))
+
+        mc_feature_name = 'graph_edge_max_clique_size'
+        mc_train_features = Feature.load('%s/%s.train.smat' % (feature_pt, mc_feature_name))
+        mc_test_features = Feature.load('%s/%s.test.smat' % (feature_pt, mc_feature_name))
+
+        # save btm_train_features
+        btm_train_features_vec_fp = '%s/%s.train.vec' % (cf.get('DEFAULT', 'devel_pt'), btm_feature_name)
+        fout = open(btm_train_features_vec_fp, 'w')
+        vec_len = len(btm_train_features[0])
+        for i in range(btm_train_features.shape[0]):
+            vec = [str(v) for v in btm_train_features[i].toarray()[0].tolist()]
+            fout.write('%s\n' % ' '.join(vec[0:vec_len / 2]))
+            fout.write('%s\n' % ' '.join(vec[vec_len / 2: vec_len]))
+        fout.close()
+
+        # save btm_all_features_filter
+        btm_all_features_filter_vec_fp = '%s/%s.all_filter.vec' % (cf.get('DEFAULT', 'devel_pt'), btm_feature_name)
+        fout = open(btm_all_features_filter_vec_fp)
+
+        for i in range(btm_train_features.shape[0]):
+            if mc_train_features[i][0] <= 3.:
+                continue
+            vec = [str(v) for v in btm_train_features[i].toarray()[0].tolist()]
+            fout.write('%s\n' % ' '.join(vec[0:vec_len / 2]))
+            fout.write('%s\n' % ' '.join(vec[vec_len / 2: vec_len]))
+
+        for i in range(btm_test_features.shape[0]):
+            if mc_test_features[i][0] <= 3.:
+                continue
+            vec = [str(v) for v in btm_test_features[i].toarray()[0].tolist()]
+            fout.write('%s\n' % ' '.join(vec[0:vec_len / 2]))
+            fout.write('%s\n' % ' '.join(vec[vec_len / 2: vec_len]))
+
+        fout.close()
+
 
     @staticmethod
     def run(argv):
@@ -2198,6 +2240,8 @@ class BTMVecCosSimDis(object):
             BTMVecCosSimDis.extract_btm_vec_cos_sim_dis(cf, argv[1:])
         elif 'plot_btm_vec_cos_sim_dis' == cmd:
             BTMVecCosSimDis.plot_btm_vec_cos_sim_dis(cf, argv[1:])
+        elif 'gen_btm_vec' == cmd:
+            BTMVecCosSimDis.gen_btm_vec(cf, argv[1:])
 
 
 class PowerfulWordV2(object):
