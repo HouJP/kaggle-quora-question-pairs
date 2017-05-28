@@ -2212,7 +2212,7 @@ class BTMVecCosSimDis(object):
 
         # save btm_all_features_filter
         btm_all_features_filter_vec_fp = '%s/%s.all_filter.vec' % (cf.get('DEFAULT', 'devel_pt'), btm_feature_name)
-        fout = open(btm_all_features_filter_vec_fp)
+        fout = open(btm_all_features_filter_vec_fp, 'w')
 
         for i in range(btm_train_features.shape[0]):
             if mc_train_features[i][0] <= 3.:
