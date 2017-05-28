@@ -10,7 +10,7 @@
 #include <math.h>
 #include "StrUtil.h"
 
-#define NUM_THREADS 30
+#define NUM_THREADS 10
 #define LEN_BINS 50
 #define EPS (1e-12)
 
