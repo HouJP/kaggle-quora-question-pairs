@@ -2108,7 +2108,7 @@ class BTMVecCosSimDis(object):
         features = []
         new_line = True
         for index in range(1):
-            f = open(cf.get('DEFAULT', 'devel_pt') + '/btm_100.train.vec')
+            f = open(cf.get('DEFAULT', 'devel_pt') + '/btm_100.train.fs')
             for line in f:
                 vec = [float(s) for s in line.strip().split()]
                 if new_line:
