@@ -2107,23 +2107,23 @@ class BTMVecCosSimDis(object):
     def load_btm_vec_cos_sim_dis(cf):
         features = []
         new_line = True
-        for index in range(10):
-            f = open(cf.get('DEFAULT', 'devel_pt') + '/btm_train_wordtoken_100_50.fs.0%d' % index)
+        for index in range(1):
+            f = open(cf.get('DEFAULT', 'devel_pt') + '/btm_100.train.vec')
             for line in f:
                 vec = [float(s) for s in line.strip().split()]
                 if new_line:
                     new_line = False
-                    features.append(vec[0:49])
+                    features.append(vec)
                 else:
                     new_line = True
-                    features[len(features) - 1].extend(vec[0:49])
+                    features[len(features) - 1].extend(vec)
             f.close()
         return features
 
     @staticmethod
     def extract_btm_vec_cos_sim_dis(cf, argv):
         # 设置参数
-        feature_name = 'btm_train_wordtoken_100_50_dis_98'
+        feature_name = 'btm_100.all_filter.vec'
 
         # 加载数据文件
         train_data = pd.read_csv('%s/train.csv' % cf.get('DEFAULT', 'origin_pt')).fillna(value="")
@@ -2143,14 +2143,14 @@ class BTMVecCosSimDis(object):
         Feature.save_dataframe(train_features, train_feature_fp)
         LogUtil.log('INFO', 'save train features (%s) done' % feature_name)
 
-        test_features = features[len(train_data) : len(train_data) + len(test_data)]
-        # 增加一个自身向量的修正
-        # for i in range(len(test_features)):
-        #     test_features[i][49] += 1.0
-        #     test_features[i][99] += 1.0
-        LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
-        Feature.save_dataframe(test_features, test_feature_fp)
-        LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
+        # test_features = features[len(train_data) : len(train_data) + len(test_data)]
+        # # 增加一个自身向量的修正
+        # # for i in range(len(test_features)):
+        # #     test_features[i][49] += 1.0
+        # #     test_features[i][99] += 1.0
+        # LogUtil.log('INFO', 'extract test features (%s) done' % feature_name)
+        # Feature.save_dataframe(test_features, test_feature_fp)
+        # LogUtil.log('INFO', 'save test features (%s) done' % feature_name)
 
     @staticmethod
     def plot_btm_vec_cos_sim_dis(cf, argv):
@@ -2214,19 +2214,25 @@ class BTMVecCosSimDis(object):
         btm_all_features_filter_vec_fp = '%s/%s.all_filter.vec' % (cf.get('DEFAULT', 'devel_pt'), btm_feature_name)
         fout = open(btm_all_features_filter_vec_fp, 'w')
 
+        count = 0
         for i in range(btm_train_features.shape[0]):
             if mc_train_features[i][0] <= 3.:
+                count += 1
                 continue
             vec = [str(v) for v in btm_train_features[i].toarray()[0].tolist()]
             fout.write('%s\n' % ' '.join(vec[0:vec_len / 2]))
             fout.write('%s\n' % ' '.join(vec[vec_len / 2: vec_len]))
+        print 'train: count=%d' % count
 
+        count = 0
         for i in range(btm_test_features.shape[0]):
             if mc_test_features[i][0] <= 3.:
+                count += 1
                 continue
             vec = [str(v) for v in btm_test_features[i].toarray()[0].tolist()]
             fout.write('%s\n' % ' '.join(vec[0:vec_len / 2]))
             fout.write('%s\n' % ' '.join(vec[vec_len / 2: vec_len]))
+        print 'test: count=%d' % count
 
         fout.close()
 
