@@ -383,6 +383,8 @@ class Model(object):
         index_fp = cf.get('DEFAULT', 'feature_index_pt')
         label_fp = cf.get('DEFAULT', 'feature_label_pt')
 
+        LogUtil.log('INFO', 'cv_tag(%s)' % cv_tag)
+
         # 加载特征文件
         offline_features = Feature.load_all_features(cf, offline_rawset_name, will_save=will_save)
         # 加载标签文件

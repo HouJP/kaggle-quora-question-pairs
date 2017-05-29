@@ -4990,6 +4990,101 @@ class NLP(object):
                     'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
 
     @staticmethod
+    def extract_row_first_word_v2(row):
+        q1 = str(row['question1']).strip()
+        q2 = str(row['question2']).strip()
+
+        q1_words = [NLP.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(q1.decode('utf-8')))]
+        q2_words = [NLP.snowball_stemmer.stem(word).encode('utf-8') for word in
+                    nltk.word_tokenize(Preprocessor.clean_text(q2.decode('utf-8')))]
+
+        fs_1 = []
+        fs_2 = []
+
+        has_words = ['what', 'whi', 'which', 'how', 'where', 'when']
+        first_words = ['if', 'can', 'should']
+        do_words = ['doe', 'do', 'did']
+        be_words = ['is', 'are']
+        will_words = ['will', 'would']
+
+        # question 1
+        for word in has_words:
+            fs_1.append(q1_words[0:3].count(word))
+        for word in first_words:
+            fs_1.append(q1_words[0:1].count(word))
+        fs_1.append(0.)
+        for word in do_words:
+            fs_1[len(fs_1) - 1] += q1_words[0:1].count(word)
+        fs_1.append(0.)
+        for word in be_words:
+            fs_1[len(fs_1) - 1] += q1_words[0:1].count(word)
+        fs_1.append(0.)
+        for word in will_words:
+            fs_1[len(fs_1) - 1] += q1_words[0:1].count(word)
+
+        # question 2
+        for word in has_words:
+            fs_2.append(q2_words[0:3].count(word))
+        for word in first_words:
+            fs_2.append(q2_words[0:1].count(word))
+        fs_2.append(0.)
+        for word in do_words:
+            fs_2[len(fs_2) - 1] += q2_words[0:1].count(word)
+        fs_2.append(0.)
+        for word in be_words:
+            fs_2[len(fs_2) - 1] += q2_words[0:1].count(word)
+        fs_2.append(0.)
+        for word in will_words:
+            fs_2[len(fs_2) - 1] += q2_words[0:1].count(word)
+
+        fs = []
+        for ind1 in range(6):
+            for ind2 in range(ind1, len(fs_1)):
+                if (fs_1[ind1] > 0 and fs_2[ind2] > 0) or (fs_1[ind2] > 0 and fs_2[ind1] > 0):
+                    fs.append(1.)
+                else:
+                    fs.append(0.)
+
+        # 计数器
+        NLP.counter += 1
+        if NLP.counter % 1000 == 0:
+            LogUtil.log('INFO', 'NLP.counter=%d' % NLP.counter)
+
+        return fs
+
+    @staticmethod
+    def extract_first_word_v2(cf, argv):
+        # 抽取特征的数据集名称
+        dataset_name = argv[0]  # e.g. train
+        # 划分 part 数目
+        part_num = int(argv[1])
+        # part 的 ID
+        part_id = int(argv[2])
+        # 设置参数
+        feature_name = 'first_word_sym_v2'
+
+        # 加载数据文件
+        data = pd.read_csv('%s/%s.csv' % (cf.get('DEFAULT', 'origin_pt'), dataset_name)).fillna(value="")
+        begin_id = int(1. * len(data) / part_num * part_id)
+        end_id = int(1. * len(data) / part_num * (part_id + 1))
+        LogUtil.log('INFO', 'begin_id(%d),end_id(%d)' % (begin_id, end_id))
+
+        # 存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        if 1 == part_num:
+            data_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, dataset_name)
+        else:
+            data_feature_fp = '%s/%s.%s.smat.%03d' % (feature_pt, feature_name, dataset_name, part_id)
+
+        # 抽取特征
+        features = data[begin_id: end_id].apply(NLP.extract_row_first_word_v2, axis=1,
+                                                raw=True)
+        Feature.save_dataframe(features, data_feature_fp)
+        LogUtil.log('INFO',
+                    'save train features (%s, %s, %d, %d) done' % (feature_name, dataset_name, part_num, part_id))
+
+    @staticmethod
     def run(cf, argv):
         cmd = argv[0]
 
@@ -4997,6 +5092,8 @@ class NLP(object):
             NLP.extract_not(cf, argv[1:])
         elif 'extract_first_word' == cmd:
             NLP.extract_first_word(cf, argv[1:])
+        elif 'extract_first_word_v2' == cmd:
+            NLP.extract_first_word_v2(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD')
 
