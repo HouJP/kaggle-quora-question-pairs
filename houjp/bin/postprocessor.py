@@ -55,6 +55,12 @@ class PostProcessor(object):
         return np.exp(p) / (1.0 + np.exp(p))
 
     @staticmethod
+    def cut_p(p):
+        p[p > 1.0 - 1e-15] = 1.0 - 1e-15
+        p[p < 1e-15] = 1e-15
+        return p
+
+    @staticmethod
     def logit(p):
         p = np.array(p)
         return np.log(p / (1 - p))
