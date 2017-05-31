@@ -15,6 +15,7 @@ from postprocessor import PostProcessor
 import random
 from os.path import isfile, join
 from sklearn.linear_model import Lasso
+from sklearn.linear_model import LogisticRegression
 from sklearn.externals import joblib
 import time
 
@@ -391,6 +392,17 @@ class Model(object):
         params = {}
         params['lasso_alpha'] = float(cf.get('PARAMS', 'lasso_alpha'))
         params['lasso_normalize'] = ('True' == cf.get('PARAMS', 'lasso_normalize'))
+
+        params['lr_penalty'] = cf.get('PARAMS', 'lr_penalty')
+        params['lr_dual'] = cf.get('PARAMS', 'lr_dual').lower() == 'True'
+        params['lr_tol'] = float(cf.get('PARAMS', 'lr_tol'))
+        params['lr_C'] = float(cf.get('PARAMS', 'lr_C'))
+        params['lr_verbose'] = cf.getint('PARAMS', 'lr_verbose')
+        params['lr_max_iter'] = cf.getint('PARAMS', 'lr_max_iter')
+        params['lr_solver'] = cf.get('PARAMS', 'lr_solver')
+        params['lr_n_jobs'] = cf.getint('PARAMS', 'lr_n_jobs')
+        params['lr_multi_class'] = cf.get('PARAMS', 'lr_multi_class')
+
         return params
 
 
@@ -1116,10 +1128,21 @@ class Model(object):
         if 'lasso' == model_type:
             model = Lasso(alpha=params['lasso_alpha'],
                           normalize=params['lasso_normalize'])
-            model.fit(X=offline_train_features, y=offline_train_labels)
+        elif 'lr' == model_type:
+            model = LogisticRegression(penalty=params['lr_penalty'],
+                                       dual=params['lr_dual'],
+                                       tol=params['lr_tol'],
+                                       C=params['lr_C'],
+                                       verbose=params['lr_verbose'],
+                                       max_iter=params['lr_max_iter'],
+                                       solver=params['lr_solver'],
+                                       n_jobs=params['lr_n_jobs'],
+                                       multi_class=params['lr_multi_class'])
         else:
             LogUtil.log('ERROR', 'Unknow Model Type')
             model = None
+
+        model.fit(X=offline_train_features, y=offline_train_labels)
 
         # 解锁
         os.remove(lock_fp)
