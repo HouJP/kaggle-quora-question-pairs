@@ -174,6 +174,8 @@ class Model(object):
         labels = [labels[index] for index in balanced_indexs]
         # 根据索引采样特征
         features = Feature.sample_row(features, balanced_indexs)
+        # 变换
+        features = PostProcessor.logit(features)
         # 构造DMatrix
         return features, labels, balanced_indexs
 
