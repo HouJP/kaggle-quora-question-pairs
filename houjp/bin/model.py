@@ -271,8 +271,8 @@ class Model(object):
         LogUtil.log("INFO", 'params=%s, best_ntree_limit=%d' % (str(params), model.best_ntree_limit))
 
         # 新增配置
-        params['best_ntree_limit'] = model.best_ntree_limit
-        cf.set('XGBOOST_PARAMS', 'best_ntree_limit', model.best_ntree_limit)
+        # params['best_ntree_limit'] = model.best_ntree_limit
+        # cf.set('XGBOOST_PARAMS', 'best_ntree_limit', model.best_ntree_limit)
 
         # 存储模型
         model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
@@ -348,6 +348,28 @@ class Model(object):
         if 'True' == cf.get('MODEL', 'online'):
             Model.predict_xgb(cf, model, params)
         return
+
+    @staticmethod
+    def get_parameters_xgb(cf):
+        params = {}
+        params['booster'] = cf.get('XGBOOST_PARAMS', 'booster')
+        params['objective'] = cf.get('XGBOOST_PARAMS', 'objective')
+        params['eval_metric'] = cf.get('XGBOOST_PARAMS', 'eval_metric')
+        params['eta'] = float(cf.get('XGBOOST_PARAMS', 'eta'))
+        params['max_depth'] = cf.getint('XGBOOST_PARAMS', 'max_depth')
+        params['subsample'] = float(cf.get('XGBOOST_PARAMS', 'subsample'))
+        params['colsample_bytree'] = float(cf.get('XGBOOST_PARAMS', 'colsample_bytree'))
+        params['min_child_weight'] = cf.getint('XGBOOST_PARAMS', 'min_child_weight')
+        params['silent'] = cf.getint('XGBOOST_PARAMS', 'silent')
+        params['num_round'] = cf.getint('XGBOOST_PARAMS', 'num_round')
+        params['early_stop'] = cf.getint('XGBOOST_PARAMS', 'early_stop')
+        params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
+        params['scale_pos_weight'] = float(cf.get('XGBOOST_PARAMS', 'scale_pos_weight'))
+        params['gamma'] = float(cf.get('XGBOOST_PARAMS', 'gamma'))
+        params['alpha'] = float(cf.get('XGBOOST_PARAMS', 'alpha'))
+        params['lambda'] = float(cf.get('XGBOOST_PARAMS', 'lambda'))
+        return params
+
 
     @staticmethod
     def cv_xgb(cf, tag=time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))):
@@ -441,19 +463,20 @@ class Model(object):
             LogUtil.log('INFO', 'offline test data generation done')
 
             # 设置参数
-            params = {}
-            params['objective'] = cf.get('XGBOOST_PARAMS', 'objective')
-            params['eval_metric'] = cf.get('XGBOOST_PARAMS', 'eval_metric')
-            params['eta'] = float(cf.get('XGBOOST_PARAMS', 'eta'))
-            params['max_depth'] = cf.getint('XGBOOST_PARAMS', 'max_depth')
-            params['subsample'] = float(cf.get('XGBOOST_PARAMS', 'subsample'))
-            params['colsample_bytree'] = float(cf.get('XGBOOST_PARAMS', 'colsample_bytree'))
-            params['min_child_weight'] = cf.getint('XGBOOST_PARAMS', 'min_child_weight')
-            params['silent'] = cf.getint('XGBOOST_PARAMS', 'silent')
-            params['num_round'] = cf.getint('XGBOOST_PARAMS', 'num_round')
-            params['early_stop'] = cf.getint('XGBOOST_PARAMS', 'early_stop')
-            params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
-            params['scale_pos_weight'] = float(cf.get('XGBOOST_PARAMS', 'scale_pos_weight'))
+            # params = {}
+            # params['objective'] = cf.get('XGBOOST_PARAMS', 'objective')
+            # params['eval_metric'] = cf.get('XGBOOST_PARAMS', 'eval_metric')
+            # params['eta'] = float(cf.get('XGBOOST_PARAMS', 'eta'))
+            # params['max_depth'] = cf.getint('XGBOOST_PARAMS', 'max_depth')
+            # params['subsample'] = float(cf.get('XGBOOST_PARAMS', 'subsample'))
+            # params['colsample_bytree'] = float(cf.get('XGBOOST_PARAMS', 'colsample_bytree'))
+            # params['min_child_weight'] = cf.getint('XGBOOST_PARAMS', 'min_child_weight')
+            # params['silent'] = cf.getint('XGBOOST_PARAMS', 'silent')
+            # params['num_round'] = cf.getint('XGBOOST_PARAMS', 'num_round')
+            # params['early_stop'] = cf.getint('XGBOOST_PARAMS', 'early_stop')
+            # params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
+            # params['scale_pos_weight'] = float(cf.get('XGBOOST_PARAMS', 'scale_pos_weight'))
+            params = Model.get_parameters_xgb(cf)
             watchlist = [(offline_train_data, 'train'), (offline_valid_data, 'valid')]
 
             # 训练模型
@@ -467,8 +490,8 @@ class Model(object):
             # 打印参数
             LogUtil.log("INFO", 'params=%s, best_ntree_limit=%d' % (str(params), model.best_ntree_limit))
             # 新增配置
-            params['best_ntree_limit'] = model.best_ntree_limit
-            cf.set('XGBOOST_PARAMS', 'best_ntree_limit', model.best_ntree_limit)
+            # params['best_ntree_limit'] = model.best_ntree_limit
+            # cf.set('XGBOOST_PARAMS', 'best_ntree_limit', model.best_ntree_limit)
 
             params_all.append(params)
 
@@ -627,19 +650,20 @@ class Model(object):
     def load_model(cf):
         # 加载模型
         model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
-        params = {}
-        params['objective'] = cf.get('XGBOOST_PARAMS', 'objective')
-        params['eval_metric'] = cf.get('XGBOOST_PARAMS', 'eval_metric')
-        params['eta'] = float(cf.get('XGBOOST_PARAMS', 'eta'))
-        params['max_depth'] = cf.getint('XGBOOST_PARAMS', 'max_depth')
-        params['subsample'] = float(cf.get('XGBOOST_PARAMS', 'subsample'))
-        params['colsample_bytree'] = float(cf.get('XGBOOST_PARAMS', 'colsample_bytree'))
-        params['min_child_weight'] = cf.getint('XGBOOST_PARAMS', 'min_child_weight')
-        params['silent'] = cf.getint('XGBOOST_PARAMS', 'silent')
-        params['num_round'] = cf.getint('XGBOOST_PARAMS', 'num_round')
-        params['early_stop'] = cf.getint('XGBOOST_PARAMS', 'early_stop')
-        params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
-        params['best_ntree_limit'] = cf.getint('XGBOOST_PARAMS', 'best_ntree_limit')
+        # params = {}
+        # params['objective'] = cf.get('XGBOOST_PARAMS', 'objective')
+        # params['eval_metric'] = cf.get('XGBOOST_PARAMS', 'eval_metric')
+        # params['eta'] = float(cf.get('XGBOOST_PARAMS', 'eta'))
+        # params['max_depth'] = cf.getint('XGBOOST_PARAMS', 'max_depth')
+        # params['subsample'] = float(cf.get('XGBOOST_PARAMS', 'subsample'))
+        # params['colsample_bytree'] = float(cf.get('XGBOOST_PARAMS', 'colsample_bytree'))
+        # params['min_child_weight'] = cf.getint('XGBOOST_PARAMS', 'min_child_weight')
+        # params['silent'] = cf.getint('XGBOOST_PARAMS', 'silent')
+        # params['num_round'] = cf.getint('XGBOOST_PARAMS', 'num_round')
+        # params['early_stop'] = cf.getint('XGBOOST_PARAMS', 'early_stop')
+        # params['nthread'] = cf.getint('XGBOOST_PARAMS', 'nthread')
+        # params['best_ntree_limit'] = cf.getint('XGBOOST_PARAMS', 'best_ntree_limit')
+        params = Model.get_parameters_xgb(cf)
         model = xgb.Booster(params)
         model.load_model(model_fp)
 
