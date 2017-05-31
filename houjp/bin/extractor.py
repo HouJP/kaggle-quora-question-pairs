@@ -4598,6 +4598,7 @@ class Predict(object):
         cv_num = int(argv[1])
         offline_rawset_name = cf.get('MODEL', 'offline_rawset_name')
         index_fp = cf.get('DEFAULT', 'feature_index_pt')
+        cv_tag = cf.get('MODEL', 'cv_tag')
         # 设置参数
         feature_name = 'cv_predict_%s' % version
 
@@ -4607,7 +4608,7 @@ class Predict(object):
         # 加载 offline valid 索引
         offline_valid_index_all = []
         for fold_id in range(cv_num):
-            offline_valid_indexs_fp = '%s/cv_n%d_f%d_valid.%s.index' % (index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_valid_indexs_fp = '%s/cv_tag%s_n%d_f%d_valid.%s.index' % (index_fp, cv_tag, cv_num, fold_id, offline_rawset_name)
             offline_valid_indexs = Feature.load_index(offline_valid_indexs_fp)
             offline_valid_index_all.extend(offline_valid_indexs)
         offline_valid_pred_all = [0] * len(offline_valid_pred_all_origin)
@@ -4622,8 +4623,8 @@ class Predict(object):
         # 加载 offline test 索引
         offline_test_index_all = []
         for fold_id in range(cv_num):
-            offline_test_indexs_fp = '%s/cv_n%d_f%d_test.%s.index' % (
-                index_fp, cv_num, fold_id, offline_rawset_name)
+            offline_test_indexs_fp = '%s/cv_tag%s_n%d_f%d_test.%s.index' % (
+                index_fp, cv_tag, cv_num, fold_id, offline_rawset_name)
             offline_test_indexs = Feature.load_index(offline_test_indexs_fp)
             offline_test_index_all.extend(offline_test_indexs)
         for index in range(len(offline_test_pred_all)):
@@ -4672,7 +4673,7 @@ class Predict(object):
         offline_rawset_name = cf.get('MODEL', 'offline_rawset_name')
         index_fp = cf.get('DEFAULT', 'feature_index_pt')
         # 设置参数
-        feature_name = 'cv_predict_new_adj_%s' % version
+        feature_name = 'cv_predict_adj_%s' % version
 
         # 加载 offline valid 预测结果
         offline_valid_pred_all_fp = '%s/pred/cv_n%d_valid.%s.pred' % (

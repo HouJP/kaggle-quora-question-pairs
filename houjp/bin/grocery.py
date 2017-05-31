@@ -563,10 +563,8 @@ def rescale_answer(cf):
 
 def rescale2_answer(cf):
     # 加载预测结果
-    # test_preds_fp = '/Users/houjianpeng/tmp/merge_3/right_version.pred'
-    # fout = open('/Users/houjianpeng/tmp/merge_3/rescale_right_version.pred', 'w')
-    test_preds_fp = '/Users/houjianpeng/tmp/merge_4/full.test.pred'
-    fout = open('/Users/houjianpeng/tmp/merge_4/rescale_full.test.pred', 'w')
+    test_preds_fp = '/Users/houjianpeng/tmp/v4_143_17_tag01/cv_n5_online.test.pred'
+    fout = open('/Users/houjianpeng/tmp/v4_143_17_tag01/rescale_cv_n5_online.test.pred', 'w')
     test_preds = PostProcessor.read_result_list(test_preds_fp)
     test_preds = [Model.inverse_adj(y) for y in test_preds]
     LogUtil.log('INFO', 'len(test_preds)=%d' % len(test_preds))
