@@ -987,9 +987,14 @@ class Model(object):
             model_all.append(model)
 
             # 进行预测
-            offline_pred_train_data = model.predict(offline_train_features)
-            offline_pred_valid_data = model.predict(offline_valid_features)
-            offline_pred_test_data = model.predict(offline_test_features)
+            if 'lr' == model_type:
+                offline_pred_train_data = model.predict_proba(offline_train_features)[:,1]
+                offline_pred_valid_data = model.predict_proba(offline_valid_features)[:,1]
+                offline_pred_test_data = model.predict_proba(offline_test_features)[:,1]
+            else:
+                offline_pred_train_data = model.predict(offline_train_features)
+                offline_pred_valid_data = model.predict(offline_valid_features)
+                offline_pred_test_data = model.predict(offline_test_features)
 
             # 后处理
             if cf.get('MODEL', 'has_postprocess') == 'True':
@@ -1059,6 +1064,7 @@ class Model(object):
         # 加载配置
         n_part = cf.getint('MODEL', 'n_part')
         cv_num = cf.getint('MODEL', 'cv_num')
+        model_type = cf.get('MODEL', 'model_type')
 
         # 全部预测结果
         online_pred_all = []
@@ -1082,7 +1088,10 @@ class Model(object):
 
             for fold_id in range(cv_num):
                 # 预测线上测试集
-                online_pred = model_all[fold_id].predict(online_features)
+                if 'lr' == model_type:
+                    online_pred = model_all[fold_id].predict_proba(online_features)[:,1]
+                else:
+                    online_pred = model_all[fold_id].predict(online_features)
                 online_pred_all[fold_id].extend(online_pred)
                 LogUtil.log('INFO', 'online set part_id(%d), fold_id(%d) predict done' % (
                 part_id, fold_id))
