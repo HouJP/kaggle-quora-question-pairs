@@ -190,8 +190,9 @@ class FeatureProcessor(object):
         if 'run_gen_feature_with_swap' == cmd:
             FeatureProcessor.run_gen_feature_swap(cf, argv[1:])
             FeatureProcessor.run_gen_feature_with_swap(cf, argv[1:])
-        elif 'run_gen_feature_with_extra' == cmd:
+        elif 'run_gen_feature_extra' == cmd:
             FeatureProcessor.run_gen_feature_extra(cf)
+        elif 'run_gen_feature_with_extra' == cmd:
             FeatureProcessor.run_gen_feature_with_extra(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD (%s)' % cmd)
