@@ -184,6 +184,6 @@ if __name__ == "__main__":
     cf = ConfigParser.ConfigParser()
     cf.read(conf_fp)
 
-    FeatureProcessor.run(cf, sys.argv[2])
+    FeatureProcessor.run(cf, sys.argv[2:])
 
 
