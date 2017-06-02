@@ -166,7 +166,7 @@ class FeatureProcessor(object):
         elif 'run_gen_feature_extra' == cmd:
             FeatureProcessor.run_gen_feature_extra(cf)
         else:
-            LogUtil.log('WARNING', 'NO CMD')
+            LogUtil.log('WARNING', 'NO CMD (%s)' % cmd)
 
 
 def print_help():
