@@ -162,6 +162,29 @@ class FeatureProcessor(object):
                 LogUtil.log('INFO', '%s already has extra feature' % f_name)
 
     @staticmethod
+    def run_gen_feature_with_extra(cf, argv):
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+
+        feature_qp_names = Feature.get_feature_names_question_pair(cf)
+        rawset_name = argv[0]
+
+        for f_name in feature_qp_names:
+            feature_with_swap_fp = '%s/%s.%s_with_swap.smat' % (feature_pt, f_name, rawset_name)
+            feature_extra_with_swap_fp = '%s/%s.%s_extra_with_swap.smat' % (feature_pt, f_name, rawset_name)
+            feature_with_extra_with_swap_fp = '%s/%s.%s_with_extra_with_swap.smat' % (feature_pt, f_name, rawset_name)
+
+            has_with_extra_with_swap = isfile(feature_with_extra_with_swap_fp + '.npz')
+
+            if not has_with_extra_with_swap:
+                features = Feature.load(feature_with_swap_fp)
+                features_extra = Feature.load(feature_extra_with_swap_fp)
+                features_with_extra = Feature.merge_row(features, features_extra)
+                Feature.save(features_with_extra, feature_with_extra_with_swap_fp)
+                LogUtil.log('INFO', '%s generate with_extra_with_swap feature done' % f_name)
+            else:
+                LogUtil.log('INFO', '%s already has with_extra_with_swap feature' % f_name)
+
+    @staticmethod
     def run(cf, argv):
         cmd = argv[0]
         if 'run_gen_feature_with_swap' == cmd:
@@ -169,6 +192,7 @@ class FeatureProcessor(object):
             FeatureProcessor.run_gen_feature_with_swap(cf, argv[1:])
         elif 'run_gen_feature_extra' == cmd:
             FeatureProcessor.run_gen_feature_extra(cf)
+            FeatureProcessor.run_gen_feature_with_extra(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD (%s)' % cmd)
 
