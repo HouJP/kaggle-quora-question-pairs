@@ -334,7 +334,7 @@ class PreprocessorRunner(object):
         train_swap_data.to_csv(train_swap_fp, index=False)
 
     @staticmethod
-    def run_gen_index_with_extra_with_swap(cf):
+    def run_gen_index_with_extra_with_swap(cf, argv):
         train_index_fp = '%s/train_311.train.index' % cf.get('DEFAULT', 'feature_index_pt')
         train_with_extra_with_swap_index_fp = '%s/train_311.train_with_extra_with_swap.index' % cf.get('DEFAULT', 'feature_index_pt')
 
