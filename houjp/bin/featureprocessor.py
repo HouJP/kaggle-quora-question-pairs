@@ -37,7 +37,7 @@ class FeatureProcessor(object):
             LogUtil.log('INFO', '%s already has swap feature' % feature_name)
 
     @staticmethod
-    def load_feature_swap_conf(conf_fp):
+    def load_feature_swap_conf(conf_fp, feature_qp_names):
         """
         加载配置文件
         :return:
@@ -47,6 +47,8 @@ class FeatureProcessor(object):
         f = open(conf_fp, 'r')
         for line in f:
             [f_name, f_index_s] = line.strip().split('\t')
+            if f_name not in feature_qp_names:
+                continue
             f_names.append(f_name)
             f_index_subs_s = f_index_s.split(',')
             f_index = []
@@ -72,9 +74,11 @@ class FeatureProcessor(object):
         rawset_name = argv[0]
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
 
+        feature_qp_names = Feature.get_feature_names_question_pair(cf)
+
         # 加载配置文件
         feature_swap_conf_fp = '../conf/feature_swap.conf'
-        f_names, f_indexs = FeatureProcessor.load_feature_swap_conf(feature_swap_conf_fp)
+        f_names, f_indexs = FeatureProcessor.load_feature_swap_conf(feature_swap_conf_fp, feature_qp_names)
 
         # 特征变换
         for i in range(len(f_names)):
