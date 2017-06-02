@@ -334,6 +334,23 @@ class PreprocessorRunner(object):
         train_swap_data.to_csv(train_swap_fp, index=False)
 
     @staticmethod
+    def run_gen_index_with_extra_with_swap(cf):
+        train_index_fp = '%s/train_311.train.index' % cf.get('DEFAULT', 'feature_index_pt')
+        train_with_extra_with_swap_index_fp = '%s/train_311.train_with_extra_with_swap.index' % cf.get('DEFAULT', 'feature_index_pt')
+
+        train_index = DataUtil.load_vector(train_index_fp, False)
+        train_index = [int(x) for x in train_index]
+
+        offset = 404290
+        train_swap_index = [x + offset for x in train_index]
+
+        train_extra_index = range(offset * 2, offset * 2 + 44075 * 2)
+
+        train_with_extra_with_swap_index = train_index + train_swap_index + train_extra_index
+
+        DataUtil.save_vector(train_with_extra_with_swap_index_fp, train_with_extra_with_swap_index, 'w')
+
+    @staticmethod
     def run_gen_index_with_swap():
         """
         生成线下训练集索引文件，包含swap部分
@@ -526,6 +543,8 @@ class PreprocessorRunner(object):
             PreprocessorRunner.gen_index_with_max_clique_size(cf, argv[1:])
         elif 'gen_cv_subset_index' == cmd:
             PreprocessorRunner.gen_cv_subset_index(cf, argv[1:])
+        elif 'run_gen_index_with_extra_with_swap' == cmd:
+            PreprocessorRunner.run_gen_index_with_extra_with_swap(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD in PreprocessorRunner')
 
