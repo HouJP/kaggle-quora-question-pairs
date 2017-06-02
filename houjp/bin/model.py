@@ -61,10 +61,13 @@ class Model(object):
     @staticmethod
     def cal_scores_with_clique_size(cf, tag, preds_fp):
 
+        te = float(cf.get('MODEL', 'te'))
+        tr = float(cf.get('MODEL', 'tr'))
+
         # 加载预测结果
         preds = Model.load_preds(preds_fp)
         if cf.get('MODEL', 'has_postprocess') == 'True':
-            preds = [Model.inverse_adj(y) for y in preds]
+            preds = [Model.inverse_adj(y, te=te, tr=tr) for y in preds]
 
         # 加载标签文件
         labels = DataUtil.load_vector(cf.get('MODEL', 'train_labels_fp'), True)
@@ -115,13 +118,14 @@ class Model(object):
             1. * sum(labels_r) / len(labels_r), 1. * sum(preds_r) / len(preds_r)))
 
     @staticmethod
-    def inverse_adj(y, te=0.173, tr=0.369):
+    def inverse_adj(y, te, tr):
         a = te / tr
         b = (1 - te) / (1 - tr)
         return b * y / (a + (b - a) * y)
 
     @staticmethod
-    def adj(x, te=0.173, tr=0.369):
+    def adj(x, te, tr):
+    #def adj(x, te=0.173, tr=0.369):
         a = te / tr
         b = (1 - te) / (1 - tr)
         return a * x / (a * x + b * (1 - x))
@@ -200,6 +204,9 @@ class Model(object):
         '''
         # 新增配置
         cf.set('DEFAULT', 'tag', str(tag))
+
+        te = float(cf.get('MODEL', 'te'))
+        tr = float(cf.get('MODEL', 'tr'))
 
         # 创建输出目录
         out_pt = cf.get('DEFAULT', 'out_pt')
@@ -310,9 +317,9 @@ class Model(object):
 
         # 后处理
         if cf.get('MODEL', 'has_postprocess') == 'True':
-            pred_train_data = [Model.adj(x) for x in pred_train_data]
-            pred_valid_data = [Model.adj(x) for x in pred_valid_data]
-            pred_test_data = [Model.adj(x) for x in pred_test_data]
+            pred_train_data = [Model.adj(x, te=te, tr=tr) for x in pred_train_data]
+            pred_valid_data = [Model.adj(x, te=te, tr=tr) for x in pred_valid_data]
+            pred_test_data = [Model.adj(x, te=te, tr=tr) for x in pred_test_data]
 
         # 加载训练集ID文件
         train_ids = range(train_data.num_row())
@@ -418,6 +425,9 @@ class Model(object):
         """
         # 新增配置
         cf.set('DEFAULT', 'tag', str(tag))
+
+        te = float(cf.get('MODEL', 'te'))
+        tr = float(cf.get('MODEL', 'tr'))
 
         # 创建输出目录
         out_pt = cf.get('DEFAULT', 'out_pt')
@@ -545,9 +555,9 @@ class Model(object):
 
             # 后处理
             if cf.get('MODEL', 'has_postprocess') == 'True':
-                offline_pred_train_data = [Model.adj(x) for x in offline_pred_train_data]
-                offline_pred_valid_data = [Model.adj(x) for x in offline_pred_valid_data]
-                offline_pred_test_data = [Model.adj(x) for x in offline_pred_test_data]
+                offline_pred_train_data = [Model.adj(x, te=te, tr=tr) for x in offline_pred_train_data]
+                offline_pred_valid_data = [Model.adj(x, te=te, tr=tr) for x in offline_pred_valid_data]
+                offline_pred_test_data = [Model.adj(x, te=te, tr=tr) for x in offline_pred_test_data]
 
             offline_valid_score = Model.entropy_loss_from_list(offline_valid_data.get_label(), offline_pred_valid_data)
             offline_test_score = Model.entropy_loss_from_list(offline_test_data.get_label(), offline_pred_test_data)
@@ -590,8 +600,8 @@ class Model(object):
 
         # 还原后处理，评测得分
         if cf.get('MODEL', 'has_postprocess') == 'True':
-            offline_valid_pred_all = [Model.inverse_adj(y) for y in offline_valid_pred_all]
-            offline_test_pred_all = [Model.inverse_adj(y) for y in offline_test_pred_all]
+            offline_valid_pred_all = [Model.inverse_adj(y, te=te, tr=tr) for y in offline_valid_pred_all]
+            offline_test_pred_all = [Model.inverse_adj(y, te=te, tr=tr) for y in offline_test_pred_all]
         offline_valid_score_all = Model.entropy_loss_from_list(offline_valid_label_all, offline_valid_pred_all)
         offline_test_score_all = Model.entropy_loss_from_list(offline_test_label_all, offline_test_pred_all)
         LogUtil.log('INFO', '-------------------')
@@ -609,6 +619,8 @@ class Model(object):
         # 加载配置
         n_part = cf.getint('MODEL', 'n_part')
         cv_num = cf.getint('MODEL', 'cv_num')
+        te = float(cf.get('MODEL', 'te'))
+        tr = float(cf.get('MODEL', 'tr'))
 
         # 全部预测结果
         online_pred_all = []
@@ -640,7 +652,7 @@ class Model(object):
         # 后处理
         if cf.get('MODEL', 'has_postprocess') == 'True':
             for fold_id in range(cv_num):
-                online_pred_all[fold_id] = [Model.adj(x) for x in online_pred_all[fold_id]]
+                online_pred_all[fold_id] = [Model.adj(x, te=te, tr=tr) for x in online_pred_all[fold_id]]
         # 加载线上测试集ID文件
         online_ids = DataUtil.load_vector(cf.get('MODEL', 'online_test_ids_fp'), False)
         # 存储线上测试集预测结果
@@ -711,6 +723,9 @@ class Model(object):
         # 加载配置
         n_part = cf.getint('MODEL', 'n_part')
 
+        te = float(cf.get('MODEL', 'te'))
+        tr = float(cf.get('MODEL', 'tr'))
+
         # 全部预测结果
         all_pred_online_test_data = []
 
@@ -736,7 +751,7 @@ class Model(object):
             LogUtil.log('INFO', 'online test set (%02d), ntree_limit(%d) predict done' % (id_part, ntree_limit))
         # 后处理
         if cf.get('MODEL', 'has_postprocess') == 'True':
-            all_pred_online_test_data = [Model.adj(x) for x in all_pred_online_test_data]
+            all_pred_online_test_data = [Model.adj(x, te=te, tr=tr) for x in all_pred_online_test_data]
 
         # 加载线上测试集ID文件
         online_test_ids = DataUtil.load_vector(cf.get('MODEL', 'online_test_ids_fp'), False)
@@ -887,6 +902,9 @@ class Model(object):
         # 新增配置
         cf.set('DEFAULT', 'tag', str(tag))
 
+        te = float(cf.get('MODEL', 'te'))
+        tr = float(cf.get('MODEL', 'tr'))
+
         model_type = cf.get('MODEL', 'model_type')
 
         # 创建输出目录
@@ -1000,9 +1018,9 @@ class Model(object):
 
             # 后处理
             if cf.get('MODEL', 'has_postprocess') == 'True':
-                offline_pred_train_data = [Model.adj(x) for x in offline_pred_train_data]
-                offline_pred_valid_data = [Model.adj(x) for x in offline_pred_valid_data]
-                offline_pred_test_data = [Model.adj(x) for x in offline_pred_test_data]
+                offline_pred_train_data = [Model.adj(x, te=te, tr=tr) for x in offline_pred_train_data]
+                offline_pred_valid_data = [Model.adj(x, te=te, tr=tr) for x in offline_pred_valid_data]
+                offline_pred_test_data = [Model.adj(x, te=te, tr=tr) for x in offline_pred_test_data]
 
             offline_valid_score = Model.entropy_loss_from_list(offline_valid_labels, offline_pred_valid_data)
             offline_test_score = Model.entropy_loss_from_list(offline_test_labels, offline_pred_test_data)
@@ -1048,8 +1066,8 @@ class Model(object):
 
         # 还原后处理，评测得分
         if cf.get('MODEL', 'has_postprocess') == 'True':
-            offline_valid_pred_all = [Model.inverse_adj(y) for y in offline_valid_pred_all]
-            offline_test_pred_all = [Model.inverse_adj(y) for y in offline_test_pred_all]
+            offline_valid_pred_all = [Model.inverse_adj(y, te=te, tr=tr) for y in offline_valid_pred_all]
+            offline_test_pred_all = [Model.inverse_adj(y, te=te, tr=tr) for y in offline_test_pred_all]
         offline_valid_score_all = Model.entropy_loss_from_list(offline_valid_label_all, offline_valid_pred_all)
         offline_test_score_all = Model.entropy_loss_from_list(offline_test_label_all, offline_test_pred_all)
         LogUtil.log('INFO', '-------------------')
@@ -1067,6 +1085,8 @@ class Model(object):
         n_part = cf.getint('MODEL', 'n_part')
         cv_num = cf.getint('MODEL', 'cv_num')
         model_type = cf.get('MODEL', 'model_type')
+        te = float(cf.get('MODEL', 'te'))
+        tr = float(cf.get('MODEL', 'tr'))
 
         # 全部预测结果
         online_pred_all = []
@@ -1101,7 +1121,7 @@ class Model(object):
         # 后处理
         if cf.get('MODEL', 'has_postprocess') == 'True':
             for fold_id in range(cv_num):
-                online_pred_all[fold_id] = [Model.adj(x) for x in online_pred_all[fold_id]]
+                online_pred_all[fold_id] = [Model.adj(x, te=te, tr=tr) for x in online_pred_all[fold_id]]
         # 加载线上测试集ID文件
         online_ids = DataUtil.load_vector(cf.get('MODEL', 'online_test_ids_fp'), False)
         # 存储线上测试集预测结果
