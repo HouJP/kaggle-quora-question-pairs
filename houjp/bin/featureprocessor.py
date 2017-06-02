@@ -166,7 +166,7 @@ class FeatureProcessor(object):
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
 
         feature_qp_names = Feature.get_feature_names_question_pair(cf)
-        rawset_name = argv[0]
+        rawset_name = 'train'
 
         for f_name in feature_qp_names:
             feature_with_swap_fp = '%s/%s.%s_with_swap.smat' % (feature_pt, f_name, rawset_name)
