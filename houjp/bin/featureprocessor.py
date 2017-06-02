@@ -61,14 +61,14 @@ class FeatureProcessor(object):
         return f_names, f_indexs
 
     @staticmethod
-    def run_gen_feature_swap(conf_fp):
+    def run_gen_feature_swap(cf):
         """
         交换<Q1,Q2>特征
         :return:
         """
         # 读取配置文件
-        cf = ConfigParser.ConfigParser()
-        cf.read(conf_fp)
+        # cf = ConfigParser.ConfigParser()
+        # cf.read(conf_fp)
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
 
         # 加载配置文件
@@ -84,14 +84,14 @@ class FeatureProcessor(object):
             FeatureProcessor.swap_feature(feature_pt, f_name, f_index, rawset_name)
 
     @staticmethod
-    def run_gen_feature_with_swap(conf_fp):
+    def run_gen_feature_with_swap(cf):
         """
         生成线下特征文件，包含swap部分
         :return:
         """
         # 读取配置文件
-        cf = ConfigParser.ConfigParser()
-        cf.read(conf_fp)
+        # cf = ConfigParser.ConfigParser()
+        # cf.read(conf_fp)
         feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
 
         feature_qp_names = Feature.get_feature_names_question_pair(cf)
@@ -113,10 +113,65 @@ class FeatureProcessor(object):
             else:
                 LogUtil.log('INFO', '%s already has with_swap feature' % f_name)
 
+    @staticmethod
+    def get_index_with_max_clique_size(cf, rawset_name, low_thresh):
+        # 设置参数
+        feature_name = 'graph_edge_max_clique_size'
+        # 特征存储路径
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        test_feature_fp = '%s/%s.%s.smat' % (feature_pt, feature_name, rawset_name)
+        test_features_mc = Feature.load(test_feature_fp).toarray()
+
+        indexs = []
+        for index in range(len(test_features_mc)):
+            if test_features_mc[index][0] >= low_thresh:
+                indexs.append(index)
+
+        return indexs
+
+    @staticmethod
+    def run_gen_feature_extra(cf):
+        """
+        生成额外训练数据
+        :param conf_fp:
+        :return:
+        """
+        # 读取配置文件
+        # cf = ConfigParser.ConfigParser()
+        # cf.read(conf_fp)
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        feature_qp_names = Feature.get_feature_names_question_pair(cf)
+
+        mc_indexs = FeatureProcessor.get_index_with_max_clique_size(cf, 'test', 4.)
+
+        for f_name in feature_qp_names:
+            feature_fp = '%s/%s.test.smat' % (feature_pt, f_name)
+            feature_extra_fp = '%s/%s.train_extra.smat' % (feature_pt, f_name)
+
+            has_extra = isfile(feature_extra_fp + ".npz")
+            if not has_extra:
+                features = Feature.load(feature_fp)
+                features_extra = Feature.sample_row(features, mc_indexs)
+                Feature.save_smat(features_extra, feature_extra_fp)
+                LogUtil.log('INFO', '%s generate extra feature done' % f_name)
+            else:
+                LogUtil.log('INFO', '%s already has extra feature' % f_name)
+
+    @staticmethod
+    def run(cf, argv):
+        cmd = argv[0]
+        if 'run_gen_feature_with_swap' == cmd:
+            FeatureProcessor.run_gen_feature_swap(cf)
+            FeatureProcessor.run_gen_feature_with_swap(cf)
+        elif 'run_gen_feature_extra' == cmd:
+            FeatureProcessor.run_gen_feature_extra(cf)
+        else:
+            LogUtil.log('WARNING', 'NO CMD')
+
 
 def print_help():
     print 'featureprocessor <conf_file_path> -->'
-    print '\tGO'
+    print '\trun_gen_feature_with_swap'
 
 
 if __name__ == "__main__":
@@ -126,6 +181,9 @@ if __name__ == "__main__":
         exit(1)
 
     conf_fp = sys.argv[1]
+    cf = ConfigParser.ConfigParser()
+    cf.read(conf_fp)
 
-    FeatureProcessor.run_gen_feature_swap(conf_fp)
-    FeatureProcessor.run_gen_feature_with_swap(conf_fp)
+    FeatureProcessor.run(cf, sys.argv[2])
+
+
