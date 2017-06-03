@@ -207,25 +207,34 @@ class Model(object):
         LogUtil.log('INFO', 'Evaluate clique_size < 3 (%s)' % tag)
         labels_l = [labels[index] for index in range(len(labels)) if fs[index] < thresh]
         preds_l = [preds[index] for index in range(len(labels)) if fs[index] < thresh]
-        Model.entropy_loss_from_list(labels_l, preds_l)
-        LogUtil.log('INFO', 'rate_labels_l=%f, rate_preds_l=%f' % (
-            1. * sum(labels_l) / len(labels_l), 1. * sum(preds_l) / len(preds_l)))
+        if len(preds_l) <= 0:
+            LogUtil.log('INFO', 'has no preds clique_size < 3')
+        else:
+            Model.entropy_loss_from_list(labels_l, preds_l)
+            LogUtil.log('INFO', 'rate_labels_l=%f, rate_preds_l=%f' % (
+                1. * sum(labels_l) / len(labels_l), 1. * sum(preds_l) / len(preds_l)))
 
         LogUtil.log('INFO', '-------------------')
         LogUtil.log('INFO', 'Evaluate clique_size = 3 (%s)' % tag)
         labels_m = [labels[index] for index in range(len(labels)) if fs[index] == thresh]
         preds_m = [preds[index] for index in range(len(labels)) if fs[index] == thresh]
-        Model.entropy_loss_from_list(labels_m, preds_m)
-        LogUtil.log('INFO', 'rate_labels_m=%f, rate_preds_m=%f' % (
-            1. * sum(labels_m) / len(labels_m), 1. * sum(preds_m) / len(preds_m)))
+        if len(preds_m) <= 0:
+            LogUtil.log('INFO', 'has no preds clique_size = 3')
+        else:
+            Model.entropy_loss_from_list(labels_m, preds_m)
+            LogUtil.log('INFO', 'rate_labels_m=%f, rate_preds_m=%f' % (
+                1. * sum(labels_m) / len(labels_m), 1. * sum(preds_m) / len(preds_m)))
 
         LogUtil.log('INFO', '-------------------')
         LogUtil.log('INFO', 'Evaluate clique_size > 3 (%s)' % tag)
         labels_r = [labels[index] for index in range(len(labels)) if fs[index] > thresh]
         preds_r = [preds[index] for index in range(len(labels)) if fs[index] > thresh]
-        Model.entropy_loss_from_list(labels_r, preds_r)
-        LogUtil.log('INFO', 'rate_labels_r=%f, rate_preds_r=%f' % (
-            1. * sum(labels_r) / len(labels_r), 1. * sum(preds_r) / len(preds_r)))
+        if len(preds_r) <= 0:
+            LogUtil.log('INFO', 'has no preds clique_size > 3')
+        else:
+            Model.entropy_loss_from_list(labels_r, preds_r)
+            LogUtil.log('INFO', 'rate_labels_r=%f, rate_preds_r=%f' % (
+                1. * sum(labels_r) / len(labels_r), 1. * sum(preds_r) / len(preds_r)))
 
     @staticmethod
     def inverse_adj(y, te, tr):
