@@ -477,6 +477,86 @@ class PreprocessorRunner(object):
         DataUtil.save_vector(test_311_clique_size_g3_indexs_fp, test_311_clique_size_g3_indexs, 'w')
 
     @staticmethod
+    def gen_index_with_max_clique_size_new(cf, argv):
+        """
+        划分两部分 <= 3 以及 > 3
+        :param cf:
+        :param argv:
+        :return:
+        """
+        # 加载训练集特征
+        feature_name = 'graph_edge_max_clique_size'
+        feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+        train_feature_fp = '%s/%s.train_with_swap.smat' % (feature_pt, feature_name)
+        train_features = Feature.load(train_feature_fp).toarray()
+
+        # 加载训练集索引 <= 3
+        train_311_indexs = Feature.load_index(cf.get('MODEL', 'train_indexs_fp'))
+        # 训练集索引存储路径
+        train_311_clique_size_le3_indexs_fp = '%s/train_311_clique_size_le3.train_with_swap.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'))
+        # 过滤索引
+        train_311_clique_size_le3_indexs = []
+        for index in range(len(train_311_indexs)):
+            if train_features[train_311_indexs[index]][0] <= 3:
+                train_311_clique_size_le3_indexs.append(train_311_indexs[index])
+        DataUtil.save_vector(train_311_clique_size_le3_indexs_fp, train_311_clique_size_le3_indexs, 'w')
+
+        # 训练集索引存储路径
+        train_311_clique_size_g3_indexs_fp = '%s/train_311_clique_size_g3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'train_rawset_name'))
+        # 过滤索引
+        train_311_clique_size_g3_indexs = []
+        for index in range(len(train_311_indexs)):
+            if train_features[train_311_indexs[index]][0] > 3:
+                train_311_clique_size_g3_indexs.append(train_311_indexs[index])
+        DataUtil.save_vector(train_311_clique_size_g3_indexs_fp, train_311_clique_size_g3_indexs, 'w')
+
+        # 加载验证集索引
+        valid_311_indexs = Feature.load_index(cf.get('MODEL', 'valid_indexs_fp'))
+        # 验证集索引存储路径
+        valid_311_clique_size_le3_indexs_fp = '%s/valid_311_clique_size_le3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'valid_rawset_name'))
+        # 过滤索引
+        valid_311_clique_size_le3_indexs = []
+        for index in range(len(valid_311_indexs)):
+            if train_features[valid_311_indexs[index]][0] <= 3.:
+                valid_311_clique_size_le3_indexs.append(valid_311_indexs[index])
+        DataUtil.save_vector(valid_311_clique_size_le3_indexs_fp, valid_311_clique_size_le3_indexs, 'w')
+
+        # 验证集索引存储路径
+        valid_311_clique_size_g3_indexs_fp = '%s/valid_311_clique_size_g3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'valid_rawset_name'))
+        # 过滤索引
+        valid_311_clique_size_g3_indexs = []
+        for index in range(len(valid_311_indexs)):
+            if train_features[valid_311_indexs[index]][0] > 3:
+                valid_311_clique_size_g3_indexs.append(valid_311_indexs[index])
+        DataUtil.save_vector(valid_311_clique_size_g3_indexs_fp, valid_311_clique_size_g3_indexs, 'w')
+
+        # 加载测试集索引
+        test_311_indexs = Feature.load_index(cf.get('MODEL', 'test_indexs_fp'))
+        # 测试集索引存储路径
+        test_311_clique_size_le3_indexs_fp = '%s/test_311_clique_size_le3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'test_rawset_name'))
+        # 过滤索引
+        test_311_clique_size_le3_indexs = []
+        for index in range(len(test_311_indexs)):
+            if train_features[test_311_indexs[index]][0] <= 3.:
+                test_311_clique_size_le3_indexs.append(test_311_indexs[index])
+        DataUtil.save_vector(test_311_clique_size_le3_indexs_fp, test_311_clique_size_le3_indexs, 'w')
+
+        # 测试集索引存储路径
+        test_311_clique_size_g3_indexs_fp = '%s/test_311_clique_size_g3.%s.index' % (
+            cf.get('DEFAULT', 'feature_index_pt'), cf.get('MODEL', 'test_rawset_name'))
+        # 过滤索引
+        test_311_clique_size_g3_indexs = []
+        for index in range(len(test_311_indexs)):
+            if train_features[test_311_indexs[index]][0] > 3.:
+                test_311_clique_size_g3_indexs.append(test_311_indexs[index])
+        DataUtil.save_vector(test_311_clique_size_g3_indexs_fp, test_311_clique_size_g3_indexs, 'w')
+
+    @staticmethod
     def gen_cv_subset_index(cf, argv):
         tag = argv[0]
         cv_num = 5
@@ -545,6 +625,8 @@ class PreprocessorRunner(object):
             PreprocessorRunner.gen_cv_subset_index(cf, argv[1:])
         elif 'run_gen_index_with_extra_with_swap' == cmd:
             PreprocessorRunner.run_gen_index_with_extra_with_swap(cf, argv[1:])
+        elif 'gen_index_with_max_clique_size_new' == cmd:
+            PreprocessorRunner.gen_index_with_max_clique_size_new(cf, argv[1:])
         else:
             LogUtil.log('WARNING', 'NO CMD in PreprocessorRunner')
 

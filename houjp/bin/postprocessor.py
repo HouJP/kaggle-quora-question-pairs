@@ -63,6 +63,7 @@ class PostProcessor(object):
     @staticmethod
     def logit(p):
         p = np.array(p)
+        p = PostProcessor.cut_p(p)
         return np.log(p / (1 - p))
 
     @staticmethod

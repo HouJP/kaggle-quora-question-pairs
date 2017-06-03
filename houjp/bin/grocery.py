@@ -563,10 +563,14 @@ def rescale_answer(cf):
 
 def rescale2_answer(cf):
     # 加载预测结果
-    test_preds_fp = '/Users/houjianpeng/tmp/v4_151_17_tag03/cv_n5_online.test.pred'
-    fout = open('/Users/houjianpeng/tmp/v4_151_17_tag03/rescale_cv_n5_online.test.pred', 'w')
+    te = 0.173
+    tr = 0.369
+    has_postprocess = True
+    test_preds_fp = '/Users/houjianpeng/tmp/yxy_1/cv_n5_online.test.pred'
+    fout = open('/Users/houjianpeng/tmp/yxy_1/rescale_cv_n5_online.test.pred', 'w')
     test_preds = PostProcessor.read_result_list(test_preds_fp)
-    test_preds = [Model.inverse_adj(y) for y in test_preds]
+    if has_postprocess:
+        test_preds = [Model.inverse_adj(y,te=te,tr=tr) for y in test_preds]
     LogUtil.log('INFO', 'len(test_preds)=%d' % len(test_preds))
 
     thresh = 3
@@ -596,6 +600,115 @@ def rescale2_answer(cf):
         elif test_features_mc[index][0] > 3.:
             # score = Model.adj(score, te=0.96503024, tr=0.971288)
             score = Model.adj(score, te=0.96503024, tr=0.972554)
+        else:
+            if test_features_cc[index][0] < 3.:
+                # score = Model.adj(score, te=0.05739666, tr=0.101436)
+                score = Model.adj(score, te=0.05739666, tr=0.233473)
+            else:
+                # score = Model.adj(score, te=0.04503431, tr=0.093469)
+                score = Model.adj(score, te=0.04503431, tr=0.149471)
+        test_preds[index] = score
+
+
+    fout.write("\"test_id\",\"is_duplicate\"\n")
+
+    for index in range(len(test_preds)):
+        fout.write('%d,%s\n' % (index, test_preds[index]))
+    fout.close()
+
+    print '-------------------------------------------------'
+    print '分析 clique_size <3 / =3 / >3 的各部分：'
+
+    thresh = 3
+
+    len_l = 0
+    len_m = 0
+    len_r = 0
+    len_l_pos = 0
+    len_m_pos = 0
+    len_r_pos = 0
+    for index in range(len(test_preds)):
+        if test_features_mc[index][0] > thresh:
+            len_r += 1.
+            len_r_pos += test_preds[index]
+        elif test_features_mc[index][0] == thresh:
+            len_m += 1.
+            len_m_pos += test_preds[index]
+        else:
+            len_l += 1.
+            len_l_pos += test_preds[index]
+    print 'len_l=%d, len_m=%d, len_r=%d, len_l_pos=%d, len_m_pos=%d, len_r_pos=%d' % (
+    len_l, len_m, len_r, len_l_pos, len_m_pos, len_r_pos)
+    print 'rate_l=%f, rate_m=%f, rate_r=%f' % (len_l / len(test_preds), len_m / len(test_preds), len_r / len(test_preds))
+    print 'pos_rate_l=%f, pos_rate_m=%f, pos_rate_r=%f' % (len_l_pos / len_l, len_m_pos / len_m, len_r_pos / len_r)
+
+    print '-------------------------------------------------'
+    print '分析 clique_size == 2 部分：根据 cc_size 切分为两部分'
+
+    thresh_mc = 3
+    thresh_cc = 3
+
+    len_1 = 0
+    len_2 = 0
+    len_3 = 0
+    len_all = 0
+    len_pos_1 = 0
+    len_pos_2 = 0
+    len_pos_3 = 0
+    for index in range(len(test_preds)):
+        len_all += 1.
+        if test_features_mc[index][0] < thresh_mc:
+            if test_features_cc[index][0] < thresh_cc:
+                len_1 += 1.
+                len_pos_1 += test_preds[index]
+            else:
+                len_2 += 1.
+                len_pos_2 += test_preds[index]
+        else:
+            len_3 += 1.
+            len_pos_3 += test_preds[index]
+    print 'len_all=%f, len_1=%f(%f), len_2=%f(%f), len_3=%f(%f)' \
+          % (len_all, len_1, 1.0 * len_1 / len_all, len_2, 1.0 * len_2 / len_all, len_3, 1.0 * len_3 / len_all)
+    print 'pos_1=%f, pos_2=%f, pos_3=%f' % (1.0 * len_pos_1 / len_1, 1.0 * len_pos_2 / len_2, 1. * len_pos_3 / len_3)
+
+def rescale3_answer(cf):
+    # 加载预测结果
+    te = 0.173
+    tr = 0.43121
+    test_preds_fp = '/Users/houjianpeng/tmp/v5_125_10/full.test.pred'
+    fout = open('/Users/houjianpeng/tmp/v5_125_10/rescale_full.test.pred', 'w')
+    test_preds = PostProcessor.read_result_list(test_preds_fp)
+    test_preds = [Model.inverse_adj(y, te=te, tr=tr) for y in test_preds]
+    LogUtil.log('INFO', 'len(test_preds)=%d' % len(test_preds))
+
+    thresh = 3
+
+    # 设置参数
+    feature_name = 'graph_edge_max_clique_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    test_features_mc = Feature.load(test_feature_fp).toarray()
+
+    # 设置参数
+    feature_name = 'graph_edge_cc_size'
+    # 特征存储路径
+    feature_pt = cf.get('DEFAULT', 'feature_question_pair_pt')
+    test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+    test_features_cc = Feature.load(test_feature_fp).toarray()
+
+    print '-------------------------------------------------'
+    print '缩放答案：'
+
+    for index in range(len(test_preds)):
+        score = test_preds[index]
+        if test_features_mc[index][0] == 3.:
+            # score = Model.adj(score, te=0.40883512, tr=0.459875)
+            score = Model.adj(score, te=0.40883512, tr=0.623191)
+        elif test_features_mc[index][0] > 3.:
+            # score = Model.adj(score, te=0.96503024, tr=0.971288)
+            # score = Model.adj(score, te=0.96503024, tr=0.972554)
+            score = Model.adj(score, te=0.96503024, tr=0.9829238325818231)
         else:
             if test_features_cc[index][0] < 3.:
                 # score = Model.adj(score, te=0.05739666, tr=0.101436)
