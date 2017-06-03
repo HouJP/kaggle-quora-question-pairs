@@ -18,6 +18,7 @@ from sklearn.linear_model import Lasso
 from sklearn.linear_model import LogisticRegression
 from sklearn.externals import joblib
 import time
+from grocery import std_rescale_answer
 
 class Model(object):
     """
@@ -672,6 +673,9 @@ class Model(object):
         PostProcessor.write_result(online_pred_merge_fp, online_pred_merge)
         LogUtil.log('INFO', 'cv merge done(%s)' % online_pred_merge_fp)
 
+        # 缩放答案
+        std_rescale_answer(cf, online_pred_merge_fp)
+
     @staticmethod
     def train_xgb_with_lock(params, train_data, watchlist, verbose_eval):
 
@@ -758,6 +762,9 @@ class Model(object):
         # 存储线上测试集预测结果
         pred_online_test_fp = cf.get('MODEL', 'online_test_prediction_fp')
         Model.save_pred(online_test_ids, all_pred_online_test_data, pred_online_test_fp)
+
+        # 缩放答案
+        std_rescale_answer(cf, pred_online_test_fp)
 
     @staticmethod
     def run_predict_xgb(cf):
@@ -1142,6 +1149,10 @@ class Model(object):
         online_pred_merge = PostProcessor.merge_logit(online_pred_list)
         PostProcessor.write_result(online_pred_merge_fp, online_pred_merge)
         LogUtil.log('INFO', 'cv merge done(%s)' % online_pred_merge_fp)
+
+        # 缩放答案
+        std_rescale_answer(cf, online_pred_merge_fp)
+
 
     @staticmethod
     def train_with_lock(params, offline_train_features, offline_train_labels):
