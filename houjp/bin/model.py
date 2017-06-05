@@ -818,9 +818,12 @@ class Model(object):
         return model
 
     @staticmethod
-    def load_model(cf):
+    def load_model(cf, model_id):
+        model_name = 'xgboost.model'
+        if -1 != model_id:
+            model_name = 'cv_n%d_f%d.xgboost.model' % (cf.getint('MODEL', 'cv_num'), model_id)
         # 加载模型
-        model_fp = cf.get('DEFAULT', 'model_pt') + '/xgboost.model'
+        model_fp = cf.get('DEFAULT', 'model_pt') + '/' + model_name
         # params = {}
         # params['objective'] = cf.get('XGBOOST_PARAMS', 'objective')
         # params['eval_metric'] = cf.get('XGBOOST_PARAMS', 'eval_metric')
@@ -914,8 +917,10 @@ class Model(object):
 
     @staticmethod
     def sort_feature_xgb(cf, argv):
+        # 模型ID
+        model_id = int(argv[0])
         # 加载模型
-        model, params = Model.load_model(cf)
+        model, params = Model.load_model(cf, model_id)
         find2score = model.get_fscore()
 
         # 加载特征
@@ -1062,6 +1067,9 @@ class Model(object):
         # 加载标签文件
         offline_labels = DataUtil.load_vector('%s/%s.label' % (label_fp, offline_rawset_name), True)
 
+        offline_train_pred_all = []
+        offline_train_label_all = []
+
         offline_valid_pred_all = []
         offline_valid_label_all = []
 
@@ -1147,11 +1155,15 @@ class Model(object):
                 offline_pred_valid_data = [Model.adj(x, te=te, tr=tr) for x in offline_pred_valid_data]
                 offline_pred_test_data = [Model.adj(x, te=te, tr=tr) for x in offline_pred_test_data]
 
+            offline_train_score = Model.entropy_loss_from_list(offline_train_labels, offline_pred_train_data)
             offline_valid_score = Model.entropy_loss_from_list(offline_valid_labels, offline_pred_valid_data)
             offline_test_score = Model.entropy_loss_from_list(offline_test_labels, offline_pred_test_data)
             LogUtil.log('INFO', '-------------------')
-            LogUtil.log('INFO', 'Evaluate for fold_id(%d): valid_score(%s), test_score(%s)' % (
-            fold_id, offline_valid_score, offline_test_score))
+            LogUtil.log('INFO', 'Evaluate for fold_id(%d):train_score(%s), valid_score(%s), test_score(%s)' % (
+            fold_id,offline_train_score, offline_valid_score, offline_test_score))
+
+            offline_train_pred_all.extend(list(offline_pred_train_data))
+            offline_train_label_all.extend(list(offline_train_labels))
 
             offline_valid_pred_all.extend(list(offline_pred_valid_data))
             offline_valid_label_all.extend(list(offline_valid_labels))
@@ -1169,6 +1181,9 @@ class Model(object):
         cf.write(open(cf.get('DEFAULT', 'conf_pt') + 'python.conf', 'w'))
 
         # 存储预测结果
+        offline_train_pred_all_fp = '%s/cv_n%d_train.%s.pred' % (
+            cf.get('DEFAULT', 'pred_pt'), cv_num, offline_rawset_name)
+        Model.save_pred(range(len(offline_train_pred_all)), offline_train_pred_all, offline_train_pred_all_fp)
         offline_valid_pred_all_fp = '%s/cv_n%d_valid.%s.pred' % (
         cf.get('DEFAULT', 'pred_pt'), cv_num, offline_rawset_name)
         Model.save_pred(range(len(offline_valid_pred_all)), offline_valid_pred_all, offline_valid_pred_all_fp)
@@ -1177,11 +1192,12 @@ class Model(object):
         Model.save_pred(range(len(offline_test_pred_all)), offline_test_pred_all, offline_test_pred_all_fp)
 
         # 评测得分
+        offline_train_score_all = Model.entropy_loss(offline_train_label_all, offline_train_pred_all_fp)
         offline_valid_score_all = Model.entropy_loss(offline_valid_label_all, offline_valid_pred_all_fp)
         offline_test_score_all = Model.entropy_loss(offline_test_label_all, offline_test_pred_all_fp)
         LogUtil.log('INFO', '-------------------')
-        LogUtil.log('INFO', 'Evaluate for all: valid_score_all(%s), test_score_all(%s)' % (
-            offline_valid_score_all, offline_test_score_all))
+        LogUtil.log('INFO', 'Evaluate for all: train_score_all(%s), valid_score_all(%s), test_score_all(%s)' % (
+            offline_train_score_all, offline_valid_score_all, offline_test_score_all))
 
         # 存储预测不佳结果
         pos_fault_fp = cf.get('MODEL', 'pos_fault_fp')
