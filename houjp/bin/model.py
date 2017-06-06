@@ -1292,12 +1292,12 @@ class Model(object):
     def train_with_lock(params, offline_train_features, offline_train_labels):
 
         # 加锁
-        lock_fp = '%s/cv.lock' % (cf.get('DEFAULT', 'data_pt'))
-        while isfile(lock_fp):
-            LogUtil.log('INFO', 'cv model is running, waiting 300s ...')
-            time.sleep(300)
-        f = open(lock_fp, 'w')
-        f.close()
+        # lock_fp = '%s/cv.lock' % (cf.get('DEFAULT', 'data_pt'))
+        # while isfile(lock_fp):
+        #     LogUtil.log('INFO', 'cv model is running, waiting 300s ...')
+        #     time.sleep(300)
+        # f = open(lock_fp, 'w')
+        # f.close()
 
         model_type = cf.get('MODEL', 'model_type')
 
@@ -1321,7 +1321,7 @@ class Model(object):
         model.fit(X=offline_train_features, y=offline_train_labels)
 
         # 解锁
-        os.remove(lock_fp)
+        # os.remove(lock_fp)
 
         return model
 

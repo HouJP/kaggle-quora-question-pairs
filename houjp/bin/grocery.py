@@ -566,8 +566,8 @@ def rescale2_answer(cf):
     te = 0.173
     tr = 0.369
     has_postprocess = True
-    test_preds_fp = '/Users/houjianpeng/tmp/v1_5_1_stackall/cv_n5_online.test.pred'
-    fout = open('/Users/houjianpeng/tmp/v1_5_1_stackallqq/rescale_cv_n5_online.test.pred', 'w')
+    test_preds_fp = '/Users/houjianpeng/tmp/v4_215_17_tag65/cv_n5_online.test.pred'
+    fout = open('/Users/houjianpeng/tmp/v4_215_17_tag65/rescale_cv_n5_online.test.pred', 'w')
     test_preds = PostProcessor.read_result_list(test_preds_fp)
     if has_postprocess:
         test_preds = [Model.inverse_adj(y,te=te,tr=tr) for y in test_preds]
