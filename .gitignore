@@ -16,3 +16,4 @@ btm
 
 # latex
 .texpadtmp/
+*.pdf
