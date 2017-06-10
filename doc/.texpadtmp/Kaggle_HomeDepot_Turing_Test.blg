@@ -1,0 +1,55 @@
+This is BibTeX, Version 0.99d (TeX Live 2016)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: /Users/houjianpeng/Github/kaggle-quora-question-pairs/doc/.texpadtmp/Kaggle_HomeDepot_Turing_Test.aux
+The style file: plain.bst
+Database file #1: ../reference.bib
+Database file #2: ../reference2.bib
+Warning--to sort, need author or key in Google_dict
+Warning--to sort, need author or key in crowdflower_3place
+Warning--to sort, need author or key in PeterNorvig
+Warning--to sort, need author or key in CrowdFlower_1st
+Warning--to sort, need author or key in dato:beatthebenchmark
+Warning--to sort, need author or key in BenS
+Warning--to sort, need author or key in glove-gensim
+You've used 7 entries,
+            2118 wiz_defined-function locations,
+            516 strings with 4883 characters,
+and the built_in function-call counts, 1035 in all, are:
+= -- 77
+> -- 7
+< -- 0
++ -- 7
+- -- 0
+* -- 37
+:= -- 100
+add.period$ -- 7
+call.type$ -- 7
+change.case$ -- 14
+chr.to.int$ -- 0
+cite$ -- 14
+duplicate$ -- 49
+empty$ -- 162
+format.name$ -- 0
+if$ -- 253
+int.to.chr$ -- 0
+int.to.str$ -- 7
+missing$ -- 0
+newline$ -- 24
+num.names$ -- 0
+pop$ -- 84
+preamble$ -- 1
+purify$ -- 14
+quote$ -- 0
+skip$ -- 49
+stack$ -- 0
+substring$ -- 35
+swap$ -- 7
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 28
+warning$ -- 7
+while$ -- 0
+width$ -- 8
+write$ -- 37
+(There were 7 warnings)

@@ -4,7 +4,6 @@ conf/
 tmp/
 out/
 log/
-doc/
 submit.sh
 
 # c++

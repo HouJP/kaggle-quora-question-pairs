@@ -1,0 +1,27 @@
+\begin{thebibliography}{1}
+
+\bibitem{Google_dict}
+\url{https://www.kaggle.com/steubk/home-depot-product-search-relevance/fixing-typos
+  }.
+
+\bibitem{crowdflower_3place}
+\url{http://blog.kaggle.com/2015/07/22/crowdflower-winners-interview-3rd-place-team-quartet/
+  }.
+
+\bibitem{PeterNorvig}
+\url{http://norvig.com/spell-correct.html}.
+
+\bibitem{CrowdFlower_1st}
+\url{https://github.com/ChenglongChen/Kaggle_CrowdFlower}.
+
+\bibitem{dato:beatthebenchmark}
+\url{https://www.kaggle.com/c/dato-native/forums/t/16626/beat-the-benchmark-0-90388-with-simple-model
+  }.
+
+\bibitem{BenS}
+\url{https://www.kaggle.com/c/home-depot-product-search-relevance/forums/t/19463/what-s-the-lb-shakeup-potential/116689\#post116689}.
+
+\bibitem{glove-gensim}
+\url{https://github.com/manasRK/glove-gensim}.
+
+\end{thebibliography}
