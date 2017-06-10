@@ -13,3 +13,6 @@ Makefile
 cmake_install.cmake
 kaggle_quora_question_pairs
 btm
+
+# latex
+.texpadtmp/
