@@ -61,19 +61,19 @@
 \begin{itemize}
 \item[$\bullet$] \textbf{Liang Pang} \\
 %	 Location: Kyiv, Ukraine \\
-	Email: \url{pangliang@gmail.com}
+	Email: \url{pl8787@gmail.com}
 \item[$\bullet$] \textbf{Yixing Fan} \\
 %	 Location: Kyiv, Ukraine \\
-	Email: \url{fanyixing@gmail.com}
+	Email: \url{fanyixing111@gmail.com}
 \item[$\bullet$] \textbf{Jianpeng Hou} \\
 %	 Location: Shenzhen, Guangdong, China\\
 	Email: \url{houjp1992@gmail.com}
 \item[$\bullet$] \textbf{Xinyu Yue} \\
 %	 Location: Shenzhen, Guangdong, China\\
-	Email: \url{yuexinyu@gmail.com}
+	Email: \url{yuexinyu@software.ict.ac.cn}
 \item[$\bullet$] \textbf{Guocheng Niu} \\
 %	 Location: Shenzhen, Guangdong, China\\
-	Email: \url{niuox@gmail.com}
+	Email: \url{oxguocheng@gmail.com}
 \end{itemize}
 \item[] Competition: \href{https://www.kaggle.com/c/quora-question-pairs/}{Quora Question Pairs}
 \end{itemize}
@@ -312,11 +312,52 @@ We developed a light weight Machine Learning framework \textbf{FeatWheel} to hel
 \item \textbf{Simple}: With FeatWheel, you can focus on extracting features. All you need to do is to generate feature files in specified format and write a config file.
 \item \textbf{Flexible}: You can specify the features you need and FeatWheel can help you finish the procedure of feature merging. You can also store the merging result on the disk to speed up the next loading process.
 \item \textbf{Efficient}: If you want to split the data set into training, validation and test data, you just need to generate index files. You don't need make any changes to feature files and data set files.
-\item \textbf{Reliable}: Each time of the model training and prediction will generate a separate output directory
+\item \textbf{Reliable}: Each time of the model training and prediction will generate a separate output directory and will keep the operating environment of this running. This is very useful for the reproduction of results.
 \end{itemize}
+
+\subsection{Structure}
+
+\begin{verbatim}
+    |- project                    # root directory of project 		
+    |    |- bin                   # executable file directory		
+    |    |    |- feature.py	
+    |    |    |- preprocess.py	
+    |    |    |- model.py		
+    |    |    |- postprocess.py		
+    |    |- conf                  # configuration file directory		
+    |    |    |- python.conf		
+    |    |- daa                   # data file directory		
+    |    |    |- source           # input data source 	
+    |    |    |- feature	         # feature file directory 	
+    |    |    |- index            # index file directory		
+    |    |    |- label            # label file directory		
+    |    |    |- out              # output directory	
+    |    |- log                   # log file directory		
+\end{verbatim}
+
+
+
+\subsection{Format}
+
+The storage format of features is a sparse matrix. Different features can be stored in different files and the format of each file is as follows:
+
+\begin{verbatim}
+row_number<space>column_number
+feature_id<colon>feature_value<space>feature_id<colon>feature_value ...
+\end{verbatim}
+
+This format of feature files is named as \textbf{SMAT}. If the feature value is empty, it can be omitted. The example is as follows:
+
+\begin{verbatim}
+    2 4
+    0:1 2:2
+    1:2 3:1 4:5.2
+\end{verbatim}
+
+
 
 \section{Acknowledgement}
 
-Acknowledgement
+We would like to thank the Kaggle team and Quora for organizing this competition. Thanks to every member of the team for the day and night.
 
 \end{document}
