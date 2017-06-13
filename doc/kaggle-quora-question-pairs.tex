@@ -137,6 +137,45 @@ Fold5	&	S5, S1, S2	&	S3	&		S4 \\ \hline
 \end{tabular}
 \end{table}
 
+\section{Deep Text Matching Models}
+In this section, we introduce two categories of deep text matching models~\cite{}: representation based models and interaction based models. Both of them play importance role in this competition, especially in the stage of stacking.
+
+\subsection{Representation Based Models}
+
+Representation based model is one of the siamese architecture~\cite{}, which firstly proposed in face verification task. As shown in Fig.~\ref{Fig.siamese}, given two pieces of text $x$ and $y$, representation based model first encode each of them to the independent sentence representations, $R(x)$ and $R'(y)$. Then calculate the similarity score $f(x,y)$ between these two representations, such as cosine similarity, dot product or feed them to an MLP (multi-layer perception).
+
+\begin{equation}
+	f(x,y) = g(R(x), R'(y)).
+\end{equation}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.45\textwidth]{../img/siamese}
+  \caption{The Siamese Architecture.} \label{Fig.siamese}
+\end{figure}
+
+The encode function, $R$ and $R'$, can be designed as the CNN (convolutional neural network) or RNN (recurrent neural network), both of them can capture the sequential information of the text. 
+
+
+\subsection{Interaction Based Models}
+
+Interaction based model treats text matching problem in another way, while it first construct an interaction matrix based on the word representations, then the patterns are extracted base on the interaction matrix. Different from representation based model which focuses on make good sentence representations, interaction based model focuses on construct interaction representations. We can describe this process in the formula below,
+
+\begin{equation}
+	f(x, y) = g(R^m(M(x,y))),
+\end{equation}
+where $M$ denotes the interaction matrix between $x$ and $y$, $R^m$ denotes the representation of the interaction matrix and the function $g$ is used to generate the similarity score.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.45\textwidth]{../img/match_ptn}
+  \caption{The Interaction Based Architecture.} \label{Fig.interaction}
+\end{figure}
+
+The model MatchPyramid~\cite{} and Match-SRNN~\cite{} belong to this category. In this competition, we define a much complex $M$ to construct a interaction tensor (not matrix because it is 3-dimension) and then apply 2D-GRU, which first be introduced in Match-SRNN.
+
+\subsection{Best Single Deep Text Matching Model}
+
 \section{Deep Fusion}
 
 \subsection{Single Stacking}
