@@ -1,6 +1,6 @@
 ****
 
-#	<center>Kaggle: Quora Question Pairs</center>
+#	<center>Kaggle: Quora Question Pairs (Comming Soon)</center>
 ##### <center>Author: Liang Pang, Yixing Fan, Jianpeng Hou, Xinyu Yue, Guocheng Niu</center>
 
 ****
