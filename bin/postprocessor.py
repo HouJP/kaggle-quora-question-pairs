@@ -4,109 +4,43 @@
 import numpy as np
 import getopt
 import sys
-
+from featwheel.utils import DataUtil
+from featwheel.feature import Feature
 
 class PostProcessor(object):
+    @staticmethod
+    def adj(x, te, tr):
+        a = te / tr
+        b = (1 - te) / (1 - tr)
+        return a * x / (a * x + b * (1 - x))
 
     @staticmethod
-    def read_result(filename):
-        fin = open(filename)
-        fin.readline()
-        ret = {}
-        for line in fin:
-            part = line.strip().split(',')
-            ret[part[0]] = float(part[1])
-        return ret
+    def rescale(config, online_preds_fp):
+        online_preds = DataUtil.load_vector(online_preds_fp, 'float')
 
-    @staticmethod
-    def read_result_list(fn):
-        fin = open(fn)
-        fin.readline()
-        ret = []
-        index = []
-        for line in fin:
-            part = line.strip().split(',')
-            index.append(int(part[0]))
-            ret.append(float(part[1]))
-        ret_new = [0] * len(index)
-        for ind in range(len(index)):
-            ret_new[index[ind]] = ret[ind]
-        return ret_new
+        feature_name = 'graph_edge_max_clique_size'
+        feature_pt = config.get('DEFAULT', 'feature_pt')
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+        test_features_mc = Feature.load(test_feature_fp).toarray()
 
+        feature_name = 'graph_edge_cc_size'
+        feature_pt = config.get('DEFAULT', 'feature_pt')
+        test_feature_fp = '%s/%s.test.smat' % (feature_pt, feature_name)
+        test_features_cc = Feature.load(test_feature_fp).toarray()
 
-    @staticmethod
-    def write_result(filename, ret):
-        fout = open(filename, 'w')
-        print >> fout, 'test_id,is_duplicate'
-        for idx in ret:
-            print >> fout, ','.join(map(str, [idx, ret[idx]]))
-        fout.close()
+        for index in range(len(online_preds)):
+            score = online_preds[index]
+            if test_features_mc[index][0] == 3.:
+                score = PostProcessor.adj(score, te=0.40883512, tr=0.623191)
+            elif test_features_mc[index][0] > 3.:
+                score = PostProcessor.adj(score, te=0.96503024, tr=0.972554)
+            else:
+                if test_features_cc[index][0] < 3.:
+                    score = PostProcessor.adj(score, te=0.05739666, tr=0.233473)
+                else:
+                    score = PostProcessor.adj(score, te=0.04503431, tr=0.149471)
+            online_preds[index] = score
 
-    @staticmethod
-    def merge(res_list):
-        res = {}
-        for idx in res_list[0]:
-            res[idx] = np.average([res_list[x][idx] for x in range(len(res_list))])
-        return res
-
-    @staticmethod
-    def inv_logit(p):
-        p = np.array(p)
-        return np.exp(p) / (1.0 + np.exp(p))
-
-    @staticmethod
-    def cut_p(p):
-        p[p > 1.0 - 1e-15] = 1.0 - 1e-15
-        p[p < 1e-15] = 1e-15
-        return p
-
-    @staticmethod
-    def logit(p):
-        p = np.array(p)
-        p = PostProcessor.cut_p(p)
-        return np.log(p / (1 - p))
-
-    @staticmethod
-    def merge_logit_list(res_list):
-        res = []
-        for index in range(len(res_list[0])):
-            res.append(PostProcessor.inv_logit(np.average(PostProcessor.logit([res_list[x][index] for x in range(len(res_list))]))))
-        return res
-
-    @staticmethod
-    def merge_logit(res_list):
-        res = {}
-        for idx in res_list[0]:
-            res[idx] = PostProcessor.inv_logit(np.average(PostProcessor.logit([res_list[x][idx] for x in range(len(res_list))])))
-        return res
-
-    @staticmethod
-    def run_merge(argv):
-        in_fnames = None
-        out_fname = None
-
-        try:
-            opts, args = getopt.getopt(argv[1:], 'i:o:', ['in_fnames=', 'out_fname='])
-        except getopt.GetoptError:
-            print 'Postprocessor.run_merge -i <input_file_names> -o <output_file_name>'
-            sys.exit(2)
-        for opt, arg in opts:
-            if opt in ('-i', '--in_fnames'):
-                in_fnames = arg
-            elif opt in ('-o', '--out_fname'):
-                out_fname = arg
-
-        assert None is not in_fnames, 'Postprocessor.run_merge -i <input_file_names> -o <output_file_name>'
-        assert None is not out_fname, 'Postprocessor.run_merge -i <input_file_names> -o <output_file_name>'
-
-        res_list = []
-        for in_fname in in_fnames.strip().split(','):
-            res = PostProcessor.read_result(in_fname)
-            res_list.append(res)
-        res_merge = PostProcessor.merge_logit(res_list)
-        PostProcessor.write_result(out_fname, res_merge)
-
-if __name__ == "__main__":
-    PostProcessor.run_merge(sys.argv)
+        DataUtil.save_vector(online_preds_fp + '.rescale', online_preds)
 
 
