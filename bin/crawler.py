@@ -4,10 +4,11 @@
 # @Author  : HouJP
 # @Email   : houjp1992@gmail.com
 
+import cookielib
 import urllib
 import urllib2
-import cookielib
-from utils import TimeUtil
+
+from bin.featwheel.utils import TimeUtil
 
 
 class LeaderBoard(object):

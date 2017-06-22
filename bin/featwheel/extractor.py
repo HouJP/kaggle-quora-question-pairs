@@ -5,10 +5,12 @@
 # @Email   : houjp1992@gmail.com
 
 
-import pandas as pd
 import ConfigParser
+
+import pandas as pd
+
+from bin.featwheel.utils import LogUtil
 from feature import Feature
-from ..utils import LogUtil
 
 
 class Extractor(object):

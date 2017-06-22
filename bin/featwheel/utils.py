@@ -11,6 +11,7 @@ import sys
 from difflib import SequenceMatcher
 from scipy.stats import pearsonr
 from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 try:
     import lzma
     import Levenshtein
@@ -84,6 +85,8 @@ class DataUtil(object):
     """
     Tool of data process
     """
+    valid_types = ['str', 'int', 'float']
+
     def __init__(self):
         return
 
@@ -122,7 +125,7 @@ class DataUtil(object):
         for instance in instances:
             randn = random.random()
             for i in range(0, len(pre_sum_rates)):
-                if (randn < pre_sum_rates[i]):
+                if randn < pre_sum_rates[i]:
                     slices[i].append(instance)
                     break
         n_slices = []
@@ -132,17 +135,19 @@ class DataUtil(object):
         return slices
 
     @staticmethod
-    def load_vector(file_path, is_float):
+    def load_vector(file_path, ele_type):
         """
         Load vector from disk
         :param file_path: vector file path
-        :param is_float: convert elements to float type
+        :param ele_type: element type in vector
         :return: a vector in List type
         """
+        assert ele_type.lower() in DataUtil.valid_types, "Wrong ele_type: %s" % ele_type
+        ele_type = eval(ele_type.lower())
         vector = []
         f = open(file_path)
         for line in f:
-            value = int(line.strip()) if is_float else line.strip()
+            value = ele_type(line.strip())
             vector.append(value)
         f.close()
         LogUtil.log("INFO", "load vector done. length=%d" % (len(vector)))
@@ -257,6 +262,45 @@ class MathUtil(object):
     def dim(x):
         d = 1 if len(x.shape) == 1 else x.shape[1]
         return d
+
+    @staticmethod
+    def aggregate(data, modes):
+        valid_modes = ["size", "mean", "std", "max", "min", "median"]
+
+        if isinstance(modes, str):
+            assert modes.lower() in valid_modes, "Wrong aggregation_mode: %s" % modes
+            modes = [modes.lower()]
+        elif isinstance(modes, list):
+            for m in modes:
+                assert m.lower() in valid_modes, "Wrong aggregation_mode: %s" % m
+                modes = [m.lower() for m in modes]
+        aggregators = [getattr(np, m) for m in modes]
+
+        aggeration_value = list()
+        for agg in aggregators:
+            try:
+                s = agg(data)
+            except ValueError:
+                s = MISSING_VALUE_NUMERIC
+            aggeration_value.append(s)
+        return aggeration_value
+
+    @staticmethod
+    def cut_prob(p):
+        p[p > 1.0 - 1e-15] = 1.0 - 1e-15
+        p[p < 1e-15] = 1e-15
+        return p
+
+    @staticmethod
+    def logit(p):
+        assert isinstance(p, np.ndarray), 'type error'
+        p = MathUtil.cut_prob(p)
+        return np.log(p / (1. - p))
+
+    @staticmethod
+    def logistic(y):
+        assert isinstance(p, np.ndarray), 'type error'
+        return np.exp(y) / (1. + np.exp(y))
 
 
 class DistanceUtil(object):

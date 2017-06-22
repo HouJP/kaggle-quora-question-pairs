@@ -5,12 +5,14 @@
 # @Email   : houjp1992@gmail.com
 
 
-from ..featwheel.extractor import Extractor
-from ..utils import LogUtil
-from ..utils import MathUtil
 import csv
+
 import networkx as nx
-from ..feature import Feature
+
+from bin.featwheel.utils import LogUtil
+from bin.featwheel.utils import MathUtil
+from ..featwheel.feature import Feature
+from ..featwheel.extractor import Extractor
 
 
 class Graph(Extractor):

@@ -5,14 +5,16 @@
 # @Email   : houjp1992@gmail.com
 
 
-from ..featwheel.extractor import Extractor
-from ..utils import LogUtil
-import math
 import csv
-import numpy as np
-from numpy import linalg
-import pandas as pd
 import json
+import math
+
+import numpy as np
+import pandas as pd
+from numpy import linalg
+
+from bin.featwheel.utils import LogUtil
+from ..featwheel.extractor import Extractor
 
 
 class BTM(Extractor):

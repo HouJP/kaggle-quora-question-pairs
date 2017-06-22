@@ -5,13 +5,15 @@
 # @Email   : houjp1992@gmail.com
 
 
-from ..postprocessor import PostProcessor
-from ..featwheel.feature import Feature
-from ..utils import LogUtil, MathUtil
 import ConfigParser
 import random
+
 import numpy as np
 from scipy import sparse
+
+from bin.featwheel.utils import LogUtil
+from ..featwheel.feature import Feature
+from ..postprocessor import PostProcessor
 
 
 class Stacking(object):

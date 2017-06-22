@@ -5,18 +5,19 @@
 # @Email   : houjp1992@gmail.com
 
 
-from ..featwheel.extractor import Extractor
-from ..utils import NgramUtil, DistanceUtil, LogUtil, MathUtil
-from ..preprocessor import TextPreProcessor
-from ..utils import MISSING_VALUE_NUMERIC
-from nltk.stem import SnowballStemmer
-import nltk
 import math
-from nltk.corpus import stopwords
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-import numpy as np
 
+import nltk
+import numpy as np
+import pandas as pd
+from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+from bin.featwheel.utils import MISSING_VALUE_NUMERIC
+from bin.featwheel.utils import NgramUtil, DistanceUtil, LogUtil, MathUtil
+from ..featwheel.extractor import Extractor
+from ..preprocessor import TextPreProcessor
 
 stops = set(stopwords.words("english"))
 snowball_stemmer = SnowballStemmer('english')

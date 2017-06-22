@@ -5,13 +5,15 @@
 # @Email   : houjp1992@gmail.com
 
 
-import re
-import random
-import nltk
-from nltk.stem import SnowballStemmer
-from utils import DataUtil, LogUtil
 import ConfigParser
+import random
+import re
+
+import nltk
 import pandas as pd
+from nltk.stem import SnowballStemmer
+
+from bin.featwheel.utils import DataUtil, LogUtil
 
 
 class TextPreProcessor(object):
