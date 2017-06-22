@@ -168,15 +168,15 @@ class LogisticRegression(Model):
 
     def __load_parameters(self):
         params = dict()
-        params['penalty'] = self.config.get('PARAMS', 'penalty')
-        params['dual'] = self.config.get('PARAMS', 'dual').lower() == 'True'
-        params['tol'] = float(self.config.get('PARAMS', 'tol'))
-        params['C'] = float(self.config.get('PARAMS', 'C'))
-        params['verbose'] = self.config.getint('PARAMS', 'verbose')
-        params['max_iter'] = self.config.getint('PARAMS', 'max_iter')
-        params['solver'] = self.config.get('PARAMS', 'solver')
-        params['n_jobs'] = self.config.getint('PARAMS', 'n_jobs')
-        params['multi_class'] = self.config.get('PARAMS', 'multi_class')
+        params['penalty'] = self.config.get('LOGISTIC_REGRESSION_PARAMS', 'penalty')
+        params['dual'] = self.config.get('LOGISTIC_REGRESSION_PARAMS', 'dual').lower() == 'True'
+        params['tol'] = float(self.config.get('LOGISTIC_REGRESSION_PARAMS', 'tol'))
+        params['C'] = float(self.config.get('LOGISTIC_REGRESSION_PARAMS', 'C'))
+        params['verbose'] = self.config.getint('LOGISTIC_REGRESSION_PARAMS', 'verbose')
+        params['max_iter'] = self.config.getint('LOGISTIC_REGRESSION_PARAMS', 'max_iter')
+        params['solver'] = self.config.get('LOGISTIC_REGRESSION_PARAMS', 'solver')
+        params['n_jobs'] = self.config.getint('LOGISTIC_REGRESSION_PARAMS', 'n_jobs')
+        params['multi_class'] = self.config.get('LOGISTIC_REGRESSION_PARAMS', 'multi_class')
         return params
 
     def save(self, model_fp):
