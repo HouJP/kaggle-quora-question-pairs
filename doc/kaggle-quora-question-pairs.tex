@@ -175,6 +175,28 @@ where $M$ denotes the interaction matrix between $x$ and $y$, $R^m$ denotes the 
 The model MatchPyramid~\cite{} and Match-SRNN~\cite{} belong to this category. In this competition, we define a much complex $M$ to construct a interaction tensor (not matrix because it is 3-dimension) and then apply 2D-GRU, which first be introduced in Match-SRNN.
 
 \subsection{Best Single Deep Text Matching Model}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.6\textwidth]{../img/single-deepmodel.png}
+  \caption{The architecture of the best single deep text matching model.} \label{Fig.best_single}
+\end{figure}
+In order to gain a better performance, we find that a structure level combination is useful. As shown in Figure.~\ref{Fig.best_single}, we first construct multiple channels of matching matrices; then concatenate them into a 3-dimensional tensor as the input of the following network; finally, apply the hierarchical convolutional operation and the 2-dimensional GRU operation on this matching tensor respectively.
+
+\subsubsection{Matching Tensor}
+We use three types of data sources, namely original word embeddings, compressed word embeddings and contextual word embeddings. 
+
+\textbf{Word Embedding}: The word embeddings are pre-trained using Word2Vec. We use released 300-dimensional word embeddings, such as Google-News and Glove-640B.
+
+\textbf{Compressed Word Embedding}: We use a linear function to compressed original word embedding into a low dimension. For example, we apply a linear transform matrix $ W (300 \times 20) $ to  compress 300-dimensional embedding into 20-dimensional embedding.
+
+\textbf{Contextual Word Embedding}: Considering the contextual information around current word, we construct a contextual word embedding. In order to obtain the contextual information, we follow the structure proposed in MV-LSTM~\cite{}. A bi-directional LSTM is adopted to build contextual word embeddings.
+
+Based on these three data sources, we construct multiple channels matching matrix, called matching tensor, considering different similarity functions. In this single model, we use identity function, dot product function, element product function and element concatenate function. 
+
+\subsubsection{Patterns Extraction and Aggregation}
+After constructing matching tensor which contains fine-grained matching signals, we need to extract or aggregate matching patterns from the matching tensors. As we have mentioned, MatchPyramid and Match-SRNN provide two kinds of aspect to tackle this issue. In MatchPyramid,  a hierarchical convolutional operation is applied to extract matching signals patterns; while in Match-SRNN, a spacial GRU operation is applied to find a matching alignment and aggregate the matching signals.
+
+Then, we concatenate the outputs of CNN and 2D-GRU, and feed them into the following full connected layers, in order to obtain the final matching score (the probability of the question duplication).
 
 \section{Deep Fusion}
 
