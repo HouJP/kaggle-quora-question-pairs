@@ -90,7 +90,7 @@ class TFIDFWordMatchShare(Extractor):
     def __init__(self, config):
         Extractor.__init__(self, config)
 
-        train_data = pd.read_csv('%s/train.csv' % config.get('DEFAULT', 'source_pt')).fillna(value="")
+        train_data = pd.read_csv('%s/train.csv' % config.get('DIRECTORY', 'source_pt')).fillna(value="")
         self.idf = TFIDFWordMatchShare.init_idf(train_data)
 
     @staticmethod
@@ -262,7 +262,7 @@ class PowerfulWordDoubleSide(Extractor):
         Extractor.__init__(self, config_fp)
 
         powerful_word_fp = '%s/words_power.%s.txt' % (
-            self.config.get('DEFAULT', 'devel_fp'), self.config.get('MODEL', 'train_subset_name'))
+            self.config.get('DIRECTORY', 'devel_fp'), self.config.get('MODEL', 'train_subset_name'))
         self.pword = PowerfulWord.load_powerful_word(powerful_word_fp)
         self.pword_dside = PowerfulWordDoubleSide.init_powerful_word_dside(self.pword, thresh_num, thresh_rate)
 
@@ -296,7 +296,7 @@ class PowerfulWordOneSide(Extractor):
         Extractor.__init__(self, config_fp)
 
         powerful_word_fp = '%s/words_power.%s.txt' % (
-            self.config.get('DEFAULT', 'devel_fp'), self.config.get('MODEL', 'train_subset_name'))
+            self.config.get('DIRECTORY', 'devel_fp'), self.config.get('MODEL', 'train_subset_name'))
         self.pword = PowerfulWord.load_powerful_word(powerful_word_fp)
         self.pword_oside = PowerfulWordOneSide.init_powerful_word_oside(self.pword, thresh_num, thresh_rate)
 
@@ -332,7 +332,7 @@ class PowerfulWordDoubleSideRate(Extractor):
         Extractor.__init__(self, config_fp)
 
         powerful_word_fp = '%s/words_power.%s.txt' % (
-            self.config.get('DEFAULT', 'devel_fp'), self.config.get('MODEL', 'train_subset_name'))
+            self.config.get('DIRECTORY', 'devel_fp'), self.config.get('MODEL', 'train_subset_name'))
         self.pword_dict = dict(PowerfulWord.load_powerful_word(powerful_word_fp))
 
     def extract_row(self, row):
@@ -359,7 +359,7 @@ class PowerfulWordOneSideRate(Extractor):
         Extractor.__init__(self, config_fp)
 
         powerful_word_fp = '%s/words_power.%s.txt' % (
-            self.config.get('DEFAULT', 'devel_fp'), self.config.get('MODEL', 'train_subset_name'))
+            self.config.get('DIRECTORY', 'devel_fp'), self.config.get('MODEL', 'train_subset_name'))
         self.pword_dict = dict(PowerfulWord.load_powerful_word(powerful_word_fp))
 
     def extract_row(self, row):
@@ -389,8 +389,8 @@ class TFIDF(Extractor):
         self.tfidf = self.init_tfidf()
 
     def init_tfidf(self):
-        train_data = pd.read_csv('%s/train.csv' % self.config.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
-        test_data = pd.read_csv('%s/test.csv' % self.config.get('DEFAULT', 'origin_pt')).fillna(value="")  # [:100]
+        train_data = pd.read_csv('%s/train.csv' % self.config.get('DIRECTORY', 'origin_pt')).fillna(value="")  # [:100]
+        test_data = pd.read_csv('%s/test.csv' % self.config.get('DIRECTORY', 'origin_pt')).fillna(value="")  # [:100]
 
         tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 1))
         tfidf_txt = pd.Series(
@@ -421,8 +421,8 @@ class DulNum(Extractor):
     @staticmethod
     def generate_dul_num(config):
         # load data set
-        train_data = pd.read_csv('%s/train.csv' % config.get('DEFAULT', 'source_pt')).fillna(value="")
-        test_data = pd.read_csv('%s/test_with_qid.csv' % config.get('DEFAULT', 'source_pt')).fillna(value="")
+        train_data = pd.read_csv('%s/train.csv' % config.get('DIRECTORY', 'source_pt')).fillna(value="")
+        test_data = pd.read_csv('%s/test_with_qid.csv' % config.get('DIRECTORY', 'source_pt')).fillna(value="")
 
         dul_num = {}
         for index, row in train_data.iterrows():

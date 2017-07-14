@@ -70,9 +70,9 @@ class UDG(Graph):
         test_wfs_fs = None
         if weight_feature_name is not None:
             train_wfs_fs = Feature.load(
-                '%s/%s.train.smat' % (config.get('DEFAULT', 'feature_question_pair_pt'), weight_feature_name)).toarray()
+                '%s/%s.train.smat' % (config.get('DIRECTORY', 'feature_question_pair_pt'), weight_feature_name)).toarray()
             test_wfs_fs = Feature.load(
-                '%s/%s.test.smat' % (config.get('DEFAULT', 'feature_question_pair_pt'), weight_feature_name)).toarray()
+                '%s/%s.test.smat' % (config.get('DIRECTORY', 'feature_question_pair_pt'), weight_feature_name)).toarray()
             if 'True' == reverse:
                 LogUtil.log('INFO', 'will reverse')
                 for index in range(len(train_wfs_fs)):
@@ -80,7 +80,7 @@ class UDG(Graph):
                 for index in range(len(test_wfs_fs)):
                     test_wfs_fs[index][weight_feature_id] = 1. - test_wfs_fs[index][weight_feature_id]
 
-        fin = csv.reader(open('%s/train.csv' % config.get('DEFAULT', 'origin_pt')))
+        fin = csv.reader(open('%s/train.csv' % config.get('DIRECTORY', 'origin_pt')))
         fin.next()
         index = 0
         for p in fin:
@@ -96,7 +96,7 @@ class UDG(Graph):
             e2weight[(q2id[q2], q2id[q1])] = weight
             index += 1
 
-        fin = csv.reader(open('%s/test.csv' % config.get('DEFAULT', 'origin_pt')))
+        fin = csv.reader(open('%s/test.csv' % config.get('DIRECTORY', 'origin_pt')))
         fin.next()
         index = 0
         for p in fin:

@@ -239,7 +239,7 @@ Although Cascade Stacking method can improve the performance obviously compared 
 In order to deal with those problems, we proposed another interesting structure of stacking named \textbf{Hierarchical Stacking}. The framework of the Hierarchical Stacking  is shown in Fig.~{\ref{fig:hierarchical-stacking}. The steps of the hierarchical stacking described as follows:
 
 \begin{itemize}
-\label{alg:cascade-stacking}
+\label{alg:hierarchical-stacking}
 \item[1.] Fit and make predictions based on original features with diverse models, such as XGBoost, LightGBM and Deep Models.
 \item[2.] Convert the prediction results into new features through single-stacking algorithm.
 \item[3.] Fit and make predictions based on last layer transformed features and new extracted features with diverse models, such as XGBoost, LightGBM.

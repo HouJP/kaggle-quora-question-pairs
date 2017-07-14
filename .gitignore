@@ -17,3 +17,5 @@ btm
 # latex
 .texpadtmp/
 *.pdf
+*.ps
+*.dvi
