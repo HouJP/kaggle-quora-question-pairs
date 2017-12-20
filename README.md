@@ -35,3 +35,6 @@ Submissions were evaluated on the log loss between the predicted values and the 
 
 ****
 
+### Deep Model
+
+Please see [TextNet](https://github.com/pl8787/textnet-release) and [TextNet-Model](https://github.com/pl8787/textnet-model). For tensorflow version, please checkout [MatchZoo](https://github.com/faneshion/MatchZoo).
